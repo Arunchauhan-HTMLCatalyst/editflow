@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Flowing "ef" monogram ligature for EditFlow -->
+    <!-- Adaptive icon safe zone: 18dp–90dp (72dp usable, centered) -->
+    <!-- All elements stay well within the safe zone with stroke padding -->
+
+    <!-- Group scaled down to 0.75 to fit inside the circular safe zone (66dp/33dp radius) -->
+    <group
+        android:pivotX="54.0"
+        android:pivotY="54.0"
+        android:scaleX="0.75"
+        android:scaleY="0.75">
+        <!-- "e" bowl — open arc, clear gap at lower-right -->
+        <!-- Center at (42.5, 57), radius ~11, arc from 0° CCW ~304° -->
+        <path
+            android:pathData="M53.5,57 A11,11 0 1 0 48.5,66.5"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4.8"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000" />
+
+        <!-- Shared crossbar (ligature flow line) -->
+        <path
+            android:pathData="M31.5,57 L68,57"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4.8"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000" />
+
+        <!-- "f" vertical stem -->
+        <path
+            android:pathData="M63.7,34 L63.7,77"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4.8"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000" />
+
+        <!-- "f" top hook (elegant curve to the right) -->
+        <path
+            android:pathData="M63.7,34 Q63.7,27 75,27"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4.8"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000" />
+    </group>
+</vector>
