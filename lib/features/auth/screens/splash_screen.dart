@@ -65,7 +65,10 @@ class _SplashScreenState extends State<SplashScreen>
       }
     });
 
-    await Future.delayed(const Duration(seconds: 4));
+    // Wait up to 10 seconds for OAuth callback deep link to be processed.
+    // Release builds need more time: app_links processes the intent
+    // asynchronously after the Flutter engine fully initialises.
+    await Future.delayed(const Duration(seconds: 10));
     if (!mounted) return;
     sub.cancel();
 
