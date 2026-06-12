@@ -34,7 +34,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // ✅ Navigate to dashboard as soon as auth becomes authenticated
     // This fires when Google OAuth deep link returns and session is established
     ref.listen<AuthState>(authProvider, (previous, next) {
+      debugPrint('[LOGIN SCREEN] AuthState listener fired: status=${next.status}, error=${next.error}, user=${next.user?.id}');
       if (next.status == AuthStatus.authenticated && context.mounted) {
+        debugPrint('[LOGIN SCREEN] AuthStatus is authenticated. Navigating to /dashboard');
         context.go('/dashboard');
       }
     });
@@ -147,6 +149,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onTap: isLoading
                         ? null
                         : () {
+                            debugPrint('[LOGIN SCREEN] Sign In button tapped. Email: ${_emailController.text.trim()}');
                             ref.read(authProvider.notifier).signIn(
                               _emailController.text.trim(),
                               _passwordController.text.trim(),
@@ -221,7 +224,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   // Google Sign In
                   GestureDetector(
-                    onTap: isLoading ? null : () => ref.read(authProvider.notifier).signInWithGoogle(),
+                    onTap: isLoading ? null : () {
+                      debugPrint('[LOGIN SCREEN] Continue with Google button tapped');
+                      ref.read(authProvider.notifier).signInWithGoogle();
+                    },
                     child: Container(
                       width: double.infinity,
                       height: 52,

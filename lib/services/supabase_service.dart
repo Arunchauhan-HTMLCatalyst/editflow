@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/app_constants.dart';
 
@@ -5,14 +6,21 @@ class SupabaseService {
   static late SupabaseClient client;
 
   static Future<void> initialize() async {
-    await Supabase.initialize(
-      url: AppConstants.supabaseUrl,
-      publishableKey: AppConstants.supabaseAnonKey,
-      authOptions: FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
-      ),
-    );
-    client = Supabase.instance.client;
+    debugPrint('[SUPABASE SERVICE] Initializing Supabase...');
+    try {
+      await Supabase.initialize(
+        url: AppConstants.supabaseUrl,
+        publishableKey: AppConstants.supabaseAnonKey,
+        authOptions: FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+        ),
+      );
+      client = Supabase.instance.client;
+      debugPrint('[SUPABASE SERVICE] Initialization completed. Session: ${client.auth.currentSession != null ? "active" : "null"}');
+    } catch (e, st) {
+      debugPrint('[SUPABASE SERVICE] Initialization failed: $e\n$st');
+      rethrow;
+    }
   }
 
   static SupabaseClient get instance => client;

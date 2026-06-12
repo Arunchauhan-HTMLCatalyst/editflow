@@ -47,34 +47,60 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkAuth() async {
+    debugPrint('[SPLASH] _checkAuth started. Current user: ${SupabaseService.currentUser?.id}');
     await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
+    if (!mounted) {
+      debugPrint('[SPLASH] Not mounted after initial delay');
+      return;
+    }
 
     if (SupabaseService.currentUser != null) {
+      debugPrint('[SPLASH] User is already logged in: ${SupabaseService.currentUser?.id}');
       await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
+      if (!mounted) {
+        debugPrint('[SPLASH] Not mounted after user session delay');
+        return;
+      }
+      debugPrint('[SPLASH] Navigating to /dashboard');
       context.go('/dashboard');
       return;
     }
 
+    debugPrint('[SPLASH] User not logged in yet. Listening to onAuthStateChange...');
     StreamSubscription? sub;
-    sub = SupabaseService.instance.auth.onAuthStateChange.listen((data) {
-      if (data.session != null && mounted) {
-        sub?.cancel();
-        context.go('/dashboard');
-      }
-    });
+    sub = SupabaseService.instance.auth.onAuthStateChange.listen(
+      (data) {
+        debugPrint('[SPLASH] onAuthStateChange event: ${data.event}, session: ${data.session != null ? "active" : "null"}');
+        if (data.session != null && mounted) {
+          debugPrint('[SPLASH] onAuthStateChange detected session. Cancelling sub and going to /dashboard');
+          sub?.cancel();
+          context.go('/dashboard');
+        }
+      },
+      onError: (e, st) {
+        debugPrint('[SPLASH] onAuthStateChange error: $e\n$st');
+      },
+    );
 
     // Wait up to 10 seconds for OAuth callback deep link to be processed.
     // Release builds need more time: app_links processes the intent
     // asynchronously after the Flutter engine fully initialises.
+    debugPrint('[SPLASH] Waiting 10 seconds for deep link or user activity...');
     await Future.delayed(const Duration(seconds: 10));
-    if (!mounted) return;
+    if (!mounted) {
+      debugPrint('[SPLASH] Not mounted after 10 seconds wait');
+      return;
+    }
+    debugPrint('[SPLASH] 10 seconds wait completed. Cancelling subscription.');
     sub.cancel();
 
-    if (SupabaseService.currentUser != null) {
+    final finalUser = SupabaseService.currentUser;
+    debugPrint('[SPLASH] Final check - User: ${finalUser?.id}');
+    if (finalUser != null) {
+      debugPrint('[SPLASH] Navigating to /dashboard (final check succeeded)');
       context.go('/dashboard');
     } else {
+      debugPrint('[SPLASH] Navigating to /login (no session found)');
       context.go('/login');
     }
   }
