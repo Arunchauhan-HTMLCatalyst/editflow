@@ -14,12 +14,10 @@ class ProjectRepository {
         .eq('user_id', userId)
         .order('created_at', ascending: false)
         .timeout(const Duration(seconds: 15));
-    return (response as List).map((e) {
-      if (e['clients'] != null) {
-        e['client_name'] = e['clients']['name'];
-      }
-      return Project.fromJson(e);
-    }).toList();
+    return (response as List)
+        .map((e) => Project.tryFromJson(e))
+        .whereType<Project>()
+        .toList();
   }
 
   Future<List<Project>> getByClientId(String clientId) async {
@@ -31,12 +29,10 @@ class ProjectRepository {
         .eq('client_id', clientId)
         .order('created_at', ascending: false)
         .timeout(const Duration(seconds: 15));
-    return (response as List).map((e) {
-      if (e['clients'] != null) {
-        e['client_name'] = e['clients']['name'];
-      }
-      return Project.fromJson(e);
-    }).toList();
+    return (response as List)
+        .map((e) => Project.tryFromJson(e))
+        .whereType<Project>()
+        .toList();
   }
 
   Future<Project> getById(String id) async {

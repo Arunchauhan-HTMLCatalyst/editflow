@@ -14,7 +14,10 @@ class ClientRepository {
         .eq('user_id', userId)
         .order('created_at', ascending: false)
         .timeout(const Duration(seconds: 15));
-    return (response as List).map((e) => Client.fromJson(e)).toList();
+    return (response as List)
+        .map((e) => Client.tryFromJson(e))
+        .whereType<Client>()
+        .toList();
   }
 
   Future<Client> getById(String id) async {

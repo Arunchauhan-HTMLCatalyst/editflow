@@ -8,7 +8,8 @@ Future<void> main() async {
 
   try {
     await SupabaseService.initialize();
-  } catch (e) {
+  } catch (e, st) {
+    debugPrint('[MAIN] Supabase initialization failed: $e\n$st');
     // App can still run in offline mode for development
   }
 
