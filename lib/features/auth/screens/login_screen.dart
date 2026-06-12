@@ -31,6 +31,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
     final isLoading = authState.status == AuthStatus.loading;
 
+    // ✅ Navigate to dashboard as soon as auth becomes authenticated
+    // This fires when Google OAuth deep link returns and session is established
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated && context.mounted) {
+        context.go('/dashboard');
+      }
+    });
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(

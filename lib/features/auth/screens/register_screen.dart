@@ -34,6 +34,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final authState = ref.watch(authProvider);
     final isLoading = authState.status == AuthStatus.loading;
 
+    // Navigate to dashboard as soon as auth becomes authenticated
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated && context.mounted) {
+        context.go('/dashboard');
+      }
+    });
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(

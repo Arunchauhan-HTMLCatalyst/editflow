@@ -43,11 +43,15 @@ class AuthProvider extends StateNotifier<AuthState> {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
     _authSubscription = _authRepository.onAuthChange().listen((event) {
-      if (event == AuthChangeEvent.signedIn) {
-        state = AuthState(
-          status: AuthStatus.authenticated,
-          user: _authRepository.currentUser,
-        );
+      if (event == AuthChangeEvent.signedIn ||
+          event == AuthChangeEvent.tokenRefreshed) {
+        final user = _authRepository.currentUser;
+        if (user != null) {
+          state = AuthState(
+            status: AuthStatus.authenticated,
+            user: user,
+          );
+        }
       } else if (event == AuthChangeEvent.signedOut) {
         state = const AuthState(status: AuthStatus.unauthenticated);
       }

@@ -19,6 +19,7 @@ class AuthRepository {
     await SupabaseService.instance.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: AppConstants.supabaseRedirectUrl,
+      authScreenLaunchMode: LaunchMode.externalApplication,
     );
   }
 
