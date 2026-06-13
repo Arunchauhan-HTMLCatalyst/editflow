@@ -447,6 +447,15 @@ class SettingsScreen extends ConsumerWidget {
                 isDark: isDark,
                 onChanged: (_) => ref.read(settingsProvider.notifier).toggleClientMode(),
               ),
+              if (!settings.isClientMode) ...[
+                const SizedBox(height: 12),
+                _UpiIdCard(
+                  upiId: settings.upiId,
+                  isDark: isDark,
+                  onChanged: (u) =>
+                      ref.read(settingsProvider.notifier).setUpiId(u),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // DATA SECTION
@@ -1559,6 +1568,168 @@ class _ClientModeCard extends StatelessWidget {
                   ? const Color(0xFF252538)
                   : const Color(0xFFE2E8F0),
               onChanged: onChanged,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UpiIdCard extends StatefulWidget {
+  final String upiId;
+  final bool isDark;
+  final ValueChanged<String> onChanged;
+
+  const _UpiIdCard({
+    required this.upiId,
+    required this.isDark,
+    required this.onChanged,
+  });
+
+  @override
+  State<_UpiIdCard> createState() => _UpiIdCardState();
+}
+
+class _UpiIdCardState extends State<_UpiIdCard> {
+  late TextEditingController _controller;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.upiId);
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) {
+      widget.onChanged(_controller.text.trim());
+    }
+  }
+
+  @override
+  void didUpdateWidget(_UpiIdCard old) {
+    super.didUpdateWidget(old);
+    if (old.upiId != widget.upiId && !_focusNode.hasFocus) {
+      _controller.text = widget.upiId;
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.isDark ? AppColors.card : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: widget.isDark ? AppColors.border : const Color(0xFFF1F5F9),
+          width: 1.0,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: widget.isDark
+                    ? AppColors.primary.withValues(alpha: 0.15)
+                    : const Color(0xFFEEF2F6),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.account_balance_wallet_rounded,
+                size: 18,
+                color: widget.isDark ? AppColors.primary : const Color(0xFF475569),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'UPI ID',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Receive direct bank transfers',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: widget.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: 150,
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                keyboardType: TextInputType.emailAddress,
+                textAlign: TextAlign.right,
+                decoration: InputDecoration(
+                  hintText: 'e.g. user@upi',
+                  hintStyle: TextStyle(
+                    fontSize: 13,
+                    color: widget.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: widget.isDark
+                          ? AppColors.border
+                          : const Color(0xFFE2E8F0),
+                      width: 0.8,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 1.5,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: widget.isDark
+                      ? const Color(0xFF1E1E2C)
+                      : const Color(0xFFF1F5F9),
+                ),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                ),
+                onSubmitted: (v) {
+                  widget.onChanged(v.trim());
+                },
+              ),
             ),
           ],
         ),

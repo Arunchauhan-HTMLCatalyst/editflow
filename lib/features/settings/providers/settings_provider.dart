@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/currency_config.dart';
 
 class SettingsState {
@@ -7,12 +8,14 @@ class SettingsState {
   final bool isDarkMode;
   final double monthlyGoal;
   final bool isClientMode;
+  final String upiId;
 
   const SettingsState({
     this.currency = CurrencyConfig.usd,
     this.isDarkMode = false,
     this.monthlyGoal = 10000,
     this.isClientMode = false,
+    this.upiId = '',
   });
 
   SettingsState copyWith({
@@ -20,12 +23,14 @@ class SettingsState {
     bool? isDarkMode,
     double? monthlyGoal,
     bool? isClientMode,
+    String? upiId,
   }) =>
       SettingsState(
         currency: currency ?? this.currency,
         isDarkMode: isDarkMode ?? this.isDarkMode,
         monthlyGoal: monthlyGoal ?? this.monthlyGoal,
         isClientMode: isClientMode ?? this.isClientMode,
+        upiId: upiId ?? this.upiId,
       );
 }
 
@@ -40,11 +45,26 @@ class SettingsProvider extends StateNotifier<SettingsState> {
     final isDark = prefs.getBool('dark_mode') ?? false;
     final goal = prefs.getDouble('monthly_goal') ?? 10000;
     final isClient = prefs.getBool('is_client_mode') ?? false;
+    
+    var upi = prefs.getString('upi_id') ?? '';
+    
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        final metaUpi = user.userMetadata?['upi_id'] as String?;
+        if (metaUpi != null && metaUpi.isNotEmpty) {
+          upi = metaUpi;
+          await prefs.setString('upi_id', upi);
+        }
+      }
+    } catch (_) {}
+
     state = SettingsState(
       currency: CurrencyConfig.fromCode(currencyCode),
       isDarkMode: isDark,
       monthlyGoal: goal,
       isClientMode: isClient,
+      upiId: upi,
     );
   }
 
@@ -72,6 +92,23 @@ class SettingsProvider extends StateNotifier<SettingsState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('monthly_goal', goal);
     state = state.copyWith(monthlyGoal: goal);
+  }
+
+  Future<void> setUpiId(String upi) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('upi_id', upi);
+    state = state.copyWith(upiId: upi);
+
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(
+            data: {'upi_id': upi},
+          ),
+        );
+      }
+    } catch (_) {}
   }
 }
 

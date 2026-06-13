@@ -19,6 +19,7 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/app_logo.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class PaymentsScreen extends ConsumerStatefulWidget {
   const PaymentsScreen({super.key});
@@ -60,6 +61,31 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     buffer.writeln('  BALANCE DUE      :  ${currency.format(project.remainingAmount)}');
     buffer.writeln('  PAYMENT STATUS   :  ${project.remainingAmount <= 0 ? "✓ PAID IN FULL" : "⚠ BALANCE OUTSTANDING"}');
     buffer.writeln('------------------------------------------------');
+
+    final settings = ref.read(settingsProvider);
+    if (settings.upiId.isNotEmpty && project.remainingAmount > 0) {
+      final authState = ref.read(authProvider);
+      final user = authState.user;
+      final fullName = user?.userMetadata?['full_name'] as String?;
+      String? rawName = fullName ?? user?.email?.split('@').first;
+      String userName = 'User';
+      if (rawName != null && rawName.isNotEmpty) {
+        userName = rawName[0].toUpperCase() + rawName.substring(1);
+      }
+      
+      final upiLink = _generateUpiLink(
+        upiId: settings.upiId,
+        payeeName: userName,
+        amount: project.remainingAmount,
+        transactionNote: 'Payment for #EF-${project.id.substring(0, 8).toUpperCase()}',
+        currencyCode: currency.code,
+      );
+      
+      buffer.writeln('  PAY TO UPI ID    :  ${settings.upiId}');
+      buffer.writeln('  PAYMENT LINK     :  $upiLink');
+      buffer.writeln('------------------------------------------------');
+    }
+
     buffer.writeln('  Thank you for your business!');
     buffer.writeln('  If you have any questions, please contact me.');
     buffer.writeln('================================================');
@@ -96,6 +122,31 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     buffer.writeln('Total Paid: ${currency.format(totalPaid)}');
     buffer.writeln('Total Remaining Balance: ${currency.format(totalRemaining)}');
     buffer.writeln('------------------------');
+
+    final settings = ref.read(settingsProvider);
+    if (settings.upiId.isNotEmpty && totalRemaining > 0) {
+      final authState = ref.read(authProvider);
+      final user = authState.user;
+      final fullName = user?.userMetadata?['full_name'] as String?;
+      String? rawName = fullName ?? user?.email?.split('@').first;
+      String userName = 'User';
+      if (rawName != null && rawName.isNotEmpty) {
+        userName = rawName[0].toUpperCase() + rawName.substring(1);
+      }
+      
+      final upiLink = _generateUpiLink(
+        upiId: settings.upiId,
+        payeeName: userName,
+        amount: totalRemaining,
+        transactionNote: 'Combined Invoice Payment',
+        currencyCode: currency.code,
+      );
+      
+      buffer.writeln('Pay to UPI ID: ${settings.upiId}');
+      buffer.writeln('Payment Link: $upiLink');
+      buffer.writeln('------------------------');
+    }
+
     buffer.writeln('Thank you for your business!');
     buffer.writeln('Generated via EditFlow');
 
@@ -832,8 +883,46 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
           : 'combined_invoice_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File('${tempDir.path}/$fileName');
       await file.writeAsBytes(pngBytes);
+
+      final settings = ref.read(settingsProvider);
+      String shareText = 'Freelance Invoice';
+      double totalRemaining = 0;
+      if (widget.project != null) {
+        totalRemaining = widget.project!.remainingAmount;
+      } else if (widget.projects != null) {
+        double totalBudget = 0;
+        double totalPaid = 0;
+        for (final p in widget.projects!) {
+          totalBudget += p.price;
+          totalPaid += p.receivedAmount;
+        }
+        totalRemaining = totalBudget - totalPaid;
+      }
       
-      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], text: 'Freelance Invoice'));
+      if (settings.upiId.isNotEmpty && totalRemaining > 0) {
+        final authState = ref.read(authProvider);
+        final user = authState.user;
+        final fullName = user?.userMetadata?['full_name'] as String?;
+        String? rawName = fullName ?? user?.email?.split('@').first;
+        String userName = 'User';
+        if (rawName != null && rawName.isNotEmpty) {
+          userName = rawName[0].toUpperCase() + rawName.substring(1);
+        }
+        
+        final upiLink = _generateUpiLink(
+          upiId: settings.upiId,
+          payeeName: userName,
+          amount: totalRemaining,
+          transactionNote: widget.project != null
+              ? 'Payment for #EF-${widget.project!.id.substring(0, 8).toUpperCase()}'
+              : 'Combined Invoice Payment',
+          currencyCode: widget.currency.code,
+        );
+        
+        shareText = 'Freelance Invoice\nPay via UPI: $upiLink';
+      }
+
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], text: shareText));
     } catch (e) {
       debugPrint('Error sharing image: $e');
       if (mounted) {
@@ -947,6 +1036,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
 
   Widget _buildInvoiceCard() {
     final isSingle = widget.project != null;
+    final settings = ref.watch(settingsProvider);
     final refCode = isSingle
         ? '#EF-${widget.project!.id.substring(0, 8).toUpperCase()}'
         : '#EF-COMB-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
@@ -1127,11 +1217,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
                   ),
                 )),
           const SizedBox(height: 16),
-          Divider(
-            color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
-            height: 1,
-          ),
-          const SizedBox(height: 16),
+          // Total Budget
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1147,13 +1233,14 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
                 widget.currency.format(totalBudget),
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 6),
+          // Received Amount
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1169,43 +1256,176 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
                 widget.currency.format(totalPaid),
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Divider(
-            color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
-            height: 1,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'BALANCE DUE:',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                ),
+          const SizedBox(height: 12),
+          // Balance Due Highlight Container (Full Width)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isPaid
+                  ? AppColors.success.withValues(alpha: 0.1)
+                  : AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isPaid
+                    ? AppColors.success.withValues(alpha: 0.2)
+                    : AppColors.primary.withValues(alpha: 0.15),
+                width: 1,
               ),
-              Text(
-                widget.currency.format(totalRemaining),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: isPaid ? AppColors.success : AppColors.warning,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'BALANCE DUE:',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                    color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                  ),
                 ),
-              ),
-            ],
+                Text(
+                  widget.currency.format(totalRemaining),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: isPaid ? AppColors.success : AppColors.warning,
+                  ),
+                ),
+              ],
+            ),
           ),
+          // Centered QR Code for UPI Payment if configured & unpaid
+          if (settings.upiId.isNotEmpty && totalRemaining > 0) ...[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Divider(
+                    color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                    height: 1,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'UPI PAYMENT',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                      color: widget.isDark ? AppColors.textSecondary : const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Divider(
+                    color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
+                    ),
+                    child: QrImageView(
+                      data: _generateUpiLink(
+                        upiId: settings.upiId,
+                        payeeName: userName,
+                      ),
+                      version: QrVersions.auto,
+                      errorCorrectionLevel: QrErrorCorrectLevel.H,
+                      size: 110.0,
+                      gapless: false,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: Color(0xFF0F172A),
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: Color(0xFF0F172A),
+                      ),
+                      embeddedImage: const AssetImage('assets/images/app_logo_qr.png'),
+                      embeddedImageStyle: const QrEmbeddedImageStyle(
+                        size: Size(22, 22),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'SCAN TO PAY',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                      color: widget.isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    settings.upiId,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
       ),
     );
+  }
+
+  Future<void> _checkAndShare(VoidCallback onProceed) async {
+    final settings = ref.read(settingsProvider);
+    if (settings.upiId.isEmpty) {
+      if (!mounted) return;
+      final String? result = await showDialog<String>(
+        context: context,
+        builder: (ctx) => _AddUpiDialog(isDark: widget.isDark),
+      );
+      if (result == null) {
+        return;
+      }
+      if (result == 'bypass') {
+        onProceed();
+      } else {
+        await ref.read(settingsProvider.notifier).setUpiId(result);
+        onProceed();
+      }
+    } else {
+      onProceed();
+    }
   }
 
   @override
@@ -1224,11 +1444,13 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
         right: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Drag handle indicator
+          Center(
+            child: Container(
               width: 40,
               height: 4,
               decoration: BoxDecoration(
@@ -1236,82 +1458,336 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Share Invoice',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                  ),
+          ),
+          const SizedBox(height: 16),
+          // Title and Close Button Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Share Invoice',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                  color: widget.isDark ? AppColors.textSecondary : const Color(0xFF64748B),
-                ),
-              ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+                color: widget.isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          
+          // Scrollable Card content only
+          Flexible(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: _buildInvoiceCard(),
+              ),
             ),
-            const SizedBox(height: 12),
-            _buildInvoiceCard(),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
+          ),
+          
+          const SizedBox(height: 16),
+          // Fixed Bottom Action Buttons
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    icon: _isSharing
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Icon(Icons.image_rounded, size: 18),
-                    label: Text(
-                      _isSharing ? 'Generating...' : 'Share Image',
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                    ),
-                    onPressed: _isSharing ? null : _shareImage,
+                    elevation: 0,
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                      side: BorderSide(
-                        color: widget.isDark ? AppColors.border : const Color(0xFFCBD5E1),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.text_fields_rounded, size: 18),
-                    label: const Text(
-                      'Share Text',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                    ),
-                    onPressed: _isSharing ? null : widget.onShareText,
+                  icon: _isSharing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.image_rounded, size: 18),
+                  label: Text(
+                    _isSharing ? 'Generating...' : 'Share Image',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                   ),
+                  onPressed: _isSharing ? null : () => _checkAndShare(_shareImage),
                 ),
-              ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                    side: BorderSide(
+                      color: widget.isDark ? AppColors.border : const Color(0xFFCBD5E1),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.text_fields_rounded, size: 18),
+                  label: const Text(
+                    'Share Text',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
+                  onPressed: _isSharing
+                      ? null
+                      : () => _checkAndShare(() {
+                            widget.onShareText();
+                          }),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _generateUpiLink({
+  required String upiId,
+  required String payeeName,
+  double? amount,
+  String? transactionNote,
+  String? currencyCode,
+}) {
+  final cleanUpi = upiId.trim();
+  final cleanName = Uri.encodeComponent(payeeName.trim());
+  
+  return 'upi://pay?pa=$cleanUpi&pn=$cleanName';
+}
+
+class _AddUpiDialog extends StatefulWidget {
+  final bool isDark;
+
+  const _AddUpiDialog({required this.isDark});
+
+  @override
+  State<_AddUpiDialog> createState() => _AddUpiDialogState();
+}
+
+class _AddUpiDialogState extends State<_AddUpiDialog> {
+  final _controller = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surface : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Add UPI ID',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Receive direct payments by adding your UPI ID. We will generate custom payment links for your clients.',
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.4,
+                  color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _controller,
+                keyboardType: TextInputType.emailAddress,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                ),
+                decoration: InputDecoration(
+                  hintText: 'e.g. yourname@bank',
+                  hintStyle: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF1E1E2C) : const Color(0xFFF1F5F9),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 1.5,
+                    ),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppColors.error,
+                      width: 1,
+                    ),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppColors.error,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'UPI ID is required';
+                  }
+                  final upiRegex = RegExp(r'^[\w\.\-_]{2,256}@[\w]{2,64}$');
+                  if (!upiRegex.hasMatch(value.trim())) {
+                    return 'Please enter a valid UPI ID (e.g. user@bank)';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isDark ? AppColors.textSecondary : const Color(0xFF475569),
+                        side: BorderSide(
+                          color: isDark ? AppColors.border : const Color(0xFFCBD5E1),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).pop('bypass');
+                      },
+                      child: const Text(
+                        'Share without UPI',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          Navigator.of(context).pop(_controller.text.trim());
+                        }
+                      },
+                      child: const Text(
+                        'Save & Share',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
