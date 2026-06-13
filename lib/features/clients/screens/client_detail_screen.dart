@@ -572,6 +572,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
 
   void _showCreateProjectSheet() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currency = ref.read(currencyProvider);
     final nameController = TextEditingController();
     final descController = TextEditingController();
     final priceController = TextEditingController();
@@ -639,9 +640,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                       Expanded(
                         child: TextFormField(
                           controller: priceController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Price',
                             hintText: '0.00',
+                            prefixText: '${currency.symbol} ',
                           ),
                           keyboardType: TextInputType.number,
                         ),
@@ -650,9 +652,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                       Expanded(
                         child: TextFormField(
                           controller: receivedController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Advance Payment',
                             hintText: '0.00',
+                            prefixText: '${currency.symbol} ',
                           ),
                           keyboardType: TextInputType.number,
                         ),
@@ -858,9 +861,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: amountController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'New Advance Payment',
                         hintText: 'Enter payment amount',
+                        prefixText: '${currency.symbol} ',
                       ),
                       keyboardType: TextInputType.number,
                     ),

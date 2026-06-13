@@ -196,6 +196,7 @@ class FreelancerDetailScreen extends ConsumerWidget {
                     child: ProjectCard(
                       project: project,
                       onTap: () => context.push('/projects/${project.id}'),
+                      currency: currency,
                     ),
                   ),
                 );

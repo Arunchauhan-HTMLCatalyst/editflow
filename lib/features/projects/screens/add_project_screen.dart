@@ -10,6 +10,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/supabase_service.dart';
+import '../../settings/providers/settings_provider.dart';
 
 class AddProjectScreen extends ConsumerStatefulWidget {
   final String? preselectedClientId;
@@ -120,6 +121,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final clients = ref.watch(safeClientsProvider);
+    final currency = ref.watch(currencyProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -267,9 +269,10 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _priceController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Budget',
                                 hintText: '0.00',
+                                prefixText: '${currency.symbol} ',
                               ),
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               textInputAction: TextInputAction.next,
@@ -279,9 +282,10 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _receivedController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Advance Paid',
                                 hintText: '0.00',
+                                prefixText: '${currency.symbol} ',
                               ),
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               textInputAction: TextInputAction.next,

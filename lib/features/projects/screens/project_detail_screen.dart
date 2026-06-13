@@ -818,6 +818,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
   Widget _buildEditForm(bool isDark, Project project) {
+    final currency = ref.read(currencyProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -838,7 +839,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             Expanded(
               child: TextFormField(
                 controller: _priceController,
-                decoration: const InputDecoration(labelText: 'Price'),
+                decoration: InputDecoration(
+                  labelText: 'Price',
+                  prefixText: '${currency.symbol} ',
+                ),
                 keyboardType: TextInputType.number,
               ),
             ),
@@ -846,7 +850,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             Expanded(
               child: TextFormField(
                 controller: _receivedController,
-                decoration: const InputDecoration(labelText: 'Advance Payment'),
+                decoration: InputDecoration(
+                  labelText: 'Advance Payment',
+                  prefixText: '${currency.symbol} ',
+                ),
                 keyboardType: TextInputType.number,
               ),
             ),
