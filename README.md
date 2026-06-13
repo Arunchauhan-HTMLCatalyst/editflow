@@ -42,6 +42,9 @@ Projects move through a structured workflow:
 - Monitor pending balances
 - Overdue payment alerts
 - Revenue insights
+- Custom UPI payment QR codes (scan-to-pay via GPay, PhonePe, Paytm)
+- Prefill-free compliant deep links for secure, universal bank scanning
+- Quick text/image invoice sharing with automatic payment link attachment
 
 ---
 
@@ -61,34 +64,38 @@ Projects move through a structured workflow:
 - Pending revenue
 - Overdue payments
 - Monthly goals
-- Top clients
+- Top clients / top freelancers ranking lists
 - Project status analytics
 
 ---
 
 ### 💬 Feedback System
 
-- Project comments
-- Revision tracking
-- Client feedback management
+- Real-time project comment streams powered by Supabase Postgres channels
+- Instant client-freelancer feedback exchange
+- Revision tracking and approval pipelines
 
 ---
 
-### 🔒 Authentication
+### 🔒 Authentication & Client Mode
 
-- Google Sign-In
-- Email Authentication
-- Password Reset
-- Cloud Data Sync
+- Google Sign-In, Email Authentication, and Password Reset
+- Cloud Data Sync (Supabase Auth & Database integration)
+- Persisted "Client View Mode" toggles synced with user metadata
+- Automatic UI lockdowns (hides creation/edit/delete triggers and data backup options)
+- Dynamic bottom navigation tabs (auto-collapses to Dashboard & Freelancers)
+- Live client-specific metric translation (Earnings → Expenses, Pending → Due)
 
 ---
 
-### 🌙 Modern UI
+### 🌙 Premium UI/UX & Transitions
 
-- Beautiful Dark Mode
-- Smooth Animations
-- Mobile-first Design
-- Clean Dashboard Experience
+- Beautiful dark mode and mobile-first design
+- Curved count-up animations for all numeric stat dashboards
+- Animated Monthly Goal trackers with interactive 100%+ scale-pulse celebrations
+- Custom responsive skeleton shimmer loading layouts (light/dark mode compatible)
+- Tactile physical selection haptic vibrations on navigation tab switching
+- Page transition routes with Gaussian image blur animations and symmetric pop speeds
 
 ---
 
@@ -173,11 +180,13 @@ SUPABASE_ANON_KEY=your_supabase_key
 - [x] Calendar View
 - [x] Analytics Dashboard
 - [x] Authentication System
+- [x] Client Portal (Client Mode view & security restrictions)
+- [x] Real-time Commenting & Feedback System
+- [x] Custom UPI Payment QR Code & Sharing Integration
+- [x] Premium Animations & Transition Polish
 
 ### Upcoming Features
-- [ ] Client Portal
-- [ ] Invoice Generation
-- [ ] PDF Export
+- [ ] PDF Export / PDF Invoices
 - [ ] Team Collaboration
 - [ ] File Sharing
 - [ ] Push Notifications
