@@ -6,6 +6,8 @@ import '../providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_logo.dart';
 
+import '../../../shared/widgets/ambient_glow_container.dart';
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -42,14 +44,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark ? AppColors.bgDarkGradient : AppColors.bgLightGradient,
-          ),
-        ),
+      backgroundColor: Colors.transparent,
+      body: AmbientGlowContainer(
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -223,45 +219,81 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 24),
 
                   // Google Sign In
-                  GestureDetector(
-                    onTap: isLoading ? null : () {
-                      debugPrint('[LOGIN SCREEN] Continue with Google button tapped');
-                      ref.read(authProvider.notifier).signInWithGoogle();
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.surface : CupertinoColors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                          width: 1.0,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      GestureDetector(
+                        onTap: isLoading ? null : () {
+                          debugPrint('[LOGIN SCREEN] Continue with Google button tapped');
+                          ref.read(authProvider.notifier).signInWithGoogle();
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.surface : CupertinoColors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                  'assets/images/google_logo.png',
+                                  width: 22,
+                                  height: 22,
+                                  fit: BoxFit.contain,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Continue with Google',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                      child: Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets/images/google_logo.png',
-                              width: 22,
-                              height: 22,
-                              fit: BoxFit.contain,
+                      Positioned(
+                        top: -9,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.primary, AppColors.primaryNeon],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Continue with Google',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
                               ),
+                            ],
+                          ),
+                          child: const Text(
+                            'RECOMMENDED',
+                            style: TextStyle(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                   const SizedBox(height: 32),
                   Row(

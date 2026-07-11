@@ -123,10 +123,12 @@ class _StatusLegend extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 8,
             height: 8,
+            margin: const EdgeInsets.only(top: 1.5),
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(2),

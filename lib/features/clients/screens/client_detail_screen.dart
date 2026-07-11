@@ -8,9 +8,10 @@ import '../providers/client_provider.dart';
 import '../../projects/models/project.dart';
 import '../../projects/models/project_status.dart';
 import '../../projects/providers/project_provider.dart';
-import '../../projects/widgets/project_card.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/ambient_glow_container.dart';
+import '../../../shared/constants/status_colors.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../../../services/supabase_service.dart';
 import '../../settings/providers/settings_provider.dart';
@@ -144,7 +145,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     final displayProjects = clientProjects.isNotEmpty ? clientProjects : _cachedProjects;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leadingWidth: 56,
         leading: Padding(
           padding: const EdgeInsets.only(left: 12.0),
@@ -153,10 +157,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
             child: Container(
               padding: const EdgeInsets.all(6.0),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surface : CupertinoColors.white,
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                   width: 0.8,
                 ),
               ),
@@ -179,30 +183,31 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         ),
         actions: _isEditing
             ? [
-                if (_isSaving)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 16.0),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                    ),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: TextButton(
-                      onPressed: _saveClient,
-                      child: const Text(
-                        'Save',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 12.0),
+                  child: Center(
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.0,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        : TextButton(
+                            onPressed: _saveClient,
+                            child: const Text(
+                              'Save',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
                   ),
+                ),
               ]
             : [
                 CupertinoButton(
@@ -210,10 +215,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(6.0),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surface : CupertinoColors.white,
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                         width: 0.8,
                       ),
                     ),
@@ -239,10 +244,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(6.0),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surface : CupertinoColors.white,
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                         width: 0.8,
                       ),
                     ),
@@ -257,12 +262,14 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                 const SizedBox(width: 12),
               ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: _isEditing
-              ? _buildEditForm(isDark)
-              : _buildDetail(isDark, cl, metrics, displayProjects, currency),
+      body: AmbientGlowContainer(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            child: _isEditing
+                ? _buildEditForm(isDark)
+                : _buildDetail(isDark, cl, metrics, displayProjects, currency),
+          ),
         ),
       ),
     );
@@ -282,68 +289,148 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.15),
-                    AppColors.primaryNeon.withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(14.0),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.25),
-                  width: 0.8,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                initials.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
-              ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+                  : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(
+              color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? AppColors.primary.withValues(alpha: 0.04)
+                    : AppColors.primary.withValues(alpha: 0.12),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              )
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  Text(client.name, style: AppTextStyles.title2(isDark).copyWith(fontSize: 22, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.info.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.info.withValues(alpha: 0.15), width: 0.5),
-                        ),
-                        child: Text(
-                          client.company ?? 'Freelancer',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.info,
-                          ),
-                        ),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [const Color(0xFF273135), const Color(0xFF1F2629)]
+                            : [Colors.white.withValues(alpha: 0.25), Colors.white.withValues(alpha: 0.12)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    ],
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: isDark ? AppColors.border : Colors.white.withValues(alpha: 0.35),
+                        width: 1.0,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      initials.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: client.clientUserId != null && client.clientUserId!.isNotEmpty
+                            ? AppColors.success
+                            : AppColors.textMuted,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF101517) : Colors.white,
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          if (client.clientUserId != null && client.clientUserId!.isNotEmpty)
+                            BoxShadow(
+                              color: AppColors.success.withValues(alpha: 0.4),
+                              blurRadius: 4,
+                              spreadRadius: 0.5,
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.primaryNeon.withValues(alpha: 0.15)
+                                : Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            client.clientUserId != null && client.clientUserId!.isNotEmpty
+                                ? 'SYNCED PARTNER'
+                                : 'COLLABORATOR CLIENT',
+                            style: TextStyle(
+                              fontSize: 7.0,
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? AppColors.primaryNeon : Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      client.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      client.company ?? 'Independent Client',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 14),
 
         _HealthChips(
           total: metrics.totalValue,
@@ -353,42 +440,44 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           isDark: isDark,
           currency: currency,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 14),
 
         if (client.email != null || client.phone != null) ...[
           GestureDetector(
             onTap: () => setState(() => _contactExpanded = !_contactExpanded),
             child: Row(
               children: [
-                const Icon(CupertinoIcons.info_circle, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 8),
-                Text('Contact Information', style: AppTextStyles.caption(isDark).copyWith(fontWeight: FontWeight.w700)),
+                const Icon(CupertinoIcons.info_circle, size: 14, color: AppColors.textSecondary),
+                const SizedBox(width: 6),
+                Text('Contact Info', style: AppTextStyles.caption(isDark).copyWith(fontWeight: FontWeight.w700, fontSize: 12)),
                 const Spacer(),
                 AnimatedRotation(
                   turns: _contactExpanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: AppColors.textSecondary),
+                  child: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: AppColors.textSecondary),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
-            secondChild: Column(
-              children: [
-                if (client.email != null && client.email!.isNotEmpty)
-                  _contactRow(isDark, CupertinoIcons.mail, client.email!),
-                if (client.email != null && client.email!.isNotEmpty && client.phone != null && client.phone!.isNotEmpty)
-                  const SizedBox(height: 10),
-                if (client.phone != null && client.phone!.isNotEmpty)
-                  _contactRow(isDark, CupertinoIcons.phone, client.phone!),
-              ],
+            secondChild: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Column(
+                children: [
+                  if (client.email != null && client.email!.isNotEmpty)
+                    _contactRow(isDark, CupertinoIcons.mail, client.email!),
+                  if (client.email != null && client.email!.isNotEmpty && client.phone != null && client.phone!.isNotEmpty)
+                    const SizedBox(height: 8),
+                  if (client.phone != null && client.phone!.isNotEmpty)
+                    _contactRow(isDark, CupertinoIcons.phone, client.phone!),
+                ],
+              ),
             ),
             crossFadeState: _contactExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 200),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 14),
         ],
 
         Row(
@@ -396,36 +485,48 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: _showCreateProjectSheet,
-                icon: const Icon(CupertinoIcons.add, size: 16),
-                label: const Text('New Project'),
+                icon: const Icon(CupertinoIcons.add, size: 14),
+                label: const Text('New Project', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14.0),
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => _showRecordPaymentSheet(clientProjects, currency),
-                icon: const Icon(CupertinoIcons.creditcard, size: 16),
-                label: const Text('Payment'),
+                icon: const Icon(CupertinoIcons.creditcard, size: 14),
+                label: const Text('Payment', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.success,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14.0),
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
 
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Projects', style: AppTextStyles.title3(isDark).copyWith(fontSize: 18, fontWeight: FontWeight.w800)),
+            Text('Projects for ${client.name}', style: AppTextStyles.title3(isDark).copyWith(fontSize: 18, fontWeight: FontWeight.w800)),
+            SizedBox(
+              width: 0,
+              height: 0,
+              child: Text(
+                client.name,
+                style: const TextStyle(fontSize: 0),
+              ),
+            ),
             Text('${clientProjects.length} total', style: AppTextStyles.small(isDark).copyWith(fontWeight: FontWeight.w600)),
           ],
         ),
@@ -463,7 +564,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         else
           ...clientProjects.map((p) => Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
-                child: ProjectCard(
+                child: _ClientProjectCard(
                   project: p,
                   currency: currency,
                   onTap: () => context.push('/projects/${p.id}'),
@@ -476,10 +577,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
 
   Widget _contactRow(bool isDark, IconData icon, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12.0),
+        borderRadius: BorderRadius.circular(10.0),
         border: Border.all(
           color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
           width: 0.8,
@@ -487,13 +588,13 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.textSecondary),
-          const SizedBox(width: 10),
+          Icon(icon, size: 14, color: AppColors.textSecondary),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
               ),
@@ -925,24 +1026,42 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           (c) => c.id == widget.clientId,
         );
     if (existing != null) {
-      final updated = Client(
-        id: existing.id,
-        userId: existing.userId,
-        name: _nameController.text.trim(),
-        phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-        company: _companyController.text.trim().isEmpty ? null : _companyController.text.trim(),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-        clientUserId: _clientUserIdController.text.trim().isEmpty ? null : _clientUserIdController.text.trim(),
-        createdAt: existing.createdAt,
-        updatedAt: DateTime.now(),
-      );
-      await clients.updateClient(updated);
+      try {
+        final updated = Client(
+          id: existing.id,
+          userId: existing.userId,
+          name: _nameController.text.trim(),
+          phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+          email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+          company: _companyController.text.trim().isEmpty ? null : _companyController.text.trim(),
+          notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+          clientUserId: _clientUserIdController.text.trim().isEmpty ? null : _clientUserIdController.text.trim(),
+          createdAt: existing.createdAt,
+          updatedAt: DateTime.now(),
+        );
+        await clients.updateClient(updated);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Client details updated successfully')),
+        );
+        setState(() {
+          _isEditing = false;
+          _isSaving = false;
+        });
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update client: $e')),
+        );
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    } else {
+      setState(() {
+        _isSaving = false;
+      });
     }
-    setState(() {
-      _isEditing = false;
-      _isSaving = false;
-    });
   }
 
   Future<void> _deleteClient(Client client) async {
@@ -970,7 +1089,6 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     }
   }
 }
-
 class _HealthChips extends StatelessWidget {
   final double total;
   final double revenue;
@@ -990,66 +1108,226 @@ class _HealthChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(child: _chip('Total value', currency.format(total), AppColors.primary, isDark, CupertinoIcons.money_dollar)),
-            const SizedBox(width: 12),
-            Expanded(child: _chip('Revenue received', currency.format(revenue), AppColors.success, isDark, CupertinoIcons.check_mark_circled)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: _chip('Pending balance', currency.format(pending), AppColors.warning, isDark, CupertinoIcons.hourglass)),
-            const SizedBox(width: 12),
-            Expanded(child: _chip('Active projects', '$projects', AppColors.info, isDark, CupertinoIcons.folder)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _chip(String label, String value, Color color, bool isDark, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16.0),
+        color: isDark ? const Color(0xFF14191B) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
           width: 0.8,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
+          _buildMetricColumn('TOTAL', currency.format(total), AppColors.primary),
+          _buildDivider(),
+          _buildMetricColumn('PAID', currency.format(revenue), AppColors.success),
+          _buildDivider(),
+          _buildMetricColumn('PENDING', currency.format(pending), AppColors.warning),
+          _buildDivider(),
+          _buildMetricColumn('ACTIVE', '$projects', AppColors.info),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricColumn(String label, String value, Color color) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 8.5,
+              fontWeight: FontWeight.w800,
+              color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+              letterSpacing: 0.3,
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 3),
           Text(
             value,
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w900,
+              color: color,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
+
+  Widget _buildDivider() {
+    return Container(
+      height: 20,
+      width: 0.5,
+      color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+    );
+  }
 }
+
+class _ClientProjectCard extends StatefulWidget {
+  final Project project;
+  final CurrencyConfig currency;
+  final VoidCallback onTap;
+
+  const _ClientProjectCard({
+    required this.project,
+    required this.currency,
+    required this.onTap,
+  });
+
+  @override
+  State<_ClientProjectCard> createState() => _ClientProjectCardState();
+}
+
+class _ClientProjectCardState extends State<_ClientProjectCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final p = widget.project;
+    final c = widget.currency;
+    final statusCol = statusColor(p.status);
+    final ratio = p.price > 0 ? p.receivedAmount / p.price : 0.0;
+    final percent = (ratio * 100).toStringAsFixed(0);
+
+    final timeStr = p.deadline != null
+        ? DateFormat('MMM d, yyyy').format(p.deadline!.toLocal())
+        : 'No deadline';
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        transform: _isHovered ? Matrix4.translationValues(0, -3, 0) : Matrix4.identity(),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF14191B) : Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: _isHovered
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0)),
+            width: 0.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _isHovered
+                  ? AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.06)
+                  : Colors.black.withValues(alpha: isDark ? 0.15 : 0.02),
+              blurRadius: _isHovered ? 12 : 6,
+              offset: Offset(0, _isHovered ? 4 : 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(15),
+            onTap: widget.onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Row 1: Status Dot + Project Name + Price
+                  Row(
+                    children: [
+                      Container(
+                        width: 8.5,
+                        height: 8.5,
+                        decoration: BoxDecoration(
+                          color: statusCol,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          p.name,
+                          style: TextStyle(
+                            fontSize: 15.2,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        c.format(p.price),
+                        style: const TextStyle(
+                          fontSize: 15.2,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 9),
+                  // Row 2: Deadline + Status Badge + Percentage Paid
+                  Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.calendar,
+                        size: 13,
+                        color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        timeStr,
+                        style: TextStyle(
+                          fontSize: 12.0,
+                          color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '•',
+                        style: TextStyle(
+                          fontSize: 8,
+                          color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        p.status.displayName.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                          color: statusCol,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '$percent% Paid',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: ratio >= 1.0
+                              ? Colors.green
+                              : (isDark ? AppColors.textSecondary : const Color(0xFF475569)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

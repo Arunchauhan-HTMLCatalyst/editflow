@@ -112,128 +112,151 @@ class _ProjectCardState extends State<ProjectCard> {
         scale: _scale,
         duration: const Duration(milliseconds: 100),
         curve: Curves.easeOutCubic,
-        child: Card(
-          clipBehavior: Clip.antiAlias,
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 4,
-                  color: statusCol,
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.project.name,
-                                    style: AppTextStyles.label(isDark).copyWith(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (widget.project.clientName != null &&
-                                      widget.project.clientName!.trim().isNotEmpty) ...[
-                                    const SizedBox(height: 2),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1F21) : Colors.white,
+            borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16.0),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: statusCol,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        bottomLeft: Radius.circular(16),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
                                     Text(
-                                      widget.project.clientName!,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.textSecondary,
+                                      widget.project.name,
+                                      style: AppTextStyles.label(isDark).copyWith(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              c.format(widget.project.price),
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: AppColors.primary.withValues(alpha: 0.15),
-                                  width: 0.5,
-                                ),
-                              ),
-                              child: Text(
-                                'Pending ${c.format(widget.project.remainingAmount)}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            if (widget.project.deadline != null)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: _buildDeadlineWidget(context, widget.project.deadline!, isDark),
-                              ),
-                            StatusBadge(status: widget.project.status),
-                          ],
-                        ),
-                        if (widget.project.price > 0) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            height: 3,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                              borderRadius: BorderRadius.circular(1.5),
-                            ),
-                            alignment: Alignment.centerLeft,
-                            child: FractionallySizedBox(
-                              widthFactor: (widget.project.receivedAmount / widget.project.price).clamp(0.0, 1.0),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.primary,
-                                      AppColors.primary.withValues(alpha: 0.7),
+                                    if (widget.project.clientName != null &&
+                                        widget.project.clientName!.trim().isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        widget.project.clientName!,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                  c.format(widget.project.price),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
                                   ),
-                                  borderRadius: BorderRadius.circular(1.5),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: AppColors.primary.withValues(alpha: 0.12),
+                                    width: 0.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Due ${c.format(widget.project.remainingAmount)}',
+                                  style: const TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              if (widget.project.deadline != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: _buildDeadlineWidget(context, widget.project.deadline!, isDark),
+                                ),
+                              StatusBadge(status: widget.project.status),
+                            ],
+                          ),
+                          if (widget.project.price > 0) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              height: 3,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                                borderRadius: BorderRadius.circular(1.5),
+                              ),
+                              alignment: Alignment.centerLeft,
+                              child: FractionallySizedBox(
+                                widthFactor: (widget.project.receivedAmount / widget.project.price).clamp(0.0, 1.0),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        AppColors.primary,
+                                        AppColors.primary.withValues(alpha: 0.7),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(1.5),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

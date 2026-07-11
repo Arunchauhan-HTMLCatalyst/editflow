@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTheme {
@@ -9,6 +10,7 @@ class AppTheme {
   static ThemeData get light => ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
+        fontFamily: GoogleFonts.inter().fontFamily,
         colorScheme: ColorScheme.light(
           surface: const Color(0xFFFFFFFF),
           onSurface: const Color(0xFF0F172A), // Slate 900
@@ -46,6 +48,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
+      fontFamily: GoogleFonts.inter().fontFamily,
       colorScheme: ColorScheme(
         brightness: brightness,
         surface: surfaceColor,

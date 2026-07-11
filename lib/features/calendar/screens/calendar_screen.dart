@@ -9,6 +9,7 @@ import '../../projects/providers/project_provider.dart';
 import '../../projects/models/project.dart';
 import '../../projects/models/project_status.dart';
 import '../../../shared/providers/computed_providers.dart';
+import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
 
@@ -23,13 +24,16 @@ class CalendarScreen extends ConsumerWidget {
     final currency = ref.watch(currencyProvider);
 
     return Scaffold(
-      body: SafeArea(
-        top: true,
-        bottom: false,
-        child: projectsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('$e')),
-          data: (_) => _CalendarView(deadlines: deadlines, isDark: isDark, currency: currency),
+      backgroundColor: Colors.transparent,
+      body: AmbientGlowContainer(
+        child: SafeArea(
+          top: true,
+          bottom: false,
+          child: projectsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('$e')),
+            data: (_) => _CalendarView(deadlines: deadlines, isDark: isDark, currency: currency),
+          ),
         ),
       ),
     );
@@ -70,11 +74,6 @@ class _CalendarViewState extends State<_CalendarView> {
             p.deadline!.month == _selectedDate!.month &&
             p.deadline!.day == _selectedDate!.day)
         : <Project>[];
-
-    final screenWidth = MediaQuery.of(context).size.width;
-    // Calculate cell width dynamically based on card padding (20 screen padding + 16 card padding)
-    final gridWidth = screenWidth - 40 - 32;
-    final cellWidth = gridWidth / 7;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -176,8 +175,22 @@ class _CalendarViewState extends State<_CalendarView> {
           const SizedBox(height: 20),
 
           // Wrap in a Premium Calendar Grid Card
-          Card(
-            elevation: 0,
+          Container(
+            decoration: BoxDecoration(
+              color: widget.isDark ? AppColors.card : Colors.white,
+              borderRadius: BorderRadius.circular(20.0),
+              border: Border.all(
+                color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                width: 0.8,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: widget.isDark ? 0.1 : 0.02),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
               child: Column(
@@ -200,40 +213,58 @@ class _CalendarViewState extends State<_CalendarView> {
                             ))
                         .toList(),
                   ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    children: <Widget>[
-                      ...List.generate(firstWeekday, (_) => SizedBox(
-                        width: cellWidth,
-                        height: 48,
-                      )),
-                      ...List.generate(daysInMonth, (i) {
-                        final day = i + 1;
-                        final date = DateTime(_currentMonth.year, _currentMonth.month, day);
-                        final isToday = date.year == today.year && date.month == today.month && date.day == today.day;
-                        final isSelected = _selectedDate != null &&
-                            date.year == _selectedDate!.year &&
-                            date.month == _selectedDate!.month &&
-                            date.day == _selectedDate!.day;
-                        final hasDeadline = widget.deadlines.any((p) =>
-                            p.deadline!.year == date.year &&
-                            p.deadline!.month == date.month &&
-                            p.deadline!.day == date.day);
-                        final isPast = date.isBefore(DateTime.now().subtract(const Duration(days: 1)));
+                  const SizedBox(height: 10),
+                  ...() {
+                    final List<Widget> cells = [];
+                    for (int i = 0; i < firstWeekday; i++) {
+                      cells.add(const SizedBox(height: 38));
+                    }
+                    for (int i = 0; i < daysInMonth; i++) {
+                      final day = i + 1;
+                      final date = DateTime(_currentMonth.year, _currentMonth.month, day);
+                      final isToday = date.year == today.year && date.month == today.month && date.day == today.day;
+                      final isSelected = _selectedDate != null &&
+                          date.year == _selectedDate!.year &&
+                          date.month == _selectedDate!.month &&
+                          date.day == _selectedDate!.day;
+                      final hasDeadline = widget.deadlines.any((p) =>
+                          p.deadline!.year == date.year &&
+                          p.deadline!.month == date.month &&
+                          p.deadline!.day == date.day);
+                      final isPast = date.isBefore(DateTime.now().subtract(const Duration(days: 1)));
 
-                        return _CalendarDayCell(
+                      cells.add(
+                        _CalendarDayCell(
                           day: day,
                           isToday: isToday,
                           isSelected: isSelected,
                           hasDeadline: hasDeadline,
                           isPast: isPast,
                           isDark: widget.isDark,
-                          width: cellWidth,
                           onTap: () => setState(() => _selectedDate = date),
-                        );
-                      }),
-                    ],
-                  ),
+                        ),
+                      );
+                    }
+                    
+                    final remainder = cells.length % 7;
+                    if (remainder > 0) {
+                      final padCount = 7 - remainder;
+                      for (int i = 0; i < padCount; i++) {
+                        cells.add(const SizedBox(height: 38));
+                      }
+                    }
+
+                    final List<Widget> weekRows = [];
+                    for (int i = 0; i < cells.length; i += 7) {
+                      final rowCells = cells.sublist(i, i + 7);
+                      weekRows.add(
+                        Row(
+                          children: rowCells.map((c) => Expanded(child: c)).toList(),
+                        ),
+                      );
+                    }
+                    return weekRows;
+                  }(),
                 ],
               ),
             ),
@@ -285,7 +316,6 @@ class _CalendarDayCell extends StatefulWidget {
   final bool isPast;
   final bool isDark;
   final VoidCallback onTap;
-  final double width;
 
   const _CalendarDayCell({
     required this.day,
@@ -295,7 +325,6 @@ class _CalendarDayCell extends StatefulWidget {
     required this.isPast,
     required this.isDark,
     required this.onTap,
-    required this.width,
   });
 
   @override
@@ -311,19 +340,6 @@ class _CalendarDayCellState extends State<_CalendarDayCell> {
     final isToday = widget.isToday;
     final isDark = widget.isDark;
 
-    Color? cellBg;
-    Border? cellBorder;
-
-    if (isSelected) {
-      cellBg = AppColors.primary;
-    } else if (isToday) {
-      cellBg = AppColors.primary.withValues(alpha: 0.12);
-      cellBorder = Border.all(color: AppColors.primary.withValues(alpha: 0.6), width: 1.2);
-    } else if (_isHovered) {
-      cellBg = isDark ? AppColors.surface : const Color(0xFFF1F5F9);
-      cellBorder = Border.all(color: isDark ? AppColors.border : const Color(0xFFE2E8F0), width: 0.8);
-    }
-
     Color textColor;
     if (isSelected) {
       textColor = Colors.white;
@@ -335,53 +351,71 @@ class _CalendarDayCellState extends State<_CalendarDayCell> {
       textColor = isDark ? AppColors.textPrimary : const Color(0xFF0F172A);
     }
 
+    Widget cellContent = Container(
+      width: 30,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.primary
+            : (isToday ? AppColors.primary.withValues(alpha: 0.12) : Colors.transparent),
+        shape: BoxShape.circle,
+        border: isToday
+            ? Border.all(color: AppColors.primary.withValues(alpha: 0.6), width: 1.2)
+            : (_isHovered && !isSelected
+                ? Border.all(color: isDark ? AppColors.border : const Color(0xFFE2E8F0), width: 0.8)
+                : null),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                )
+              ]
+            : null,
+      ),
+      child: Text(
+        '${widget.day}',
+        style: TextStyle(
+          fontSize: 12.5,
+          fontWeight: isToday || isSelected ? FontWeight.w800 : FontWeight.w600,
+          color: textColor,
+        ),
+      ),
+    );
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: widget.width,
-          height: 48,
+        child: Container(
+          height: 38,
+          color: Colors.transparent, // Ensure full hit testing area
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: cellBg,
-            borderRadius: BorderRadius.circular(12),
-            border: cellBorder,
-          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '${widget.day}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isToday || isSelected ? FontWeight.w800 : FontWeight.w600,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(height: 3),
+              cellContent,
+              const SizedBox(height: 2),
               if (widget.hasDeadline)
                 Container(
-                  width: 5,
-                  height: 5,
+                  width: 4,
+                  height: 4,
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : AppColors.warning,
+                    color: isSelected ? AppColors.primary : AppColors.warning,
                     shape: BoxShape.circle,
-                    boxShadow: isSelected
-                        ? null
-                        : [
-                            BoxShadow(
-                              color: AppColors.warning.withValues(alpha: 0.6),
-                              blurRadius: 3,
-                              spreadRadius: 0.5,
-                            )
-                          ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.warning.withValues(alpha: 0.4),
+                        blurRadius: 2,
+                      )
+                    ],
                   ),
                 )
               else
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
             ],
           ),
         ),
@@ -412,6 +446,7 @@ class _AgendaProjectItemState extends State<_AgendaProjectItem> {
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
     final p = widget.project;
+    final statusColor = _statusColor(p.status);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -442,7 +477,7 @@ class _AgendaProjectItemState extends State<_AgendaProjectItem> {
                     width: 4,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: AppColors.warning,
+                      color: statusColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -467,10 +502,10 @@ class _AgendaProjectItemState extends State<_AgendaProjectItem> {
                             child: Text(
                               p.clientName!,
                               style: AppTextStyles.small(isDark).copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
-                              ),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -498,7 +533,7 @@ class _AgendaProjectItemState extends State<_AgendaProjectItem> {
                             width: 6,
                             height: 6,
                             decoration: BoxDecoration(
-                              color: _statusColor(p.status),
+                              color: statusColor,
                               shape: BoxShape.circle,
                             ),
                           ),

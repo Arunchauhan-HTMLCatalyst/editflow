@@ -5,6 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_logo.dart';
 import '../../../services/supabase_service.dart';
 
+import '../../../shared/widgets/ambient_glow_container.dart';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -116,42 +118,16 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark ? AppColors.bgDarkGradient : AppColors.bgLightGradient,
-          ),
-        ),
-        child: Stack(
-          children: [
-            // Immersive background ambient glow using RadialGradient
-            Positioned(
-              top: -100,
-              right: -100,
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08),
-                      AppColors.primary.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Center(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+      backgroundColor: Colors.transparent,
+      body: AmbientGlowContainer(
+        child: Center(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                       // Breathing Logo with Glow
                       ScaleTransition(
                         scale: _pulseAnimation,
@@ -251,9 +227,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
   }
 }

@@ -175,6 +175,9 @@ void main() {
     );
     addTearDown(container.dispose);
 
+    // Keep provider alive by listening
+    final keepAlive = container.listen(projectProvider, (prev, next) {});
+
     // Initial read (Freelancer Mode)
     final initialList = await container.read(projectProvider.future);
     expect(initialList.length, 1);
@@ -207,5 +210,7 @@ void main() {
     final updatedList = await container.read(projectProvider.future);
     expect(updatedList.length, 1);
     expect(updatedList.first.name, 'Client Project');
+
+    keepAlive.close();
   });
 }

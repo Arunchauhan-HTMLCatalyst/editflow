@@ -1,0 +1,10 @@
+# Netlify Deployment Configuration for EditFlow (Flutter Web)
+# This handles Single Page Application (SPA) redirects to prevent GoRouter 404 errors on page reload.
+
+[build]
+  publish = "build/web"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

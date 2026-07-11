@@ -17,6 +17,8 @@ import 'package:editflow/features/clients/providers/client_provider.dart';
 import 'package:editflow/router.dart';
 import 'package:editflow/shared/models/activity.dart';
 import 'package:editflow/shared/providers/computed_providers.dart';
+import 'package:editflow/shared/widgets/linkified_text.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeRecentActivityNotifier extends RecentActivityNotifier {
   final List<Activity> _activities;
@@ -92,10 +94,14 @@ class FakeCommentRepository extends Fake implements CommentRepository {
   Stream<List<Comment>> subscribeComments(String projectId) {
     return Stream.value([]);
   }
+
+  @override
+  Future<void> cleanupOldVoiceNotes() async {}
 }
 
 void main() {
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     SupabaseService.client = FakeSupabaseClient();
   });
 
@@ -578,5 +584,23 @@ void main() {
     // Verify we popped back to Dashboard (the screen we pushed from)
     expect(find.text('Bob Video Editing'), findsNothing);
     expect(find.text('Earning'), findsOneWidget);
+  });
+
+  testWidgets('LinkifiedText renders normal text and web links correctly', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: LinkifiedText(
+            text: 'Check this link: https://google.com for info.',
+          ),
+        ),
+      ),
+    );
+
+    // Verify it finds the components of the linkified text
+    expect(find.textContaining('Check this link:'), findsOneWidget);
+    expect(find.byType(InlineLinkPreview), findsOneWidget);
+    expect(find.text('google.com'), findsOneWidget);
+    expect(find.textContaining('for info.'), findsOneWidget);
   });
 }

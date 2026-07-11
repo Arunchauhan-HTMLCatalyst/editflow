@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../models/currency_config.dart';
@@ -46,7 +47,9 @@ class SettingsScreen extends ConsumerWidget {
     final isGoogle = provider == 'google';
 
     return Scaffold(
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: AmbientGlowContainer(
+        child: SafeArea(
         top: true,
         bottom: false,
         child: SingleChildScrollView(
@@ -67,10 +70,10 @@ class SettingsScreen extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(6.0),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.surface : CupertinoColors.white,
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                           width: 0.8,
                         ),
                       ),
@@ -116,8 +119,30 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Card(
-                elevation: 0,
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+                        : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20.0),
+                  border: Border.all(
+                    color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+                    width: 0.8,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? AppColors.primary.withValues(alpha: 0.04)
+                          : AppColors.primary.withValues(alpha: 0.1),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    )
+                  ],
+                ),
                 child: Padding(
                   padding: EdgeInsets.all(AppSpacing.cardPadding),
                   child: Column(
@@ -225,7 +250,7 @@ class SettingsScreen extends ConsumerWidget {
                                   style: AppTextStyles.body(isDark).copyWith(
                                     fontSize: 17.5,
                                     fontWeight: FontWeight.w800,
-                                    color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                    color: Colors.white,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -238,9 +263,7 @@ class SettingsScreen extends ConsumerWidget {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
-                                    color: isDark
-                                        ? AppColors.textSecondary
-                                        : const Color(0xFF64748B),
+                                    color: Colors.white.withValues(alpha: 0.8),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -327,7 +350,7 @@ class SettingsScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       Divider(
                         height: 1,
-                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                        color: Colors.white.withValues(alpha: 0.15),
                       ),
                       const SizedBox(height: 16),
                       _buildDetailRow(
@@ -336,6 +359,7 @@ class SettingsScreen extends ConsumerWidget {
                         value: createdStr,
                         isDark: isDark,
                         context: context,
+                        inverse: true,
                       ),
                       const SizedBox(height: 12),
                       _buildDetailRow(
@@ -344,6 +368,7 @@ class SettingsScreen extends ConsumerWidget {
                         value: lastSignInStr,
                         isDark: isDark,
                         context: context,
+                        inverse: true,
                       ),
                       const SizedBox(height: 12),
                       _buildDetailRow(
@@ -356,6 +381,7 @@ class SettingsScreen extends ConsumerWidget {
                         isCopyable: true,
                         rawToCopy: user?.id,
                         context: context,
+                        inverse: true,
                       ),
                     ],
                   ),
@@ -537,8 +563,9 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _shareApp(BuildContext context) async {
     try {
@@ -1045,13 +1072,14 @@ class SettingsScreen extends ConsumerWidget {
     bool isCopyable = false,
     String? rawToCopy,
     required BuildContext context,
+    bool inverse = false,
   }) {
     return Row(
       children: [
         Icon(
           icon,
           size: 16,
-          color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+          color: inverse ? Colors.white.withValues(alpha: 0.6) : (isDark ? AppColors.textMuted : const Color(0xFF64748B)),
         ),
         const SizedBox(width: 10),
         Text(
@@ -1059,7 +1087,7 @@ class SettingsScreen extends ConsumerWidget {
           style: TextStyle(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+            color: inverse ? Colors.white.withValues(alpha: 0.8) : (isDark ? AppColors.textSecondary : const Color(0xFF64748B)),
           ),
         ),
         const Spacer(),
@@ -1068,7 +1096,7 @@ class SettingsScreen extends ConsumerWidget {
           style: TextStyle(
             fontSize: 13.5,
             fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+            color: inverse ? Colors.white : (isDark ? AppColors.textPrimary : const Color(0xFF0F172A)),
           ),
         ),
         if (isCopyable && rawToCopy != null) ...[
@@ -1087,7 +1115,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Icon(
               Icons.copy_rounded,
               size: 14,
-              color: isDark ? AppColors.primary : const Color(0xFF0D9488),
+              color: inverse ? Colors.white : (isDark ? AppColors.primary : const Color(0xFF0D9488)),
             ),
           ),
         ],
@@ -1519,47 +1547,52 @@ class _ClientModeCard extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.primary.withValues(alpha: 0.15)
-                        : const Color(0xFFEEF2F6),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.switch_account_rounded,
-                    size: 18,
-                    color: isDark ? AppColors.primary : const Color(0xFF475569),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Client View Mode',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                      ),
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.primary.withValues(alpha: 0.15)
+                          : const Color(0xFFEEF2F6),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Simulate read-only client experience',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                      ),
+                    child: Icon(
+                      Icons.switch_account_rounded,
+                      size: 18,
+                      color: isDark ? AppColors.primary : const Color(0xFF475569),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Client View Mode',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Simulate read-only client experience',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             Switch(
               value: isClientMode,
               activeTrackColor: AppColors.primary,

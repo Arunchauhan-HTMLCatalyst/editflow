@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'project_repository.dart';
 import '../models/project.dart';
@@ -9,23 +10,40 @@ class ClientProjectRepository extends ProjectRepository {
     final clientUserId = SupabaseService.userId;
     
     try {
-      // Fetch projects, clients (to verify user ownership), and profiles (to get freelancer name)
+      // Fetch projects and clients (to verify user ownership)
       final response = await SupabaseService.instance
           .from('projects')
-          .select('*, clients!inner(name, client_user_id), profiles:user_id(full_name)')
+          .select('*, clients!client_id!inner(name, client_user_id)')
           .eq('clients.client_user_id', clientUserId)
           .order('created_at', ascending: false)
           .timeout(const Duration(seconds: 15));
           
-      return (response as List).map((e) {
+      final list = <Project>[];
+      for (final e in (response as List)) {
         if (e['clients'] != null) {
           e['client_name'] = e['clients']['name'];
         }
-        if (e['profiles'] != null && e['profiles'] is Map) {
-          e['freelancer_name'] = e['profiles']['full_name'];
+        
+        // Fetch freelancer name directly from profiles table using user_id to bypass relationship cache issues
+        final freelancerUserId = e['user_id'] as String;
+        try {
+          final profileRes = await SupabaseService.instance
+              .from('profiles')
+              .select('full_name')
+              .eq('id', freelancerUserId)
+              .maybeSingle()
+              .timeout(const Duration(seconds: 5));
+          if (profileRes != null && profileRes['full_name'] != null) {
+            e['freelancer_name'] = profileRes['full_name'] as String;
+          }
+        } catch (err) {
+          debugPrint('[ClientProjectRepository] Freelancer profile fetch failed: $err');
         }
-        return Project.fromJson(e);
-      }).toList();
+        
+        final project = Project.fromJson(e);
+        list.add(project);
+      }
+      return list;
     } on PostgrestException catch (e) {
       if (e.message.contains('client_user_id') || e.code == '42703') {
         throw Exception(
@@ -61,12 +79,6 @@ class ClientProjectRepository extends ProjectRepository {
     }
     return project;
   }
-
-  @override
-  Future<Project> create(Project project) => throw UnsupportedError("Write operations are disabled in client mode");
-
-  @override
-  Future<Project> update(Project project) => throw UnsupportedError("Write operations are disabled in client mode");
 
   @override
   Future<void> delete(String id) => throw UnsupportedError("Write operations are disabled in client mode");

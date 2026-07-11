@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/supabase_service.dart';
 import '../../../core/constants/app_constants.dart';
@@ -16,10 +17,16 @@ class AuthRepository {
       SupabaseService.instance.auth.resetPasswordForEmail(email);
 
   Future<void> signInWithGoogle() async {
+    final String redirectTo = kIsWeb
+        ? Uri.base.origin
+        : AppConstants.supabaseRedirectUrl;
+
     await SupabaseService.instance.auth.signInWithOAuth(
       OAuthProvider.google,
-      redirectTo: AppConstants.supabaseRedirectUrl,
-      authScreenLaunchMode: LaunchMode.externalApplication,
+      redirectTo: redirectTo,
+      authScreenLaunchMode: kIsWeb
+          ? LaunchMode.platformDefault
+          : LaunchMode.externalApplication,
     );
   }
 

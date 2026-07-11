@@ -7,6 +7,7 @@ import '../models/project.dart';
 import '../models/project_status.dart';
 import '../providers/project_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../clients/providers/client_provider.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/supabase_service.dart';
@@ -14,7 +15,14 @@ import '../../settings/providers/settings_provider.dart';
 
 class AddProjectScreen extends ConsumerStatefulWidget {
   final String? preselectedClientId;
-  const AddProjectScreen({super.key, this.preselectedClientId});
+  final String? preselectedFreelancerId;
+  final String? preselectedFreelancerName;
+  const AddProjectScreen({
+    super.key,
+    this.preselectedClientId,
+    this.preselectedFreelancerId,
+    this.preselectedFreelancerName,
+  });
 
   @override
   ConsumerState<AddProjectScreen> createState() => _AddProjectScreenState();
@@ -34,17 +42,8 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
   void initState() {
     super.initState();
     _selectedClientId = widget.preselectedClientId;
-  }
-
-  // Initialise _selectedClientId outside build() to avoid side-effects during
-  // a build pass, which causes '_elements.contains(element)' framework errors.
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_selectedClientId == null && widget.preselectedClientId == null) {
-      // Use ProviderScope.containerOf so we can read without watching.
-      final container = ProviderScope.containerOf(context, listen: false);
-      final clients = container.read(safeClientsProvider);
+    if (_selectedClientId == null && widget.preselectedFreelancerId == null) {
+      final clients = ref.read(safeClientsProvider);
       if (clients.isNotEmpty) {
         _selectedClientId = clients.first.id;
       }
@@ -63,9 +62,10 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedClientId == null) {
+    final isClient = ref.read(settingsProvider).isClientMode;
+    if (widget.preselectedFreelancerId == null && _selectedClientId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a client')),
+        SnackBar(content: Text(isClient ? 'Please select a freelancer' : 'Please select a client')),
       );
       return;
     }
@@ -74,16 +74,60 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
 
     try {
       final authState = ref.read(authProvider);
-      final userId = authState.user?.id ?? SupabaseService.userId;
+      final currentUserId = authState.user?.id ?? SupabaseService.userId;
+      final clients = ref.read(safeClientsProvider);
+
+      String targetUserId = currentUserId;
+      String? targetClientId = _selectedClientId;
+
+      if (isClient) {
+        if (widget.preselectedFreelancerId != null) {
+          targetUserId = widget.preselectedFreelancerId!;
+          
+          // Look up if a client record already exists for this freelancer in Supabase
+          final existingClient = await SupabaseService.instance
+              .from('clients')
+              .select('id')
+              .eq('user_id', targetUserId)
+              .eq('client_user_id', currentUserId)
+              .maybeSingle();
+
+          if (existingClient != null) {
+            targetClientId = existingClient['id'] as String;
+          } else {
+            // Self-healing: create the missing connection link in the database!
+            final profile = await SupabaseService.instance
+                .from('profiles')
+                .select('full_name')
+                .eq('id', currentUserId)
+                .maybeSingle();
+            final clientName = profile?['full_name'] as String? ?? 'Client';
+
+            final newClientId = await SupabaseService.instance
+                .rpc('create_client_connection', params: {
+                  'freelancer_id': targetUserId,
+                  'client_name': clientName,
+                });
+            targetClientId = newClientId as String;
+            
+            // Refresh clients in the background
+            ref.read(clientProvider.notifier).refresh();
+          }
+        } else {
+          final selectedClient = clients.firstWhere((c) => c.id == _selectedClientId);
+          targetUserId = selectedClient.userId;
+          targetClientId = _selectedClientId;
+        }
+      }
 
       final project = Project(
         id: '',
-        userId: userId,
-        clientId: _selectedClientId!,
+        userId: targetUserId,
+        clientId: targetClientId!,
         name: _nameController.text.trim(),
         description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
         price: double.tryParse(_priceController.text.trim()) ?? 0.0,
-        receivedAmount: double.tryParse(_receivedController.text.trim()) ?? 0.0,
+        receivedAmount: isClient ? 0.0 : (double.tryParse(_receivedController.text.trim()) ?? 0.0),
         deadline: _deadlineController.text.trim().isNotEmpty
             ? DateTime.tryParse(_deadlineController.text.trim())
             : null,
@@ -100,12 +144,6 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
         const SnackBar(content: Text('Project created successfully')),
       );
 
-      // Pop immediately. By the time addProject() resolves, all synchronous
-      // Riverpod state notifications have already fired. Using a post-frame
-      // callback instead would keep the Form's _FormScope InheritedWidget alive
-      // one extra frame while external consumers register as dependents on it,
-      // then remove it while those dependents are still registered —
-      // triggering the '_dependents.isEmpty' framework assertion.
       context.pop();
     } catch (e) {
       if (mounted) {
@@ -122,6 +160,29 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final clients = ref.watch(safeClientsProvider);
     final currency = ref.watch(currencyProvider);
+    final isClient = ref.watch(settingsProvider).isClientMode;
+
+    bool isPreselectedMissing = false;
+    if (isClient && widget.preselectedClientId != null && clients.isNotEmpty) {
+      final hasPreselected = clients.any((c) => c.id == widget.preselectedClientId);
+      if (!hasPreselected) {
+        isPreselectedMissing = true;
+      }
+    }
+
+    // Dynamically resolve and auto-select the chosen client/freelancer ID once loaded
+    if (clients.isNotEmpty && !isPreselectedMissing) {
+      final hasSelected = clients.any((c) => c.id == _selectedClientId);
+      if (!hasSelected) {
+        if (widget.preselectedClientId != null && clients.any((c) => c.id == widget.preselectedClientId)) {
+          _selectedClientId = widget.preselectedClientId;
+        } else {
+          _selectedClientId = clients.first.id;
+        }
+      }
+    } else if (isPreselectedMissing) {
+      _selectedClientId = null;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -150,7 +211,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
           ),
         ),
         title: Text(
-          'Add Project',
+          isClient ? 'Assign Project' : 'Add Project',
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 18,
@@ -172,7 +233,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: TextButton(
-                  onPressed: _save,
+                  onPressed: isPreselectedMissing ? null : _save,
                   child: const Text(
                     'Save',
                     style: TextStyle(
@@ -196,7 +257,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                       const Icon(Icons.people_outline_rounded, size: 48, color: AppColors.textMuted),
                       const SizedBox(height: 16),
                       Text(
-                        'No Clients Found',
+                        isClient ? 'No Freelancers Found' : 'No Clients Found',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -204,19 +265,23 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'You need to create a client before adding a project.',
+                      Text(
+                        isClient
+                            ? 'You need to be connected to a freelancer to assign a project.'
+                            : 'You need to create a client before adding a project.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppColors.textMuted,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () => context.push('/add-client'),
-                        child: const Text('Add Client'),
-                      ),
+                      if (!isClient) ...[
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () => context.push('/add-client'),
+                          child: const Text('Add Client'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -228,31 +293,87 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedClientId,
-                        decoration: const InputDecoration(
-                          labelText: 'Client *',
-                        ),
-                        dropdownColor: isDark ? AppColors.surface : Colors.white,
-                        items: clients.map((c) {
-                          return DropdownMenuItem<String>(
-                            value: c.id,
-                            child: Text(
-                              c.company != null && c.company!.isNotEmpty
-                                  ? '${c.name} (${c.company})'
-                                  : c.name,
-                              style: TextStyle(
-                                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                                fontSize: 14.5,
-                              ),
+                      if (widget.preselectedFreelancerId != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+                              width: 0.8,
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() => _selectedClientId = value);
-                        },
-                        validator: (value) => value == null ? 'Client is required' : null,
-                      ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.person_rounded, color: AppColors.primary, size: 20),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'ASSIGNED FREELANCER',
+                                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.textMuted),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      widget.preselectedFreelancerName ?? 'Freelancer',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else ...[
+                        DropdownButtonFormField<String>(
+                          key: ValueKey(_selectedClientId),
+                          initialValue: _selectedClientId,
+                          decoration: InputDecoration(
+                            labelText: isClient ? 'Freelancer *' : 'Client *',
+                          ),
+                          dropdownColor: isDark ? AppColors.surface : Colors.white,
+                          items: clients.map((c) {
+                            final displayName = isClient
+                                ? (c.notes != null && c.notes!.isNotEmpty && c.notes!.toLowerCase() != 'n/a' ? c.notes! : 'Freelancer')
+                                : (c.company != null && c.company!.isNotEmpty
+                                    ? '${c.name} (${c.company})'
+                                    : c.name);
+                            return DropdownMenuItem<String>(
+                              value: c.id,
+                              child: Text(
+                                displayName,
+                                style: TextStyle(
+                                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                  fontSize: 14.5,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() => _selectedClientId = value);
+                          },
+                          validator: (value) => value == null
+                              ? (isClient ? 'Freelancer is required' : 'Client is required')
+                              : null,
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _nameController,
@@ -264,35 +385,47 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _priceController,
-                              decoration: InputDecoration(
-                                labelText: 'Budget',
-                                hintText: '0.00',
-                                prefixText: '${currency.symbol} ',
-                              ),
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              textInputAction: TextInputAction.next,
-                            ),
+                      if (isClient)
+                        TextFormField(
+                          controller: _priceController,
+                          decoration: InputDecoration(
+                            labelText: 'Budget',
+                            hintText: '0.00',
+                            prefixText: '${currency.symbol} ',
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _receivedController,
-                              decoration: InputDecoration(
-                                labelText: 'Advance Paid',
-                                hintText: '0.00',
-                                prefixText: '${currency.symbol} ',
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          textInputAction: TextInputAction.next,
+                        )
+                      else
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _priceController,
+                                decoration: InputDecoration(
+                                  labelText: 'Budget',
+                                  hintText: '0.00',
+                                  prefixText: '${currency.symbol} ',
+                                ),
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                textInputAction: TextInputAction.next,
                               ),
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              textInputAction: TextInputAction.next,
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _receivedController,
+                                decoration: InputDecoration(
+                                  labelText: 'Advance Paid',
+                                  hintText: '0.00',
+                                  prefixText: '${currency.symbol} ',
+                                ),
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                textInputAction: TextInputAction.next,
+                              ),
+                            ),
+                          ],
+                        ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _deadlineController,
@@ -332,7 +465,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                       ),
                       const SizedBox(height: 32),
                       ElevatedButton(
-                        onPressed: _isSaving ? null : _save,
+                        onPressed: _isSaving || isPreselectedMissing ? null : _save,
                         child: _isSaving
                             ? const SizedBox(
                                 height: 20,

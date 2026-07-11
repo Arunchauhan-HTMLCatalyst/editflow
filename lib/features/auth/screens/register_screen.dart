@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_logo.dart';
+import '../../../shared/widgets/ambient_glow_container.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -42,14 +43,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark ? AppColors.bgDarkGradient : AppColors.bgLightGradient,
-          ),
-        ),
+      backgroundColor: Colors.transparent,
+      body: AmbientGlowContainer(
         child: SafeArea(
           child: Stack(
             children: [
@@ -63,10 +58,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8.0),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surface : CupertinoColors.white,
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                         width: 0.8,
                       ),
                     ),

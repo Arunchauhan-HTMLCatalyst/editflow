@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../repositories/auth_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum AuthStatus { uninitialized, authenticated, unauthenticated, loading }
 
@@ -33,15 +34,39 @@ class AuthProvider extends StateNotifier<AuthState> {
     _init();
   }
 
+  Future<void> _syncProfile(User user) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+      if (response == null) {
+        await Supabase.instance.client.from('profiles').insert({
+          'id': user.id,
+          'full_name': user.userMetadata?['full_name'] ?? 'User',
+          'email': user.email,
+        });
+        debugPrint('[AUTH SYNC] Created missing profile for user ${user.id}');
+      }
+    } catch (e) {
+      debugPrint('[AUTH SYNC] Failed to sync profile: $e');
+    }
+  }
+
   void _init() {
     try {
       final session = _authRepository.currentSession;
       debugPrint('[AUTH PROVIDER] _init: currentSession is ${session != null ? "active" : "null"}');
       if (session != null) {
+        final currentUser = _authRepository.currentUser;
         state = AuthState(
           status: AuthStatus.authenticated,
-          user: _authRepository.currentUser,
+          user: currentUser,
         );
+        if (currentUser != null) {
+          unawaited(_syncProfile(currentUser));
+        }
       } else {
         state = const AuthState(status: AuthStatus.unauthenticated);
       }
@@ -58,6 +83,7 @@ class AuthProvider extends StateNotifier<AuthState> {
               status: AuthStatus.authenticated,
               user: user,
             );
+            unawaited(_syncProfile(user));
           }
         } else if (event == AuthChangeEvent.signedOut) {
           state = const AuthState(status: AuthStatus.unauthenticated);
@@ -80,6 +106,9 @@ class AuthProvider extends StateNotifier<AuthState> {
         status: AuthStatus.authenticated,
         user: response.user,
       );
+      if (response.user != null) {
+        unawaited(_syncProfile(response.user!));
+      }
     } on AuthException catch (e, st) {
       debugPrint('[AUTH PROVIDER] signIn AuthException: ${e.message}\n$st');
       state = state.copyWith(
@@ -111,6 +140,9 @@ class AuthProvider extends StateNotifier<AuthState> {
           status: AuthStatus.authenticated,
           user: response.user,
         );
+        if (response.user != null) {
+          unawaited(_syncProfile(response.user!));
+        }
       }
     } on AuthException catch (e, st) {
       debugPrint('[AUTH PROVIDER] signUp AuthException: ${e.message}\n$st');
@@ -143,6 +175,18 @@ class AuthProvider extends StateNotifier<AuthState> {
   }
 
   Future<void> signOut() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      for (final key in keys) {
+        if (key.startsWith('cached_')) {
+          await prefs.remove(key);
+        }
+      }
+      debugPrint('[AUTH SIGNOUT] Cleared local storage caches successfully');
+    } catch (e) {
+      debugPrint('[AUTH SIGNOUT] Failed to clear caches: $e');
+    }
     await _authRepository.signOut();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }

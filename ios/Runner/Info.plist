@@ -58,5 +58,7 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>EditFlow requires access to the microphone to record audio feedback comments on projects.</string>
 </dict>
 </plist>

@@ -15,6 +15,7 @@ import 'features/projects/screens/project_detail_screen.dart';
 import 'features/projects/screens/add_project_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/calendar_screen.dart';
+import 'features/dashboard/screens/notification_center_screen.dart';
 import 'app_shell.dart';
 import 'core/theme/app_transitions.dart';
 
@@ -54,6 +55,49 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         pageBuilder: (context, state) => settingsPage(const SettingsScreen()),
       ),
+      GoRoute(
+        path: '/notifications',
+        pageBuilder: (context, state) => slidePushPage(const NotificationCenterScreen()),
+      ),
+
+      // Sheet-style creation screens → slide up from bottom
+      GoRoute(
+        path: '/projects/add',
+        pageBuilder: (context, state) {
+          final clientId = state.uri.queryParameters['clientId'];
+          final freelancerId = state.uri.queryParameters['freelancerId'];
+          final freelancerName = state.uri.queryParameters['freelancerName'];
+          return slideUpPage(AddProjectScreen(
+            preselectedClientId: clientId,
+            preselectedFreelancerId: freelancerId,
+            preselectedFreelancerName: freelancerName,
+          ));
+        },
+      ),
+      GoRoute(
+        path: '/add-client',
+        pageBuilder: (context, state) => slideUpPage(const AddClientScreen()),
+      ),
+
+      // Detail screens → slide in from right
+      GoRoute(
+        path: '/clients/:id',
+        pageBuilder: (context, state) => slidePushPage(ClientDetailScreen(
+          clientId: state.pathParameters['id']!,
+        )),
+      ),
+      GoRoute(
+        path: '/freelancers/:id',
+        pageBuilder: (context, state) => slidePushPage(FreelancerDetailScreen(
+          freelancerId: state.pathParameters['id']!,
+        )),
+      ),
+      GoRoute(
+        path: '/projects/:id',
+        pageBuilder: (context, state) => slidePushPage(ProjectDetailScreen(
+          projectId: state.pathParameters['id']!,
+        )),
+      ),
 
       // ── Shell (bottom nav) ──────────────────────────────────────────
       ShellRoute(
@@ -77,37 +121,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/payments',
             pageBuilder: (context, state) => fadeTabPage(const PaymentsScreen()),
-          ),
-
-          // Sheet-style creation screens → slide up from bottom
-          // IMPORTANT: literal routes must come before parameterized ones
-          GoRoute(
-            path: '/projects/add',
-            pageBuilder: (context, state) => slideUpPage(const AddProjectScreen()),
-          ),
-          GoRoute(
-            path: '/add-client',
-            pageBuilder: (context, state) => slideUpPage(const AddClientScreen()),
-          ),
-
-          // Detail screens → slide in from right
-          GoRoute(
-            path: '/clients/:id',
-            pageBuilder: (context, state) => slidePushPage(ClientDetailScreen(
-              clientId: state.pathParameters['id']!,
-            )),
-          ),
-          GoRoute(
-            path: '/freelancers/:id',
-            pageBuilder: (context, state) => slidePushPage(FreelancerDetailScreen(
-              freelancerId: state.pathParameters['id']!,
-            )),
-          ),
-          GoRoute(
-            path: '/projects/:id',
-            pageBuilder: (context, state) => slidePushPage(ProjectDetailScreen(
-              projectId: state.pathParameters['id']!,
-            )),
           ),
         ],
       ),

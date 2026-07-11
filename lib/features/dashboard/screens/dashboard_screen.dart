@@ -10,16 +10,16 @@ import '../../projects/providers/project_provider.dart';
 import '../../projects/models/project.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
-import '../../../shared/models/activity.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/project_status_section.dart';
 import '../widgets/top_clients_section.dart';
 import '../widgets/top_freelancers_section.dart';
 import '../widgets/goal_tracker.dart';
-import '../widgets/recent_activity.dart';
 import '../../../shared/widgets/shimmer_card.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/ambient_glow_container.dart';
+import '../../projects/repositories/comment_repository.dart';
 
 String _getTimeBasedGreeting() {
   final hour = DateTime.now().hour;
@@ -41,6 +41,16 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   DashboardPeriod _period = DashboardPeriod.month;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(commentRepositoryProvider).cleanupOldVoiceNotes().catchError((e) {
+        debugPrint('[DASHBOARD] Background voice note cleanup error: $e');
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,142 +75,140 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     debugPrint('[DASHBOARD] BUILD projects=${projects.length} clients=${clients.length} activities=${activities.length} isLoading=$isLoading hasError=$hasError empty=$isDashboardEmpty');
 
     return Scaffold(
-      body: SafeArea(
-        top: true,
-        bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await ref.read(clientProvider.notifier).refresh();
-            await ref.read(projectProvider.notifier).refresh();
-          },
-          child: isLoading
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(
-                    AppLayout.pagePadding(context),
-                    AppLayout.pagePadding(context),
-                    AppLayout.pagePadding(context),
-                    AppLayout.pagePadding(context) + 24,
-                  ),
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ShimmerCard(width: 140, height: 28, borderRadius: 8),
-                            SizedBox(height: 8),
-                            ShimmerCard(width: 200, height: 14, borderRadius: 4),
-                          ],
-                        ),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.surface : const Color(0xFFF1F5F9),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
+      backgroundColor: Colors.transparent,
+      body: AmbientGlowContainer(
+        child: SafeArea(
+          top: true,
+          bottom: false,
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await ref.read(clientProvider.notifier).refresh();
+              await ref.read(projectProvider.notifier).refresh();
+            },
+            child: isLoading
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      AppLayout.pagePadding(context),
+                      AppLayout.pagePadding(context),
+                      AppLayout.pagePadding(context),
+                      AppLayout.pagePadding(context) + 24,
                     ),
-                    const SizedBox(height: 24),
-                    const ShimmerCard(width: 180, height: 36, borderRadius: 12),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: ShimmerCard(height: 100, borderRadius: 16)),
-                        SizedBox(width: AppSpacing.sm),
-                        Expanded(child: ShimmerCard(height: 100, borderRadius: 16)),
-                      ],
-                    ),
-                    SizedBox(height: AppSpacing.sm),
-                    Row(
-                      children: [
-                        Expanded(child: ShimmerCard(height: 100, borderRadius: 16)),
-                        SizedBox(width: AppSpacing.sm),
-                        Expanded(child: ShimmerCard(height: 100, borderRadius: 16)),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const ShimmerCard(height: 120, borderRadius: 16),
-                    const SizedBox(height: 16),
-                    const ShimmerCard(height: 180, borderRadius: 16),
-                  ],
-                )
-              : (isDashboardEmpty
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        AppLayout.pagePadding(context),
-                        AppLayout.pagePadding(context),
-                        AppLayout.pagePadding(context),
-                        AppLayout.pagePadding(context) + 24,
+                    children: [
+                      // Greeting Banner Skeleton
+                      const ShimmerCard(height: 104, borderRadius: 20),
+                      const SizedBox(height: 24),
+                      // Period filter row skeleton
+                      Row(
+                        children: [
+                          const ShimmerCard(width: 180, height: 32, borderRadius: 16),
+                          const Spacer(),
+                          const ShimmerCard(width: 100, height: 20, borderRadius: 8),
+                        ],
                       ),
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Dashboard',
-                                  style: AppTextStyles.title1(isDark).copyWith(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w800,
+                      const SizedBox(height: 16),
+                      // Stat cards row 1
+                      Row(
+                        children: [
+                          const Expanded(child: ShimmerCard(height: 110, borderRadius: 16)),
+                          SizedBox(width: AppSpacing.sm),
+                          const Expanded(child: ShimmerCard(height: 110, borderRadius: 16)),
+                        ],
+                      ),
+                      SizedBox(height: AppSpacing.sm),
+                      // Stat cards row 2
+                      Row(
+                        children: [
+                          const Expanded(child: ShimmerCard(height: 110, borderRadius: 16)),
+                          SizedBox(width: AppSpacing.sm),
+                          const Expanded(child: ShimmerCard(height: 110, borderRadius: 16)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      // Section header 2
+                      const ShimmerCard(width: 140, height: 18, borderRadius: 8),
+                      const SizedBox(height: 12),
+                      // Project card skeletons
+                      const ShimmerCard(height: 90, borderRadius: 16),
+                      const SizedBox(height: 10),
+                      const ShimmerCard(height: 90, borderRadius: 16),
+                      const SizedBox(height: 10),
+                      const ShimmerCard(height: 90, borderRadius: 16),
+                    ],
+                  )
+                : (isDashboardEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          AppLayout.pagePadding(context),
+                          AppLayout.pagePadding(context),
+                          AppLayout.pagePadding(context),
+                          AppLayout.pagePadding(context) + 24,
+                        ),
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Dashboard',
+                                    style: AppTextStyles.title1(isDark).copyWith(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _getTimeBasedGreeting(),
-                                  style: AppTextStyles.caption(isDark).copyWith(
-                                    fontSize: 14,
-                                    color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _getTimeBasedGreeting(),
+                                    style: AppTextStyles.caption(isDark).copyWith(
+                                      fontSize: 14,
+                                      color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.settings_outlined,
-                                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                ],
                               ),
-                              onPressed: () => context.push('/settings'),
-                            ),
-                          ],
-                        ),
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.6,
-                          child: EmptyStateWidget(
-                            icon: Icons.dashboard_customize_outlined,
-                            title: settings.isClientMode ? 'No Projects Yet' : 'Welcome to EditFlow',
-                            subtitle: settings.isClientMode
-                                ? 'No video projects have been assigned to you yet.'
-                                : 'Add clients and projects to start tracking your freelance metrics.',
-                            actionLabel: settings.isClientMode ? null : 'Add Project',
-                            onAction: settings.isClientMode ? null : () => context.push('/projects/add'),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.settings_outlined,
+                                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                ),
+                                onPressed: () => context.push('/settings'),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    )
-                  : _DashboardLayout(
-                      metrics: metrics,
-                      periodMetrics: periodMetrics,
-                      projects: projects,
-                      currency: currency,
-                      settings: settings,
-                      activities: activities,
-                      isLoading: isLoading,
-                      hasError: hasError,
-                      error: error,
-                      onRetry: () {
-                        ref.read(clientProvider.notifier).refresh();
-                        ref.read(projectProvider.notifier).refresh();
-                      },
-                      onPeriodChanged: (p) => setState(() => _period = p),
-                      currentPeriod: _period,
-                    )),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.6,
+                            child: EmptyStateWidget(
+                              icon: Icons.dashboard_customize_outlined,
+                              title: settings.isClientMode ? 'No Projects Assigned' : 'Welcome to EditFlow',
+                              subtitle: settings.isClientMode
+                                  ? 'You can assign a project to any freelancer you work with.'
+                                  : 'Add clients and projects to start tracking your freelance metrics.',
+                              actionLabel: settings.isClientMode ? 'Assign Project' : 'Add Project',
+                              onAction: () => context.push('/projects/add'),
+                            ),
+                          ),
+                        ],
+                      )
+                    : _DashboardLayout(
+                        metrics: metrics,
+                        periodMetrics: periodMetrics,
+                        projects: projects,
+                        currency: currency,
+                        settings: settings,
+                        isLoading: isLoading,
+                        hasError: hasError,
+                        error: error,
+                        onRetry: () {
+                          ref.read(clientProvider.notifier).refresh();
+                          ref.read(projectProvider.notifier).refresh();
+                        },
+                        onPeriodChanged: (p) => setState(() => _period = p),
+                        currentPeriod: _period,
+                      )),
+          ),
         ),
       ),
     );
@@ -213,7 +221,6 @@ class _DashboardLayout extends StatelessWidget {
   final List<Project> projects;
   final CurrencyConfig currency;
   final SettingsState settings;
-  final List<Activity> activities;
   final bool isLoading;
   final bool hasError;
   final Object? error;
@@ -227,7 +234,6 @@ class _DashboardLayout extends StatelessWidget {
     required this.projects,
     required this.currency,
     required this.settings,
-    required this.activities,
     required this.isLoading,
     required this.hasError,
     this.error,
@@ -257,37 +263,136 @@ class _DashboardLayout extends StatelessWidget {
         
         _StaggeredSection(
           index: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Dashboard',
-                    style: AppTextStyles.title1(isDark).copyWith(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _getTimeBasedGreeting(),
-                    style: AppTextStyles.caption(isDark).copyWith(
-                      fontSize: 14,
-                      color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
-                    ),
-                  ),
-                ],
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+                    : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              IconButton(
-                icon: Icon(
-                  Icons.settings_outlined,
-                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(20.0),
+              border: Border.all(
+                color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+                width: 0.8,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? AppColors.primary.withValues(alpha: 0.04)
+                      : AppColors.primary.withValues(alpha: 0.1),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            settings.isClientMode ? 'CLIENT PORTAL' : 'WORKSPACE',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? AppColors.primaryNeon : Colors.white.withValues(alpha: 0.9),
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.primary.withValues(alpha: 0.15)
+                                  : Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              settings.isClientMode ? 'CLIENT' : 'FREELANCER',
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? AppColors.primaryNeon : Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _getTimeBasedGreeting(),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Welcome to your EditFlow workspace.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                onPressed: () => context.push('/settings'),
-              ),
-            ],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.notifications_none_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () => context.push('/notifications'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.settings_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () => context.push('/settings'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -337,13 +442,7 @@ class _DashboardLayout extends StatelessWidget {
             ProjectStatusSection(statusData: metrics.pipelineMap, total: projects.length),
           ]),
         ),
-        if (!settings.isClientMode && activities.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          _StaggeredSection(
-            index: 5,
-            child: RecentActivityWidget(activities: activities),
-          ),
-        ],
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -578,17 +677,49 @@ class _MetricRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: StatCard(label: metrics[0].label, value: metrics[0].value, icon: metrics[0].icon, iconColor: metrics[0].iconColor)),
+              Expanded(
+                child: StatCard(
+                  label: metrics[0].label,
+                  value: metrics[0].value,
+                  icon: metrics[0].icon,
+                  iconColor: metrics[0].iconColor,
+                  progressRatio: metrics[0].progressRatio,
+                ),
+              ),
               SizedBox(width: AppSpacing.sm),
-              Expanded(child: StatCard(label: metrics[1].label, value: metrics[1].value, icon: metrics[1].icon, iconColor: metrics[1].iconColor)),
+              Expanded(
+                child: StatCard(
+                  label: metrics[1].label,
+                  value: metrics[1].value,
+                  icon: metrics[1].icon,
+                  iconColor: metrics[1].iconColor,
+                  progressRatio: metrics[1].progressRatio,
+                ),
+              ),
             ],
           ),
           SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              Expanded(child: StatCard(label: metrics[2].label, value: metrics[2].value, icon: metrics[2].icon, iconColor: metrics[2].iconColor)),
+              Expanded(
+                child: StatCard(
+                  label: metrics[2].label,
+                  value: metrics[2].value,
+                  icon: metrics[2].icon,
+                  iconColor: metrics[2].iconColor,
+                  progressRatio: metrics[2].progressRatio,
+                ),
+              ),
               SizedBox(width: AppSpacing.sm),
-              Expanded(child: StatCard(label: metrics[3].label, value: metrics[3].value, icon: metrics[3].icon, iconColor: metrics[3].iconColor)),
+              Expanded(
+                child: StatCard(
+                  label: metrics[3].label,
+                  value: metrics[3].value,
+                  icon: metrics[3].icon,
+                  iconColor: metrics[3].iconColor,
+                  progressRatio: metrics[3].progressRatio,
+                ),
+              ),
             ],
           ),
         ],
@@ -599,7 +730,13 @@ class _MetricRow extends StatelessWidget {
           .map((m) => Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(right: m == metrics.last ? 0 : AppSpacing.sm),
-                  child: StatCard(label: m.label, value: m.value, icon: m.icon, iconColor: m.iconColor),
+                  child: StatCard(
+                    label: m.label,
+                    value: m.value,
+                    icon: m.icon,
+                    iconColor: m.iconColor,
+                    progressRatio: m.progressRatio,
+                  ),
                 ),
               ))
           .toList(),

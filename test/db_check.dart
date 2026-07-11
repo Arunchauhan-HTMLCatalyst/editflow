@@ -10,16 +10,13 @@ void main() async {
   );
 
   try {
-    print('Testing complete client project join query...');
+    print('Testing comments projects join select...');
     final response = await client
         .from('projects')
-        .select('*, clients!inner(name, client_user_id), profiles:user_id(full_name)')
+        .select('name, user_id, clients!client_id(client_user_id)')
         .limit(1);
-    
-    print('Success! Query executed without schema errors.');
-    print('Results returned: ${response.length}');
+    print('Query succeeded! Response: $response');
   } catch (e) {
-    print('Query failed with database error:');
-    print(e);
+    print('Query failed: $e');
   }
 }

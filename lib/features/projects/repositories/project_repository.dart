@@ -10,7 +10,7 @@ class ProjectRepository {
     final userId = SupabaseService.userId;
     final response = await SupabaseService.instance
         .from('projects')
-        .select('*, clients!inner(name)')
+        .select('*, clients!client_id!inner(name)')
         .eq('user_id', userId)
         .order('created_at', ascending: false)
         .timeout(const Duration(seconds: 15));
@@ -24,7 +24,7 @@ class ProjectRepository {
     final userId = SupabaseService.userId;
     final response = await SupabaseService.instance
         .from('projects')
-        .select('*, clients!inner(name)')
+        .select('*, clients!client_id!inner(name)')
         .eq('user_id', userId)
         .eq('client_id', clientId)
         .order('created_at', ascending: false)
@@ -38,7 +38,7 @@ class ProjectRepository {
   Future<Project> getById(String id) async {
     final response = await SupabaseService.instance
         .from('projects')
-        .select('*, clients!inner(name)')
+        .select('*, clients!client_id!inner(name)')
         .eq('id', id)
         .single()
         .timeout(const Duration(seconds: 15));
@@ -53,10 +53,10 @@ class ProjectRepository {
     final response = await SupabaseService.instance
         .from('projects')
         .insert(data)
-        .select()
+        .select('*, clients(name)')
         .single()
         .timeout(const Duration(seconds: 15));
-    final created = Project.fromJson(response);
+    final created = Project.tryFromJson(response) ?? Project.fromJson(response);
     unawaited(_activity.log(
       type: 'project_created',
       description: 'Created project "${created.name}"',
@@ -72,10 +72,10 @@ class ProjectRepository {
         .from('projects')
         .update(data)
         .eq('id', project.id)
-        .select()
+        .select('*, clients(name)')
         .single()
         .timeout(const Duration(seconds: 15));
-    return Project.fromJson(response);
+    return Project.tryFromJson(response) ?? Project.fromJson(response);
   }
 
   Future<void> delete(String id) async {

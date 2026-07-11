@@ -18,6 +18,8 @@ import '../../settings/models/currency_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/status_badge.dart';
+import '../../../shared/widgets/rich_link_text.dart';
+import '../../../shared/widgets/ambient_glow_container.dart';
 
 class ProjectDetailScreen extends ConsumerStatefulWidget {
   final String projectId;
@@ -71,7 +73,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
     return projectAsync.when(
       loading: () => Scaffold(
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           leadingWidth: 56,
           leading: Padding(
             padding: const EdgeInsets.only(left: 12.0),
@@ -80,10 +85,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6.0),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.surface : CupertinoColors.white,
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                     width: 0.8,
                   ),
                 ),
@@ -97,10 +102,15 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             ),
           ),
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: AmbientGlowContainer(
+          child: const Center(child: CircularProgressIndicator()),
+        ),
       ),
       error: (err, stack) => Scaffold(
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           leadingWidth: 56,
           leading: Padding(
             padding: const EdgeInsets.only(left: 12.0),
@@ -109,10 +119,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6.0),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.surface : CupertinoColors.white,
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                     width: 0.8,
                   ),
                 ),
@@ -126,22 +136,24 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             ),
           ),
         ),
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.warning_rounded, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
-              const Text(
-                'Project not found or failed to load',
-                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.refresh(projectDetailProvider(widget.projectId)),
-                child: const Text('Retry'),
-              ),
-            ],
+        body: AmbientGlowContainer(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.warning_rounded, size: 48, color: AppColors.error),
+                const SizedBox(height: 16),
+                const Text(
+                  'Project not found or failed to load',
+                  style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(projectDetailProvider(widget.projectId)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -155,7 +167,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         }
 
         return Scaffold(
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
             leadingWidth: 56,
             leading: Padding(
               padding: const EdgeInsets.only(left: 12.0),
@@ -164,10 +179,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(6.0),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.surface : CupertinoColors.white,
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                       width: 0.8,
                     ),
                   ),
@@ -194,109 +209,115 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
               ),
             ),
-            actions: isClient
-                ? []
-                : (_isEditing
-                    ? [
-                        if (_isSaving)
-                          const Padding(
-                            padding: EdgeInsets.only(right: 16.0),
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                            ),
-                          )
-                        else
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: TextButton(
-                              onPressed: () => _saveProject(p),
-                              child: const Text(
-                                'Save',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ]
-                    : [
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          child: Container(
-                            padding: const EdgeInsets.all(6.0),
-                            decoration: BoxDecoration(
-                              color: isDark ? AppColors.surface : CupertinoColors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Icon(
-                              CupertinoIcons.share,
-                              size: 18,
-                              color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
-                            ),
-                          ),
-                          onPressed: () => _shareProject(p),
+            actions: _isEditing
+                ? [
+                    if (_isSaving)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 16.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                         ),
-                        const SizedBox(width: 8),
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          child: Container(
-                            padding: const EdgeInsets.all(6.0),
-                            decoration: BoxDecoration(
-                              color: isDark ? AppColors.surface : CupertinoColors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Icon(
-                              CupertinoIcons.trash,
-                              size: 18,
-                              color: AppColors.error,
+                      )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: TextButton(
+                          onPressed: () => _saveProject(p),
+                          child: const Text(
+                            'Save',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
                             ),
                           ),
-                          onPressed: () => _deleteProject(p),
                         ),
-                        const SizedBox(width: 8),
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          child: Container(
-                            padding: const EdgeInsets.all(6.0),
-                            decoration: BoxDecoration(
-                              color: isDark ? AppColors.surface : CupertinoColors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Icon(
-                              CupertinoIcons.pencil,
-                              size: 18,
-                              color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
+                      ),
+                  ]
+                : [
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: Container(
+                        padding: const EdgeInsets.all(6.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Icon(
+                          CupertinoIcons.share,
+                          size: 18,
+                          color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
+                        ),
+                      ),
+                      onPressed: () => _shareProject(p),
+                    ),
+                    if (!isClient) ...[
+                      const SizedBox(width: 8),
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        child: Container(
+                          padding: const EdgeInsets.all(6.0),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                              width: 0.8,
                             ),
                           ),
-                          onPressed: () {
-                            setState(() => _isEditing = true);
-                            _populateControllers(p);
-                          },
+                          child: Icon(
+                            CupertinoIcons.trash,
+                            size: 18,
+                            color: AppColors.error,
+                          ),
                         ),
-                        const SizedBox(width: 12),
-                      ]),
+                        onPressed: () => _deleteProject(p),
+                      ),
+                    ],
+                    const SizedBox(width: 8),
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: Container(
+                        padding: const EdgeInsets.all(6.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Icon(
+                          CupertinoIcons.pencil,
+                          size: 18,
+                          color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() => _isEditing = true);
+                        _populateControllers(p);
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                  ],
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-            child: _isEditing
-                ? _buildEditForm(isDark, p)
-                : _buildDetail(isDark, p, currency, isClient),
+          body: AmbientGlowContainer(
+            topGlowColor: _getStatusGlowColor(p.status),
+            bottomGlowColor: _getStatusGlowColor(p.status),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                child: _isEditing
+                    ? _buildEditForm(isDark, p)
+                    : _buildDetail(isDark, p, currency, isClient),
+              ),
+            ),
           ),
         );
       },
@@ -313,30 +334,20 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         : '';
   }
 
-  Widget _miniStat(String label, String value, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-            color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: AppTextStyles.statValue(isDark).copyWith(
-            fontSize: 16.5,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
+  Color _getStatusGlowColor(ProjectStatus status) {
+    switch (status) {
+      case ProjectStatus.paid:
+      case ProjectStatus.completed:
+        return const Color(0xFF10B981);
+      case ProjectStatus.inProgress:
+        return AppColors.primary;
+      case ProjectStatus.revisionPending:
+        return const Color(0xFFF59E0B);
+      case ProjectStatus.yetToStart:
+        return const Color(0xFF64748B);
+    }
   }
+
 
   Widget _buildDetail(bool isDark, Project project, CurrencyConfig currency, bool isClient) {
     final progress = project.price > 0
@@ -355,129 +366,147 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Hero header card
-        Card(
-          elevation: 0,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16.0),
-              border: Border.all(
-                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                width: 0.8,
-              ),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+                  : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            borderRadius: BorderRadius.circular(20.0),
+            border: Border.all(
+              color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? AppColors.primary.withValues(alpha: 0.04)
+                    : AppColors.primary.withValues(alpha: 0.12),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              )
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Accent top bar
-                Container(
-                  height: 4,
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-                    gradient: LinearGradient(colors: AppColors.primaryGradient),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Project name
-                      Text(
+                // Top Row: Project Name & Status Badge
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
                         project.name,
                         style: AppTextStyles.title1(isDark).copyWith(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          height: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      // Client / Freelancer row
-                      if (displayName != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 14.0),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  initials.toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                showFreelancer ? 'Freelancer: $displayName' : 'Client: $displayName',
-                                style: AppTextStyles.body(isDark).copyWith(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      Divider(
-                        height: 1,
-                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                      ),
-                      const SizedBox(height: 14),
-                      // Amount + Status row
+                    ),
+                    const SizedBox(width: 12),
+                    StatusBadge(status: project.status),
+                  ],
+                ),
+                
+                const SizedBox(height: 12),
+                Divider(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+                const SizedBox(height: 12),
+                
+                // Bottom Row: Profile & Deadline
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Profile Block
+                    if (displayName != null)
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _miniStat('Total budget', currency.format(project.price), isDark),
-                                const SizedBox(height: 8),
-                                _miniStat('Advance paid', currency.format(project.receivedAmount), isDark),
-                                const SizedBox(height: 8),
-                                _miniStat('Remaining balance', currency.format(project.remainingAmount), isDark),
-                              ],
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              initials.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 8),
                           Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              StatusBadge(status: project.status),
-                              if (project.deadline != null) ...[
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      CupertinoIcons.calendar,
-                                      size: 13,
-                                      color: overdue ? AppColors.error : AppColors.textMuted,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      DateFormat('MMM d, yyyy').format(project.deadline!),
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: overdue ? AppColors.error : AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
+                              Text(
+                                showFreelancer ? 'FREELANCER' : 'CLIENT',
+                                style: TextStyle(
+                                  fontSize: 7.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white.withValues(alpha: 0.55),
+                                  letterSpacing: 0.8,
                                 ),
-                              ],
+                              ),
+                              const SizedBox(height: 1),
+                              Text(
+                                displayName,
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    
+                    // Deadline Block (Glass Pill)
+                    if (project.deadline != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: overdue ? 0.2 : 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: overdue ? 0.35 : 0.12),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              CupertinoIcons.calendar,
+                              size: 13,
+                              color: Colors.white.withValues(alpha: overdue ? 0.95 : 0.85),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              DateFormat('MMM d').format(project.deadline!),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white.withValues(alpha: overdue ? 0.95 : 0.85),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -506,40 +535,65 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
         // Details title
         Text(
-          'Details',
-          style: AppTextStyles.caption(isDark).copyWith(
+          'PROJECT METADATA & DETAILS',
+          style: TextStyle(
+            fontSize: 10,
             fontWeight: FontWeight.w800,
-            fontSize: 14,
+            color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+            letterSpacing: 0.8,
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(16.0),
-            border: Border.all(
-              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-              width: 0.8,
+        const SizedBox(height: 10),
+        
+        // Full-width Description Car        // Full-width Description Card
+        if (project.description != null && project.description!.isNotEmpty) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(
+                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                width: 0.8,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(CupertinoIcons.doc_text, size: 14, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'DESCRIPTION',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                RichLinkText(
+                  text: project.description!,
+                  isDark: isDark,
+                  textStyle: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: isDark ? AppColors.textSecondary : const Color(0xFF334155),
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Column(
-            children: [
-              if (project.description != null && project.description!.isNotEmpty)
-                _detailBlock(isDark, CupertinoIcons.doc_text, 'Description', project.description!),
-              if (project.description != null && project.description!.isNotEmpty && project.deadline != null)
-                Divider(height: 1, color: isDark ? AppColors.border : const Color(0xFFE2E8F0)),
-              if (project.deadline != null)
-                _detailBlock(isDark, CupertinoIcons.calendar, 'Deadline',
-                    DateFormat('MMM d, yyyy').format(project.deadline!)),
-              Divider(height: 1, color: isDark ? AppColors.border : const Color(0xFFE2E8F0)),
-              _detailBlock(isDark, CupertinoIcons.time, 'Created on',
-                  DateFormat('MMM d, yyyy').format(project.createdAt)),
-              Divider(height: 1, color: isDark ? AppColors.border : const Color(0xFFE2E8F0)),
-              _detailBlock(isDark, CupertinoIcons.refresh, 'Last updated',
-                  DateFormat('MMM d, yyyy').format(project.updatedAt)),
-            ],
-          ),
-        ),
+          const SizedBox(height: 12),
+        ],
+
+        // Dedicated Horizontal Dates Card
+        _buildDatesCard(isDark, project, overdue),
         const SizedBox(height: 24),
         _buildCommentsSection(isDark, project),
         const SizedBox(height: 24),
@@ -547,56 +601,105 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     );
   }
 
-  Widget _detailBlock(bool isDark, IconData icon, String label, String value) {
-    return Padding(
+  Widget _buildDatesCard(bool isDark, Project project, bool overdue) {
+    final hasDeadline = project.deadline != null;
+
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(
+          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+          width: 0.8,
+        ),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surface : Colors.white,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                width: 0.8,
+          if (hasDeadline) ...[
+            Expanded(
+              child: _dateItem(
+                icon: CupertinoIcons.calendar,
+                label: 'DEADLINE',
+                value: DateFormat('MMM d, yyyy').format(project.deadline!),
+                valueColor: overdue ? AppColors.error : AppColors.primary,
               ),
             ),
-            alignment: Alignment.center,
-            child: Icon(icon, size: 14, color: AppColors.textSecondary),
-          ),
-          const SizedBox(width: 12),
+            _verticalDivider(isDark),
+          ],
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                    color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                  ),
-                ),
-              ],
+            child: _dateItem(
+              icon: CupertinoIcons.time,
+              label: 'CREATED',
+              value: DateFormat('MMM d, yyyy').format(project.createdAt),
+              valueColor: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
+          ),
+          _verticalDivider(isDark),
+          Expanded(
+            child: _dateItem(
+              icon: CupertinoIcons.refresh,
+              label: 'UPDATED',
+              value: DateFormat('MMM d, yyyy').format(project.updatedAt),
+              valueColor: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _dateItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color valueColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 12, color: AppColors.textMuted),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 8.5,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textMuted,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: valueColor,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _verticalDivider(bool isDark) {
+    return Container(
+      width: 1,
+      height: 24,
+      margin: const EdgeInsets.symmetric(horizontal: 12.0),
+      color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+    );
+  }
+
+
+
 
   Widget _buildCommentsSection(bool isDark, Project project) {
     final projectId = project.id;
@@ -608,16 +711,17 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         Text(
           'FEEDBACK & STATUS COMMENTS',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: FontWeight.w800,
             color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-            letterSpacing: 1.0,
+            letterSpacing: 0.8,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         commentsAsync.when(
           data: (comments) {
             return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(16.0),
@@ -630,14 +734,24 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 children: [
                   if (comments.isEmpty)
                     Padding(
-                      padding: const EdgeInsets.all(24.0),
+                      padding: const EdgeInsets.symmetric(vertical: 32.0),
                       child: Center(
-                        child: Text(
-                          'No feedback comments yet.',
-                          style: TextStyle(
-                            color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                            fontSize: 13,
-                          ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              CupertinoIcons.chat_bubble_2,
+                              size: 32,
+                              color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No feedback comments yet.',
+                              style: TextStyle(
+                                color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
@@ -646,121 +760,193 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: comments.length,
-                      separatorBuilder: (context, index) => Divider(
-                        height: 1,
-                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                      ),
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final comment = comments[index];
                         final timeStr = DateFormat('MMM d, h:mm a').format(comment.createdAt.toLocal());
-                        return Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
+                        final isOwnComment = comment.userId == SupabaseService.userId;
+
+                        return Align(
+                          alignment: isOwnComment ? Alignment.centerRight : Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: 0.85,
+                            alignment: isOwnComment ? Alignment.centerRight : Alignment.centerLeft,
+                            child: Column(
+                              crossAxisAlignment: isOwnComment ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: isOwnComment ? MainAxisAlignment.end : MainAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (!isOwnComment) ...[
                                       Text(
                                         comment.userName,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w700,
-                                          fontSize: 13,
-                                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                          fontSize: 10,
+                                          color: isDark ? Colors.white70 : const Color(0xFF475569),
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
+                                      const SizedBox(width: 4),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
                                         decoration: BoxDecoration(
                                           color: comment.userId == project.userId
-                                              ? (isDark ? AppColors.primary.withAlpha(38) : AppColors.primary.withAlpha(26))
-                                              : (isDark ? Colors.teal.withAlpha(38) : Colors.teal.withAlpha(26)),
+                                              ? (isDark ? AppColors.primary.withAlpha(26) : AppColors.primary.withAlpha(18))
+                                              : (isDark ? Colors.teal.withAlpha(26) : Colors.teal.withAlpha(18)),
                                           borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(
-                                            color: comment.userId == project.userId
-                                                ? AppColors.primary.withAlpha(77)
-                                                : Colors.teal.withAlpha(77),
-                                            width: 0.5,
-                                          ),
                                         ),
                                         child: Text(
                                           comment.userId == project.userId ? 'Freelancer' : 'Client',
                                           style: TextStyle(
-                                            fontSize: 9,
+                                            fontSize: 7.5,
                                             fontWeight: FontWeight.w800,
-                                            letterSpacing: 0.5,
                                             color: comment.userId == project.userId
                                                 ? AppColors.primary
                                                 : (isDark ? Colors.tealAccent : Colors.teal.shade700),
                                           ),
                                         ),
                                       ),
+                                    ] else ...[
+                                      Text(
+                                        'You',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 10,
+                                          color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                        ),
+                                      ),
                                     ],
-                                  ),
-                                  Text(
-                                    timeStr,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                GestureDetector(
+                                  onLongPress: isOwnComment ? () => _showCommentActions(context, isDark, comment, projectId) : null,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 7.0),
+                                    decoration: BoxDecoration(
+                                      color: isOwnComment
+                                          ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.08))
+                                          : (isDark ? const Color(0xFF1E1E2C) : const Color(0xFFF1F5F9)),
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: const Radius.circular(12),
+                                        topRight: const Radius.circular(12),
+                                        bottomLeft: isOwnComment ? const Radius.circular(12) : const Radius.circular(3),
+                                        bottomRight: isOwnComment ? const Radius.circular(3) : const Radius.circular(12),
+                                      ),
+                                      border: Border.all(
+                                        color: isOwnComment
+                                            ? AppColors.primary.withValues(alpha: 0.2)
+                                            : (isDark ? AppColors.border : const Color(0xFFE2E8F0)),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        RichLinkText(
+                                          text: comment.content,
+                                          isDark: isDark,
+                                          textStyle: TextStyle(
+                                            fontSize: 13,
+                                            height: 1.4,
+                                            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                timeStr,
+                                                style: TextStyle(
+                                                  fontSize: 8.5,
+                                                  color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
+                                                ),
+                                              ),
+                                              if (isOwnComment) ...[
+                                                const SizedBox(width: 4),
+                                                GestureDetector(
+                                                  onTap: () => _showCommentActions(context, isDark, comment, projectId),
+                                                  behavior: HitTestBehavior.opaque,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                                                    child: Icon(
+                                                      Icons.more_vert_rounded,
+                                                      size: 13,
+                                                      color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                comment.content,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark ? AppColors.textSecondary : const Color(0xFF334155),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },
                     ),
+                  const SizedBox(height: 10),
                   Divider(
                     height: 1,
                     color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _commentController,
-                            decoration: InputDecoration(
-                              hintText: 'Add a comment...',
-                              hintStyle: TextStyle(
-                                color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
-                                fontSize: 13,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide.none,
-                              ),
-                              filled: true,
-                              fillColor: isDark ? const Color(0xFF1E1E2C) : const Color(0xFFF1F5F9),
-                            ),
-                            style: TextStyle(
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _commentController,
+                          decoration: InputDecoration(
+                            hintText: 'Add feedback or comment...',
+                            hintStyle: TextStyle(
+                              color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
                               fontSize: 13,
-                              color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                             ),
-                            onSubmitted: (text) => _postComment(projectId, text),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide(color: isDark ? AppColors.border : const Color(0xFFE2E8F0), width: 0.8),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide(color: isDark ? AppColors.border : const Color(0xFFE2E8F0), width: 0.8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: const BorderSide(color: AppColors.primary, width: 1.2),
+                            ),
+                            filled: true,
+                            fillColor: isDark ? const Color(0xFF131320) : const Color(0xFFF8FAFC),
                           ),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                          ),
+                          onSubmitted: (text) => _postComment(projectId, text),
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
                           onPressed: () => _postComment(projectId, _commentController.text),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -786,6 +972,176 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     );
   }
 
+  void _showCommentActions(BuildContext context, bool isDark, Comment comment, String projectId) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? AppColors.card : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              if (comment.voiceUrl == null) // Only text comments can be edited
+                ListTile(
+                  leading: Icon(Icons.edit_rounded, color: AppColors.primary, size: 20),
+                  title: const Text('Edit Comment', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _editComment(context, isDark, comment, projectId);
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
+                title: const Text('Delete Comment', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.error)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _deleteComment(context, isDark, comment, projectId);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _editComment(BuildContext context, bool isDark, Comment comment, String projectId) {
+    final editController = TextEditingController(text: comment.content);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.card : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Edit Comment',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+          ),
+        ),
+        content: TextField(
+          controller: editController,
+          maxLines: 4,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Update your comment...',
+            hintStyle: TextStyle(color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: isDark ? AppColors.border : const Color(0xFFE2E8F0)),
+            ),
+            filled: true,
+            fillColor: isDark ? const Color(0xFF1E1E2C) : const Color(0xFFF1F5F9),
+          ),
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: isDark ? AppColors.textMuted : const Color(0xFF64748B))),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final newContent = editController.text.trim();
+              if (newContent.isEmpty || newContent == comment.content) {
+                Navigator.pop(ctx);
+                return;
+              }
+              Navigator.pop(ctx);
+              try {
+                await ref.read(commentRepositoryProvider).update(comment.id, newContent, comment.userId);
+                ref.invalidate(projectCommentsProvider(projectId));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Comment updated'), duration: Duration(seconds: 2)),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to update: $e')),
+                  );
+                }
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteComment(BuildContext context, bool isDark, Comment comment, String projectId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.card : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Delete Comment?',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+          ),
+        ),
+        content: Text(
+          'This action cannot be undone.',
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: isDark ? AppColors.textMuted : const Color(0xFF64748B))),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(commentRepositoryProvider).delete(comment.id, comment.userId);
+                ref.invalidate(projectCommentsProvider(projectId));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Comment deleted'), duration: Duration(seconds: 2)),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to delete: $e')),
+                  );
+                }
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _postComment(String projectId, String text) async {
     final cleanText = text.trim();
     if (cleanText.isEmpty) return;
@@ -808,6 +1164,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
     try {
       await ref.read(commentRepositoryProvider).create(newComment);
+      // Refresh the comments list so the new comment shows immediately
+      ref.invalidate(projectCommentsProvider(projectId));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -819,6 +1177,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
   Widget _buildEditForm(bool isDark, Project project) {
     final currency = ref.read(currencyProvider);
+    final isClient = ref.watch(settingsProvider).isClientMode;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -850,6 +1209,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             Expanded(
               child: TextFormField(
                 controller: _receivedController,
+                readOnly: isClient,
                 decoration: InputDecoration(
                   labelText: 'Advance Payment',
                   prefixText: '${currency.symbol} ',
@@ -1036,107 +1396,276 @@ class _PaymentProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
       decoration: BoxDecoration(
         color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16.0),
+        borderRadius: BorderRadius.circular(20.0),
         border: Border.all(
           color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
           width: 0.8,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.02),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(CupertinoIcons.money_dollar_circle, size: 14, color: AppColors.success),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Payment',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Stats row
-          Row(
-            children: [
-              _statBlock('Received', currency.format(received), AppColors.success),
-              const SizedBox(width: 16),
-              _statBlock('Remaining', currency.format(remaining), isDark ? AppColors.textPrimary : const Color(0xFF0F172A)),
-              const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              Row(
                 children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(CupertinoIcons.shield_fill, size: 13, color: AppColors.success),
+                  ),
+                  const SizedBox(width: 10),
                   Text(
-                    '${progress.toStringAsFixed(0)}%',
+                    'PAYMENT SUMMARY',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 10,
                       fontWeight: FontWeight.w800,
-                      color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                      letterSpacing: 0.8,
                     ),
                   ),
-                  const Text('complete', style: TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
                 ],
               ),
+              // Secured tag
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.2), width: 0.5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'SECURED',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.success,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 14),
-          // Progress bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: Stack(
-              children: [
-                Container(height: 8, color: isDark ? AppColors.border : const Color(0xFFE2E8F0)),
-                FractionallySizedBox(
-                  widthFactor: (progress / 100).clamp(0, 1),
-                  child: Container(
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(colors: AppColors.successGradient),
+          const SizedBox(height: 20),
+          
+          // Main metric & circle row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'TOTAL BUDGET',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textMuted,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currency.format(total),
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Radial Gauge
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 72,
+                      height: 72,
+                      child: CircularProgressIndicator(
+                        value: (progress / 100).clamp(0.0, 1.0),
+                        strokeWidth: 7,
+                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${progress.toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        const Text(
+                          'PAID',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textMuted,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Split Cards for Details
+          Row(
+            children: [
+              // Advance Card
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.green.withValues(alpha: 0.05)
+                        : const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(
+                      color: Colors.green.withValues(alpha: isDark ? 0.15 : 0.2),
+                      width: 0.8,
                     ),
                   ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(CupertinoIcons.checkmark_circle_fill, size: 13, color: AppColors.success),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'ADVANCE PAID',
+                              style: TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.green.shade300 : Colors.green.shade700,
+                                letterSpacing: 0.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        currency.format(received),
+                        style: TextStyle(
+                           fontSize: 14.5,
+                           fontWeight: FontWeight.w800,
+                           color: isDark ? Colors.white : Colors.green.shade900,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statBlock(String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textMuted,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(value, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: color)),
-      ],
-    );
+              ),
+              const SizedBox(width: 12),
+              // Remaining Card
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.orange.withValues(alpha: 0.05)
+                        : const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(
+                      color: Colors.orange.withValues(alpha: isDark ? 0.15 : 0.2),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.clock_fill,
+                            size: 13,
+                            color: remaining > 0 ? const Color(0xFFF97316) : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'PENDING BALANCE',
+                              style: TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.orange.shade300 : Colors.orange.shade700,
+                                letterSpacing: 0.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                       ),
+                       const SizedBox(height: 6),
+                       Text(
+                         currency.format(remaining),
+                         style: TextStyle(
+                           fontSize: 14.5,
+                           fontWeight: FontWeight.w800,
+                           color: isDark ? Colors.white : Colors.orange.shade900,
+                         ),
+                       ),
+                     ],
+                   ),
+                 ),
+               ),
+             ],
+           ),
+         ],
+       ),
+     );
   }
 }
 
@@ -1165,7 +1694,7 @@ class _StatusPipeline extends StatelessWidget {
     if (currentIndex < 0) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
       decoration: BoxDecoration(
         color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(16.0),
@@ -1207,7 +1736,7 @@ class _StatusPipeline extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           ...List.generate(_steps.length, (i) {
             final step = _steps[i];
             final isCompleted = i < currentIndex;
@@ -1220,6 +1749,8 @@ class _StatusPipeline extends StatelessWidget {
               isCurrent: isCurrent,
               isLast: isLast,
               isDark: isDark,
+              index: i,
+              currentIndex: currentIndex,
               onTap: onStatusTap != null ? () => onStatusTap!(step.status) : null,
             );
           }),
@@ -1234,6 +1765,8 @@ class _StatusPipeline extends StatelessWidget {
     required bool isCurrent,
     required bool isLast,
     required bool isDark,
+    required int index,
+    required int currentIndex,
     VoidCallback? onTap,
   }) {
     const green = Color(0xFF10B981);
@@ -1261,7 +1794,7 @@ class _StatusPipeline extends StatelessWidget {
             : AppColors.textMuted;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 12.0),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 8.0),
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1269,9 +1802,33 @@ class _StatusPipeline extends StatelessWidget {
             // timeline column
             SizedBox(
               width: 32,
-              child: Column(
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  const SizedBox(height: 6),
+                  Column(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          width: 2,
+                          color: index == 0
+                              ? Colors.transparent
+                              : (index <= currentIndex
+                                  ? (index - 1 < currentIndex ? green.withValues(alpha: 0.4) : blue.withValues(alpha: 0.4))
+                                  : (isDark ? AppColors.border : const Color(0xFFE2E8F0))),
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          width: 2,
+                          color: isLast
+                              ? Colors.transparent
+                              : (index < currentIndex
+                                  ? green.withValues(alpha: 0.4)
+                                  : (isDark ? AppColors.border : const Color(0xFFE2E8F0))),
+                        ),
+                      ),
+                    ],
+                  ),
                   Container(
                     width: isCurrent ? 14.0 : 10.0,
                     height: isCurrent ? 14.0 : 10.0,
@@ -1286,21 +1843,6 @@ class _StatusPipeline extends StatelessWidget {
                           : null,
                     ),
                   ),
-                  if (!isLast)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Container(
-                          width: 2,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(1),
-                            color: isCompleted
-                                ? green.withValues(alpha: 0.4)
-                                : (isDark ? AppColors.border : const Color(0xFFE2E8F0)),
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -1313,7 +1855,7 @@ class _StatusPipeline extends StatelessWidget {
                   onTap: onTap,
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
                     decoration: BoxDecoration(
                       color: cardBg,
                       borderRadius: BorderRadius.circular(12),

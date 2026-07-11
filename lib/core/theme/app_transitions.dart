@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,20 +8,8 @@ const _tabDuration     = Duration(milliseconds: 220);
 const _pushDuration    = Duration(milliseconds: 320);
 const _sheetDuration   = Duration(milliseconds: 380);
 
-// Helper to apply smooth animated image blur during page transitions
 Widget _applyBlurTransition(Animation<double> animation, Widget child) {
-  return AnimatedBuilder(
-    animation: animation,
-    builder: (context, child) {
-      final double sigma = (1.0 - animation.value) * 10.0;
-      if (sigma <= 0.15) return child!;
-      return ImageFiltered(
-        imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.decal),
-        child: child,
-      );
-    },
-    child: child,
-  );
+  return child; // Disable full-screen blur transition to prevent visual lag and animation jitter on sub-screen pop
 }
 
 // ─────────────────────────────────────────────

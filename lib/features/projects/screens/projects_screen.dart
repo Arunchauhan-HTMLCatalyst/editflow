@@ -68,29 +68,27 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
           ),
         ),
         actions: [
-          if (!isClient) ...[
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              child: Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.surface : CupertinoColors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                    width: 0.8,
-                  ),
-                ),
-                child: const Icon(
-                  CupertinoIcons.add,
-                  size: 20,
-                  color: AppColors.primary,
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            child: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surface : CupertinoColors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                  width: 0.8,
                 ),
               ),
-              onPressed: () => context.push('/projects/add'),
+              child: const Icon(
+                CupertinoIcons.add,
+                size: 20,
+                color: AppColors.primary,
+              ),
             ),
-            const SizedBox(width: 16),
-          ],
+            onPressed: () => context.push('/projects/add'),
+          ),
+          const SizedBox(width: 16),
         ],
       ),
       body: Column(
@@ -148,8 +146,8 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                   return EmptyStateWidget(
                     icon: Icons.folder,
                     title: 'No projects yet',
-                    subtitle: 'Create your first project',
-                    actionLabel: 'Add Project',
+                    subtitle: isClient ? 'Assign your first project' : 'Create your first project',
+                    actionLabel: isClient ? 'Assign Project' : 'Add Project',
                     onAction: () => context.push('/projects/add'),
                   );
                 }
@@ -187,7 +185,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                               icon: Icons.folder,
                               title: 'No projects found',
                               subtitle: 'Try a different search',
-                              actionLabel: 'Add Project',
+                              actionLabel: isClient ? 'Assign Project' : 'Add Project',
                               onAction: () => context.push('/projects/add'),
                             )
                           : ListView.builder(

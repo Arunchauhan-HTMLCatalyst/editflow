@@ -8,6 +8,7 @@ class StatCard extends StatefulWidget {
   final IconData icon;
   final Color? iconColor;
   final int animationDelay;
+  final double? progressRatio;
 
   const StatCard({
     super.key,
@@ -16,14 +17,31 @@ class StatCard extends StatefulWidget {
     required this.icon,
     this.iconColor,
     this.animationDelay = 0,
+    this.progressRatio,
   });
 
   @override
   State<StatCard> createState() => _StatCardState();
 }
 
-class _StatCardState extends State<StatCard> {
+class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin {
   bool _isHovered = false;
+  late AnimationController _shineController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shineController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+  }
+
+  @override
+  void dispose() {
+    _shineController.dispose();
+    super.dispose();
+  }
 
   (double, String, String) _parseNumericValue(String text) {
     final sanitized = text.replaceAll(',', '');
@@ -84,16 +102,16 @@ class _StatCardState extends State<StatCard> {
                 borderRadius: BorderRadius.circular(16.0),
                 border: Border.all(
                   color: _isHovered
-                      ? color.withValues(alpha: 0.45)
+                      ? color.withValues(alpha: 0.5)
                       : (isDark ? AppColors.border : const Color(0xFFE2E8F0)),
                   width: _isHovered ? 1.2 : 0.8,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: _isHovered
-                        ? color.withValues(alpha: 0.12)
+                        ? color.withValues(alpha: 0.15)
                         : Colors.black.withValues(alpha: 0.015),
-                    blurRadius: _isHovered ? 12 : 4,
+                    blurRadius: _isHovered ? 14 : 4,
                     offset: _isHovered ? const Offset(0, 6) : const Offset(0, 2),
                   )
                 ],
@@ -101,73 +119,152 @@ class _StatCardState extends State<StatCard> {
               transform: _isHovered
                   ? (Matrix4.translationValues(0.0, -3.0, 0.0)..multiply(Matrix4.diagonal3Values(1.02, 1.02, 1.0)))
                   : Matrix4.identity(),
-              child: InkWell(
-                onTap: () {},
-                onHover: (v) => setState(() => _isHovered = v),
-                borderRadius: BorderRadius.circular(16.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Stack(
+                children: [
+                  InkWell(
+                    onTap: () {},
+                    onHover: (v) {
+                      setState(() => _isHovered = v);
+                      if (v) {
+                        _shineController.forward(from: 0.0);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(16.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8.0),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  color.withValues(alpha: 0.16),
-                                  color.withValues(alpha: 0.06),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      color.withValues(alpha: 0.16),
+                                      color.withValues(alpha: 0.06),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: color.withValues(alpha: 0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    )
+                                  ],
+                                ),
+                                child: Icon(widget.icon, size: 16, color: color),
                               ),
-                              borderRadius: BorderRadius.circular(10.0),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: color.withValues(alpha: 0.05),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                )
-                              ],
-                            ),
-                            child: Icon(widget.icon, size: 16, color: color),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween<double>(begin: 0.0, end: targetVal),
-                        duration: const Duration(milliseconds: 1000),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, animVal, _) {
-                          final displayStr = _formatValue(animVal, targetVal, prefix, suffix, hasComma, isDecimal);
-                          return Text(
-                            displayStr,
-                            style: AppTextStyles.statValue(isDark).copyWith(
-                              fontSize: 24,
-                              letterSpacing: -0.5,
+                          const SizedBox(height: 12),
+                          TweenAnimationBuilder<double>(
+                            tween: Tween<double>(begin: 0.0, end: targetVal),
+                            duration: const Duration(milliseconds: 1000),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, animVal, _) {
+                              final displayStr = _formatValue(animVal, targetVal, prefix, suffix, hasComma, isDecimal);
+                              return Text(
+                                displayStr,
+                                style: AppTextStyles.statValue(isDark).copyWith(
+                                  fontSize: 24,
+                                  letterSpacing: -0.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.label,
+                            style: AppTextStyles.statLabel(isDark).copyWith(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                          );
-                        },
+                          ),
+                          if (widget.progressRatio != null) ...[
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(2),
+                              child: Container(
+                                height: 3.0,
+                                width: double.infinity,
+                                color: isDark
+                                    ? AppColors.border.withValues(alpha: 0.4)
+                                    : const Color(0xFFE2E8F0),
+                                child: FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: widget.progressRatio!.clamp(0.0, 1.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          color,
+                                          color.withValues(alpha: 0.6),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.label,
-                        style: AppTextStyles.statLabel(isDark).copyWith(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  // Animated Diagonal Shine Sweep
+                  AnimatedBuilder(
+                    animation: _shineController,
+                    builder: (context, child) {
+                      if (!_isHovered || _shineController.value == 0.0 || _shineController.value == 1.0) {
+                        return const SizedBox.shrink();
+                      }
+                      return Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16.0),
+                          child: FractionalTranslation(
+                            translation: Offset(_shineController.value * 2 - 1, 0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.white.withValues(alpha: 0.0),
+                                    Colors.white.withValues(alpha: 0.12),
+                                    Colors.white.withValues(alpha: 0.0),
+                                  ],
+                                  begin: const Alignment(-1, -1),
+                                  end: const Alignment(1, 1),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  // Bottom colored visual indicator line
+                  Positioned(
+                    bottom: 0,
+                    left: 20,
+                    right: 20,
+                    child: Container(
+                      height: 2.5,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: _isHovered ? 0.6 : 0.25),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(2.5)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

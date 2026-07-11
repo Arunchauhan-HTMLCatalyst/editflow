@@ -16,6 +16,7 @@ import '../../projects/models/project_status.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../../shared/widgets/app_logo.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
@@ -194,7 +195,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     final overview = ref.watch(paymentOverviewProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         titleSpacing: 20.0,
         title: _isSelectMode
             ? Text(
@@ -260,12 +264,13 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           ]
         ],
       ),
-      body: projectsAsync.when(
-        loading: () => const LoadingWidget(message: 'Loading payments...'),
-        error: (e, _) => Center(
-          child: Text('Error: ${e.toString()}'),
-        ),
-        data: (projects) {
+      body: AmbientGlowContainer(
+        child: projectsAsync.when(
+          loading: () => const LoadingWidget(message: 'Loading payments...'),
+          error: (e, _) => Center(
+            child: Text('Error: ${e.toString()}'),
+          ),
+          data: (projects) {
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
             child: Column(
@@ -395,7 +400,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           );
         },
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -1078,22 +1084,31 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
       key: _globalKey,
       child: Container(
         width: double.infinity,
-      padding: const EdgeInsets.all(24.0),
-      decoration: BoxDecoration(
-        color: widget.isDark ? AppColors.card : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            spreadRadius: 2,
+        padding: const EdgeInsets.all(20.0),
+        decoration: BoxDecoration(
+          gradient: widget.isDark
+              ? const LinearGradient(
+                  colors: [Color(0xFF1C2224), Color(0xFF131819)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: widget.isDark ? null : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: widget.isDark ? 0.25 : 0.06,
+              ),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+          border: Border.all(
+            color: widget.isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+            width: 1.0,
           ),
-        ],
-        border: Border.all(
-          color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
-          width: 1.0,
         ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -1191,14 +1206,27 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
             height: 1,
           ),
           const SizedBox(height: 16),
-          Text(
-            'SERVICES',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-              color: widget.isDark ? AppColors.textSecondary : const Color(0xFF64748B),
-            ),
+          Row(
+            children: [
+              Container(
+                width: 3,
+                height: 11,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(1.5),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'SERVICES',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                  color: widget.isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           if (isSingle)
@@ -1430,7 +1458,11 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: screenHeight * 0.80,
+      ),
       decoration: BoxDecoration(
         color: widget.isDark ? AppColors.surface : const Color(0xFFF4FDFB),
         borderRadius: const BorderRadius.only(
@@ -1566,8 +1598,21 @@ String _generateUpiLink({
 }) {
   final cleanUpi = upiId.trim();
   final cleanName = Uri.encodeComponent(payeeName.trim());
-  
-  return 'upi://pay?pa=$cleanUpi&pn=$cleanName';
+  var link = 'upi://pay?pa=$cleanUpi&pn=$cleanName';
+  if (amount != null && amount > 0) {
+    link += '&am=${amount.toStringAsFixed(2)}';
+  }
+  if (currencyCode != null && currencyCode.isNotEmpty) {
+    link += '&cu=${currencyCode.trim()}';
+  } else {
+    link += '&cu=INR';
+  }
+  if (transactionNote != null && transactionNote.isNotEmpty) {
+    // Keep notes simple and short to prevent URL issues in some UPI apps
+    final cleanNote = transactionNote.length > 50 ? transactionNote.substring(0, 50) : transactionNote;
+    link += '&tn=${Uri.encodeComponent(cleanNote.trim())}';
+  }
+  return link;
 }
 
 class _AddUpiDialog extends StatefulWidget {

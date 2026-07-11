@@ -8,6 +8,7 @@ import '../../features/projects/models/project_status.dart';
 import '../../features/projects/providers/project_provider.dart';
 import '../../features/settings/providers/settings_provider.dart';
 import '../../services/supabase_service.dart';
+import '../../services/local_notification_service.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../models/activity.dart';
 import '../../core/theme/app_colors.dart';
@@ -41,6 +42,46 @@ final recentActivityProvider = AsyncNotifierProvider<RecentActivityNotifier, Lis
 class RecentActivityNotifier extends AsyncNotifier<List<Activity>> {
   StreamSubscription<List<Map<String, dynamic>>>? _subscription;
   List<Activity> _lastActivities = [];
+  final Set<String> _seenActivityIds = {};
+  bool _isFirstLoad = true;
+
+  void _triggerLocalNotification(Activity activity) {
+    String title = 'EditFlow Update';
+    switch (activity.type) {
+      case 'comment_created':
+        title = '💬 New Feedback Comment';
+        break;
+      case 'project_created':
+        title = '📁 Project Created';
+        break;
+      case 'payment_overdue':
+        title = '⚠️ Payment Overdue';
+        break;
+      case 'due_date_overdue':
+        title = '🚨 Deadline Passed';
+        break;
+      case 'due_date_12h':
+        title = '⏰ Deadline Warning (12h)';
+        break;
+      case 'due_date_1d':
+        title = '⏰ Deadline Warning (24h)';
+        break;
+      case 'due_date_2d':
+        title = '⏰ Deadline Warning (48h)';
+        break;
+      case 'client_created':
+        title = '👥 Client Connected';
+        break;
+    }
+
+    final notificationId = activity.id.hashCode;
+    LocalNotificationService.showNotification(
+      id: notificationId,
+      title: title,
+      body: activity.description,
+      payload: activity.referenceId,
+    );
+  }
 
   @override
   Future<List<Activity>> build() async {
@@ -48,42 +89,60 @@ class RecentActivityNotifier extends AsyncNotifier<List<Activity>> {
     if (authState.status != AuthStatus.authenticated) {
       debugPrint('[ACTIVITY BUILD] not authenticated - clearing cache');
       _lastActivities = [];
+      _seenActivityIds.clear();
+      _isFirstLoad = true;
       return [];
     }
 
     final uid = authState.user?.id ?? SupabaseService.userId;
     debugPrint('[ACTIVITY BUILD] uid=$uid cacheLen=${_lastActivities.length}');
-    // REALTIME DISABLED for isolation test
-    // _subscription?.cancel();
-    // _subscription = SupabaseService.instance
-    //     .from('activities')
-    //     .stream(primaryKey: ['id'])
-    //     .eq('user_id', uid)
-    //     .listen(
-    //   (rows) {
-    //     try {
-    //       final activities = rows.map((e) => Activity.fromJson(e)).toList();
-    //       print('[ACTIVITY STREAM] received ${activities.length}');
-    //       _lastActivities = activities;
-    //       state = AsyncData(activities);
-    //     } catch (e) {
-    //       print('[ACTIVITY STREAM] parse error: $e');
-    //       if (_lastActivities.isNotEmpty) {
-    //         state = AsyncData(_lastActivities);
-    //       } else if (state is! AsyncData) {
-    //         state = AsyncData([]);
-    //       }
-    //     }
-    //   },
-    //   onError: (e) {
-    //     print('[ACTIVITY STREAM ERROR] $e');
-    //     if (_lastActivities.isNotEmpty) {
-    //       state = AsyncData(_lastActivities);
-    //     } else if (state is! AsyncData) {
-    //       state = AsyncData([]);
-    //     }
-    //   },
-    // );
+    _subscription?.cancel();
+    _subscription = SupabaseService.instance
+        .from('activities')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', uid)
+        .listen(
+      (rows) {
+        try {
+          final activities = rows.map((e) => Activity.fromJson(e)).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          debugPrint('[ACTIVITY STREAM] received ${activities.length}');
+
+          // Check for new activities to show notifications
+          if (_isFirstLoad) {
+            for (final act in activities) {
+              _seenActivityIds.add(act.id);
+            }
+            _isFirstLoad = false;
+          } else {
+            for (final act in activities) {
+              if (!_seenActivityIds.contains(act.id)) {
+                _seenActivityIds.add(act.id);
+                _triggerLocalNotification(act);
+              }
+            }
+          }
+
+          _lastActivities = activities;
+          state = AsyncData(activities);
+        } catch (e) {
+          debugPrint('[ACTIVITY STREAM] parse error: $e');
+          if (_lastActivities.isNotEmpty) {
+            state = AsyncData(_lastActivities);
+          } else if (state is! AsyncData) {
+            state = AsyncData([]);
+          }
+        }
+      },
+      onError: (e) {
+        debugPrint('[ACTIVITY STREAM ERROR] $e');
+        if (_lastActivities.isNotEmpty) {
+          state = AsyncData(_lastActivities);
+        } else if (state is! AsyncData) {
+          state = AsyncData([]);
+        }
+      },
+    );
     ref.onDispose(() {
       debugPrint('[ACTIVITY DISPOSED]');
       _subscription?.cancel();
@@ -110,6 +169,17 @@ class RecentActivityNotifier extends AsyncNotifier<List<Activity>> {
       debugPrint('[ACTIVITY BUILD] fetch failed: $e');
       return [];
     }
+  }
+
+  Future<void> clearAll() async {
+    final authState = ref.read(authProvider);
+    final uid = authState.user?.id ?? SupabaseService.userId;
+    state = const AsyncData([]);
+    _lastActivities = [];
+    await SupabaseService.instance
+        .from('activities')
+        .delete()
+        .eq('user_id', uid);
   }
 }
 
@@ -178,7 +248,7 @@ final clientListDataProvider = Provider<List<ClientListData>>((ref) {
     final clientProjects = projects.where((p) => p.clientId == client.id).toList();
     return ClientListData(
       client: client,
-      revenue: clientProjects.fold<double>(0.0, (s, p) => s + p.receivedAmount),
+      revenue: clientProjects.fold<double>(0.0, (s, p) => s + p.price),
       pending: clientProjects.fold<double>(0.0, (s, p) => s + p.remainingAmount),
       projectCount: clientProjects.length,
     );
@@ -422,11 +492,13 @@ class PeriodMetricItem {
   final String value;
   final IconData icon;
   final Color? iconColor;
+  final double? progressRatio;
   const PeriodMetricItem({
     required this.label,
     required this.value,
     required this.icon,
     this.iconColor,
+    this.progressRatio,
   });
 }
 
@@ -436,7 +508,8 @@ final dashboardPeriodMetricsProvider =
     Provider.family<List<PeriodMetricItem>, DashboardPeriod>((ref, period) {
   final projects = ref.watch(safeProjectsProvider);
   final currency = ref.watch(currencyProvider);
-  final isClient = ref.watch(settingsProvider).isClientMode;
+  final settings = ref.watch(settingsProvider);
+  final isClient = settings.isClientMode;
   final now = DateTime.now();
 
   Iterable<Project> filtered;
@@ -465,24 +538,28 @@ final dashboardPeriodMetricsProvider =
       value: currency.format(earning),
       icon: Icons.trending_up_rounded,
       iconColor: const Color(0xFF22C55E),
+      progressRatio: !isClient && settings.monthlyGoal > 0 ? (earning / settings.monthlyGoal).clamp(0.0, 1.0) : 0.6,
     ),
     PeriodMetricItem(
       label: isClient ? 'Total Paid' : 'Paid',
       value: currency.format(paid),
       icon: Icons.check_circle_rounded,
       iconColor: AppColors.primaryNeon,
+      progressRatio: earning > 0 ? (paid / earning).clamp(0.0, 1.0) : 0.0,
     ),
     PeriodMetricItem(
       label: isClient ? 'Total Due' : 'Pending',
       value: currency.format(pending),
       icon: Icons.hourglass_empty_rounded,
       iconColor: const Color(0xFFF59E0B),
+      progressRatio: earning > 0 ? (pending / earning).clamp(0.0, 1.0) : 0.0,
     ),
     PeriodMetricItem(
       label: isClient ? 'Overdue' : 'Overdue',
       value: currency.format(overdue),
       icon: Icons.warning_rounded,
       iconColor: const Color(0xFFEF4444),
+      progressRatio: earning > 0 ? (overdue / earning).clamp(0.0, 1.0) : 0.0,
     ),
   ];
 });

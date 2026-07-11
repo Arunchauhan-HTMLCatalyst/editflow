@@ -9,10 +9,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_layout.dart';
-import '../../../shared/widgets/loading_widget.dart';
+import '../../../shared/widgets/shimmer_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/animated_list_item.dart';
+import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../../settings/providers/settings_provider.dart';
 
@@ -62,40 +63,40 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
               margin: EdgeInsets.only(bottom: AppSpacing.sm),
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surface : Colors.white,
+                color: isDark ? const Color(0xFF1A1F21) : Colors.white,
                 borderRadius: BorderRadius.circular(16.0),
                 border: Border.all(
-                  color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                  color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
                   width: 0.8,
                 ),
-              boxShadow: isDark
-                  ? []
-                  : [
-                      const BoxShadow(
-                        color: Color(0x0C0F172A),
-                        blurRadius: 10,
-                        offset: Offset(0, 2),
-                      )
-                    ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary.withValues(alpha: 0.15),
-                        AppColors.primaryNeon.withValues(alpha: 0.05),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.25),
-                      width: 0.8,
-                    ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.15),
+                          AppColors.primaryNeon.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.25),
+                        width: 0.8,
+                      ),
+                    ),
                   child: Center(
                     child: Text(
                       initials,
@@ -183,11 +184,13 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
         : '${clientDataList.length} ${clientDataList.length == 1 ? 'client' : 'clients'} total';
 
     return Scaffold(
-      body: SafeArea(
-        top: true,
-        bottom: false,
-        child: Column(
-          children: [
+      backgroundColor: Colors.transparent,
+      body: AmbientGlowContainer(
+        child: SafeArea(
+          top: true,
+          bottom: false,
+          child: Column(
+            children: [
             Padding(
               padding: EdgeInsets.fromLTRB(padding, 16.0, padding, 8.0),
               child: Row(
@@ -257,7 +260,13 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
             child: isClient
                 ? _buildFreelancersList(freelancersList, padding)
                 : clientsAsync.when(
-              loading: () => LoadingWidget(message: 'Loading clients...'),
+              loading: () => ListView(
+                padding: EdgeInsets.all(padding),
+                children: List.generate(4, (i) => Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: const ShimmerCard(height: 140, borderRadius: 16),
+                )),
+              ),
               error: (e, _) => ErrorStateWidget(
                 message: e.toString(),
                 onRetry: () => ref.read(clientProvider.notifier).refresh(),
@@ -340,6 +349,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
         ],
       ),
       ),
-    );
+    ),
+  );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/currency_config.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class SettingsState {
   final CurrencyConfig currency;
@@ -113,7 +114,16 @@ class SettingsProvider extends StateNotifier<SettingsState> {
 }
 
 final settingsProvider = StateNotifierProvider<SettingsProvider, SettingsState>((ref) {
-  return SettingsProvider();
+  final provider = SettingsProvider();
+
+  // Dynamically load/sync settings (like UPI ID) whenever a user logs in
+  ref.listen(authProvider, (previous, next) {
+    if (next.status == AuthStatus.authenticated) {
+      provider._load();
+    }
+  });
+
+  return provider;
 });
 
 final currencyProvider = Provider<CurrencyConfig>((ref) {

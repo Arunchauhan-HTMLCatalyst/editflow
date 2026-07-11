@@ -125,7 +125,9 @@ CREATE TABLE IF NOT EXISTS public.comments (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   user_name TEXT NOT NULL DEFAULT 'User',
   content TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  voice_url TEXT,
+  voice_duration INT
 );
 
 CREATE INDEX IF NOT EXISTS idx_comments_project_id ON public.comments(project_id);
@@ -148,6 +150,14 @@ CREATE POLICY "Users can create comments on accessible projects"
       SELECT id FROM public.projects
     )
   );
+
+CREATE POLICY "Users can update their own comments"
+  ON public.comments FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own comments"
+  ON public.comments FOR DELETE TO authenticated
+  USING (auth.uid() = user_id);
 
 -- Enable Realtime for comments
 ALTER PUBLICATION supabase_realtime ADD TABLE comments;

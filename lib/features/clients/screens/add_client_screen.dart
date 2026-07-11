@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../models/client.dart';
 import '../providers/client_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../../services/supabase_service.dart';
 
 class AddClientScreen extends ConsumerStatefulWidget {
@@ -73,7 +74,10 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leadingWidth: 56,
         leading: Padding(
           padding: const EdgeInsets.only(left: 12.0),
@@ -133,8 +137,9 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
             ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+      body: AmbientGlowContainer(
+        child: SafeArea(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
           child: Form(
             key: _formKey,
@@ -224,6 +229,7 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

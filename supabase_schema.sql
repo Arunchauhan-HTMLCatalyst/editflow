@@ -117,7 +117,9 @@ CREATE TABLE IF NOT EXISTS public.comments (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   user_name TEXT NOT NULL DEFAULT 'User',
   content TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  voice_url TEXT,
+  voice_duration INT
 );
 
 CREATE INDEX IF NOT EXISTS idx_comments_project_id ON public.comments(project_id);

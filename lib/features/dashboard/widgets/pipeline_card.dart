@@ -79,10 +79,12 @@ class _PipelineItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
                     width: 8,
                     height: 8,
+                    margin: const EdgeInsets.only(top: 1.5),
                     decoration: BoxDecoration(
                       color: color,
                       borderRadius: BorderRadius.circular(2),

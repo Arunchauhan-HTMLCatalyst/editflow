@@ -7,6 +7,8 @@ class Comment {
   final String userName;
   final String content;
   final DateTime createdAt;
+  final String? voiceUrl;
+  final int? voiceDuration;
 
   const Comment({
     required this.id,
@@ -15,6 +17,8 @@ class Comment {
     required this.userName,
     required this.content,
     required this.createdAt,
+    this.voiceUrl,
+    this.voiceDuration,
   });
 
   factory Comment.fromJson(Map<String, dynamic> json) => Comment(
@@ -24,6 +28,8 @@ class Comment {
         userName: json['user_name'] as String? ?? 'User',
         content: json['content'] as String,
         createdAt: DateTime.parse(json['created_at'] as String),
+        voiceUrl: json['voice_url'] as String?,
+        voiceDuration: json['voice_duration'] as int?,
       );
 
   static Comment? tryFromJson(Map<String, dynamic> json) {
@@ -42,6 +48,8 @@ class Comment {
         'user_name': userName,
         'content': content,
         'created_at': createdAt.toIso8601String(),
+        'voice_url': voiceUrl,
+        'voice_duration': voiceDuration,
       };
 
   Comment copyWith({
@@ -51,6 +59,8 @@ class Comment {
     String? userName,
     String? content,
     DateTime? createdAt,
+    String? voiceUrl,
+    int? voiceDuration,
   }) =>
       Comment(
         id: id ?? this.id,
@@ -59,5 +69,7 @@ class Comment {
         userName: userName ?? this.userName,
         content: content ?? this.content,
         createdAt: createdAt ?? this.createdAt,
+        voiceUrl: voiceUrl ?? this.voiceUrl,
+        voiceDuration: voiceDuration ?? this.voiceDuration,
       );
 }
