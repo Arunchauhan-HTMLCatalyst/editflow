@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'services/supabase_service.dart';
 import 'services/local_notification_service.dart';
+import 'services/foreground_service.dart';
 import 'app.dart';
 
 Future<void> main() async {
@@ -16,6 +17,7 @@ Future<void> main() async {
     } catch (e) {
       debugPrint('[MAIN] Failed to set high display rate: $e');
     }
+    EditFlowForegroundService.initialize();
   }
 
   try {

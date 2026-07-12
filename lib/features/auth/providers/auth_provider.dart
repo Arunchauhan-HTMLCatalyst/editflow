@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../repositories/auth_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../services/foreground_service.dart';
 
 enum AuthStatus { uninitialized, authenticated, unauthenticated, loading }
 
@@ -54,6 +56,18 @@ class AuthProvider extends StateNotifier<AuthState> {
     }
   }
 
+  void _startForegroundServiceIfNeeded() {
+    if (!kIsWeb && Platform.isAndroid) {
+      unawaited(EditFlowForegroundService.start());
+    }
+  }
+
+  void _stopForegroundServiceIfNeeded() {
+    if (!kIsWeb && Platform.isAndroid) {
+      unawaited(EditFlowForegroundService.stop());
+    }
+  }
+
   void _init() {
     try {
       final session = _authRepository.currentSession;
@@ -64,6 +78,7 @@ class AuthProvider extends StateNotifier<AuthState> {
           status: AuthStatus.authenticated,
           user: currentUser,
         );
+        _startForegroundServiceIfNeeded();
         if (currentUser != null) {
           unawaited(_syncProfile(currentUser));
         }
@@ -83,10 +98,12 @@ class AuthProvider extends StateNotifier<AuthState> {
               status: AuthStatus.authenticated,
               user: user,
             );
+            _startForegroundServiceIfNeeded();
             unawaited(_syncProfile(user));
           }
         } else if (event == AuthChangeEvent.signedOut) {
           state = const AuthState(status: AuthStatus.unauthenticated);
+          _stopForegroundServiceIfNeeded();
         }
       }, onError: (e, st) {
         debugPrint('[AUTH PROVIDER] error in onAuthChange subscription: $e\n$st');
@@ -187,6 +204,7 @@ class AuthProvider extends StateNotifier<AuthState> {
     } catch (e) {
       debugPrint('[AUTH SIGNOUT] Failed to clear caches: $e');
     }
+    _stopForegroundServiceIfNeeded();
     await _authRepository.signOut();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }

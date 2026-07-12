@@ -30,6 +30,7 @@ dependencies:
   cross_file: any
   google_fonts: ^8.1.0
   flutter_local_notifications: ^22.0.1
+  flutter_foreground_task: ^9.2.2
 
 dev_dependencies:
   flutter_test:
