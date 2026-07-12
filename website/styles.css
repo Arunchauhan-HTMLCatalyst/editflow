@@ -209,10 +209,11 @@ img {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 24px;
-    display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 60px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    text-align: center;
+    justify-content: center;
 }
 
 .hero-content h1 {
@@ -225,13 +226,16 @@ img {
     font-size: 18px;
     color: var(--text-muted);
     margin-bottom: 36px;
-    max-width: 540px;
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .hero-actions {
     display: flex;
     gap: 16px;
     margin-bottom: 40px;
+    justify-content: center;
 }
 
 .hero-meta {
@@ -240,6 +244,7 @@ img {
     font-size: 13px;
     color: var(--text-muted);
     font-weight: 500;
+    justify-content: center;
 }
 
 .hero-meta span {
