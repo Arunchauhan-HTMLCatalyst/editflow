@@ -152,6 +152,21 @@ img {
     gap: 12px;
 }
 
+.logo-title-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+}
+
+.by-acsoft {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--secondary);
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+}
+
 .logo-icon {
     width: 32px;
     height: 32px;
@@ -668,6 +683,36 @@ img {
     align-items: center;
     font-size: 13px;
     color: var(--text-muted);
+}
+
+.footer-credit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.acsoft-footer-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 6px;
+    filter: grayscale(1) opacity(0.6);
+    transition: all var(--transition-speed) ease;
+}
+
+.footer-credit:hover .acsoft-footer-logo {
+    filter: none;
+    transform: scale(1.08);
+}
+
+.acsoft-link {
+    color: var(--primary);
+    font-weight: 600;
+    transition: color var(--transition-speed) ease;
+}
+
+.acsoft-link:hover {
+    color: var(--secondary);
 }
 
 .footer-links {
