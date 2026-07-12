@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EditFlow | The Unified Workspace for Video Editors & Clients</title>
+    <meta name="description" content="Manage freelance video editing projects, receive frame-accurate feedback comments, track revenues, and synchronize with clients in real-time.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <img src="logo.png" alt="EditFlow Monogram Logo" class="logo-icon">
+                <span class="logo-text">EditFlow</span>
+            </a>
+            <div class="nav-links">
+                <a href="#freelancer">Freelancer Features</a>
+                <a href="#client">Client Portal</a>
+                <a href="#why-us">Why EditFlow</a>
+                <a href="editflow.apk" class="btn btn-primary nav-cta">
+                    Download APK
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </a>
+            </div>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="badge">🔥 Now with Android Foreground Service</div>
+                <h1>The Unified OS for <span class="text-gradient">Video Editors</span> & Clients</h1>
+                <p>Track monthly revenues, gather clear feedback comments, send instant UPI invoices, and collaborate with clients in real-time. All from a premium dark-mode dashboard.</p>
+                <div class="hero-actions">
+                    <a href="editflow.apk" class="btn btn-primary btn-lg">
+                        Download for Android
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    </a>
+                    <a href="#freelancer" class="btn btn-secondary btn-lg">Explore Features</a>
+                </div>
+                <div class="hero-meta">
+                    <span>⚡ Real-Time Sync</span>
+                    <span>🔒 Safe Database</span>
+                    <span>🔋 Low Battery Background Run</span>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="phone-mockup-wrapper">
+                    <div class="phone-mockup">
+                        <div class="phone-camera"></div>
+                        <div class="phone-screen">
+                            <img src="dashboard.png" alt="EditFlow Application Dashboard View" class="dashboard-img">
+                        </div>
+                    </div>
+                    <div class="glowing-orb"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Section: Freelancer Workspace -->
+    <section id="freelancer" class="features-section">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-tag">FREELANCER MODULE</span>
+                <h2>Supercharge Your Video Editing Business</h2>
+                <p class="section-desc">Keep your client pipeline organized, your goals clear, and your revisions fully documented.</p>
+            </div>
+            
+            <div class="features-grid">
+                <!-- Card 1 -->
+                <div class="feature-card">
+                    <div class="card-icon">📊</div>
+                    <h3>Dynamic Dashboard & Metrics</h3>
+                    <p>Track your active project pipeline, monthly revenue targets, and pending balance figures in one premium, visual space. Complete with progress gauges and active greeting status.</p>
+                </div>
+                <!-- Card 2 -->
+                <div class="feature-card">
+                    <div class="card-icon">💬</div>
+                    <h3>Revisions & Timelines</h3>
+                    <p>Stop hunting down WhatsApp feedback. Get structured comment threads on each project, with clear authorship, audio wave comments, and timeline markers.</p>
+                </div>
+                <!-- Card 3 -->
+                <div class="feature-card">
+                    <div class="card-icon">🔋</div>
+                    <h3>Android Foreground Service</h3>
+                    <p>A background worker isolates and synchronizes your workspace with Supabase. Displays a persistent, useful overview widget showing active projects count in your notification drawer.</p>
+                </div>
+                <!-- Card 4 -->
+                <div class="feature-card">
+                    <div class="card-icon">💰</div>
+                    <h3>UPI Payments & QR</h3>
+                    <p>Configure your UPI settings, generate instant billing details, share invoice amounts, and display sleek payment QR codes for fast, direct client payouts.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section: Client Portal -->
+    <section id="client" class="features-section dark-bg">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-tag">CLIENT PORTAL</span>
+                <h2>A Frictionless Experience for Your Clients</h2>
+                <p class="section-desc">Invite your clients to a clean, read-only dashboard designed for project monitoring, revisions, and billing.</p>
+            </div>
+
+            <div class="portal-showcase">
+                <div class="portal-text">
+                    <div class="portal-feature-item">
+                        <span class="num">01</span>
+                        <div>
+                            <h4>One-Click Login & Secure Access</h4>
+                            <p>Clients log in securely with their own email. Row-Level Security (RLS) automatically locks their access, displaying only the projects assigned to them.</p>
+                        </div>
+                    </div>
+                    <div class="portal-feature-item">
+                        <span class="num">02</span>
+                        <div>
+                            <h4>Instant Project Assignments & Edits</h4>
+                            <p>Clients can create new projects, edit descriptions, adjust requirements, or update deadlines directly. Freelancers get real-time alerts instantly.</p>
+                        </div>
+                    </div>
+                    <div class="portal-feature-item">
+                        <span class="num">03</span>
+                        <div>
+                            <h4>Two-Way Status Collaboration</h4>
+                            <p>Clients can monitor video statuses (In Progress, Approved, Paid) and mark payments as complete. Both parties stay in perfect alignment.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="portal-mockup-wrapper">
+                    <!-- Glass card representation of portal -->
+                    <div class="glass-portal-card">
+                        <div class="portal-header">
+                            <span class="portal-title">Client Workspace</span>
+                            <span class="portal-badge">Client: Alex K.</span>
+                        </div>
+                        <div class="project-strip">
+                            <div class="project-info">
+                                <span class="project-name">Commercial Ad Edit v2</span>
+                                <span class="project-status in-review">In Review</span>
+                            </div>
+                            <span class="project-price">$450</span>
+                        </div>
+                        <div class="comment-bubbles">
+                            <div class="bubble client">
+                                <span class="author">Alex K. (Client)</span>
+                                <p>Please adjust the music track volume between 0:15 and 0:30, it is drowning the voiceover.</p>
+                            </div>
+                            <div class="bubble freelancer">
+                                <span class="author">Freelancer (You)</span>
+                                <p>Sure, working on the sound balance. Will upload updated cut in 10 mins.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Us Section -->
+    <section id="why-us" class="features-section">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-tag">WHY EDITFLOW</span>
+                <h2>Built for Modern Video Creators</h2>
+                <p class="section-desc">Stop juggling five different platforms. EditFlow is the single source of truth for your business.</p>
+            </div>
+
+            <div class="comparison-container">
+                <div class="comp-box negative">
+                    <h3>The Messy Alternative</h3>
+                    <ul>
+                        <li>❌ WhatsApp chats mixed with personal texts</li>
+                        <li>❌ Lost feedback comments in long scroll threads</li>
+                        <li>❌ Missing notification alerts when app is closed</li>
+                        <li>❌ Client doesn't know project status/pipeline stage</li>
+                        <li>❌ Chasing payments manually without payment tracking</li>
+                    </ul>
+                </div>
+                <div class="comp-box positive">
+                    <h3>The EditFlow Way</h3>
+                    <ul>
+                        <li>✅ Dedicated clean dashboard workspace</li>
+                        <li>✅ Chronological comment streams linked to projects</li>
+                        <li>✅ 24/7 background service for push notification alerts</li>
+                        <li>✅ Direct Client Portal for total project transparency</li>
+                        <li>✅ Integrated UPI QR codes and paid status logs</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-container">
+            <div class="cta-glow"></div>
+            <h2>Ready to Streamline Your Video Editing Pipeline?</h2>
+            <p>Download the EditFlow application for Android now and invite your clients to a premium, collaborative workspace.</p>
+            <div class="cta-buttons">
+                <a href="editflow.apk" class="btn btn-primary btn-lg">
+                    Download APK
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </a>
+            </div>
+            <p class="apk-meta">Version 1.0.0 • Size: ~18MB • Requires Android 8.0+</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 EditFlow Workspace. All rights reserved. Designed for professional creators.</p>
+                <div class="footer-links">
+                    <span>Privacy Policy</span>
+                    <span>Terms of Service</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
