@@ -91,6 +91,7 @@ class NotificationTaskHandler extends TaskHandler {
       final user = client.auth.currentUser;
       if (user != null) {
         await _updateWorkspaceStats(client, user.id);
+        await _pollNewActivities(client, user.id);
       }
     } catch (e) {
       debugPrint('[FOREGROUND TASK REPEAT ERROR] $e');
@@ -123,6 +124,37 @@ class NotificationTaskHandler extends TaskHandler {
       debugPrint('[FOREGROUND TASK STATS] Updated. Active projects: $activeCount');
     } catch (e) {
       debugPrint('[FOREGROUND TASK STATS ERROR] $e');
+    }
+  }
+
+  Future<void> _pollNewActivities(SupabaseClient client, String userId) async {
+    try {
+      final response = await client
+          .from('activities')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(15)
+          .timeout(const Duration(seconds: 10));
+
+      final activities = (response as List).map((e) => Activity.fromJson(e)).toList();
+      debugPrint('[FOREGROUND TASK POLL] Fetched ${activities.length} rows.');
+
+      if (_isFirstLoad) {
+        for (final act in activities) {
+          _seenActivityIds.add(act.id);
+        }
+        _isFirstLoad = false;
+      } else {
+        for (final act in activities) {
+          if (!_seenActivityIds.contains(act.id)) {
+            _seenActivityIds.add(act.id);
+            _triggerActivityAlert(act);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[FOREGROUND TASK POLL ERROR] $e');
     }
   }
 
