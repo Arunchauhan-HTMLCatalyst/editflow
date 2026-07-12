@@ -17,7 +17,7 @@ class SettingsState {
 
   const SettingsState({
     this.currency = CurrencyConfig.usd,
-    this.isDarkMode = false,
+    this.isDarkMode = true,
     this.monthlyGoal = 10000,
     this.isClientMode = false,
     this.upiId = '',
@@ -47,7 +47,7 @@ class SettingsProvider extends StateNotifier<SettingsState> {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final currencyCode = prefs.getString('currency') ?? 'USD';
-    final isDark = prefs.getBool('dark_mode') ?? false;
+    final isDark = prefs.getBool('dark_mode') ?? true;
     final goal = prefs.getDouble('monthly_goal') ?? 10000;
     final isClient = prefs.getBool('is_client_mode') ?? false;
     
