@@ -274,7 +274,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       _saveToCache(_getCacheKey(), updatedList);
       debugPrint('[ProjectProvider] updateProject: updated ${updated.id}');
 
-      // If in client mode, notify the freelancer of the edit
+      // If in client mode, notify the freelancer of the edit. If NOT, notify the client.
       final isClient = ref.read(settingsProvider).isClientMode;
       if (isClient) {
         unawaited(() async {
@@ -296,6 +296,26 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
             debugPrint('[PROJECT NOTIFICATION ERROR] $err');
           }
         }());
+      } else {
+        final clients = ref.read(safeClientsProvider);
+        final client = clients.firstWhereOrNull((c) => c.id == updated.clientId);
+        if (client != null && client.clientUserId != null) {
+          unawaited(() async {
+            try {
+              await SupabaseService.instance.from('activities').insert({
+                'user_id': client.clientUserId,
+                'type': 'project_updated',
+                'description': 'Freelancer updated project details: "${updated.name}"',
+                'reference_id': updated.id,
+                'reference_type': 'project',
+                'created_at': DateTime.now().toIso8601String(),
+              });
+              debugPrint('[PROJECT NOTIFICATION] Sent project_updated notification to client ${client.clientUserId}');
+            } catch (err) {
+              debugPrint('[PROJECT NOTIFICATION TO CLIENT ERROR] $err');
+            }
+          }());
+        }
       }
     } catch (e, st) {
       debugPrint('[ProjectProvider] updateProject failed: $e');
@@ -384,6 +404,29 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
               : '"${project.name}" -> ${newStatus.displayName}',
           projectId: project.id,
         );
+
+        // Also notify the client if they have a linked portal account
+        final clients = ref.read(safeClientsProvider);
+        final client = clients.firstWhereOrNull((c) => c.id == project.clientId);
+        if (client != null && client.clientUserId != null) {
+          unawaited(() async {
+            try {
+              await SupabaseService.instance.from('activities').insert({
+                'user_id': client.clientUserId,
+                'type': activityType,
+                'description': newStatus == ProjectStatus.paid
+                    ? 'Payment completed for "${project.name}"'
+                    : 'Status of "${project.name}" updated to: ${newStatus.displayName}',
+                'reference_id': project.id,
+                'reference_type': 'project',
+                'created_at': DateTime.now().toIso8601String(),
+              });
+              debugPrint('[PROJECT NOTIFICATION] Sent status notification to client ${client.clientUserId} for project ${project.name}');
+            } catch (err) {
+              debugPrint('[PROJECT NOTIFICATION TO CLIENT ERROR] $err');
+            }
+          }());
+        }
       }
     } catch (e, st) {
       debugPrint('[ProjectProvider] updateStatus failed: $e');
