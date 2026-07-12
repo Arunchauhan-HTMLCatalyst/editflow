@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../shared/models/activity.dart';
 import 'local_notification_service.dart';
@@ -106,22 +107,47 @@ class NotificationTaskHandler extends TaskHandler {
 
   Future<void> _updateWorkspaceStats(SupabaseClient client, String userId) async {
     try {
-      // Query projects status count
-      final response = await client
-          .from('projects')
-          .select('status')
-          .eq('user_id', userId)
-          .timeout(const Duration(seconds: 10));
+      final prefs = await SharedPreferences.getInstance();
+      final isClientMode = prefs.getBool('is_client_mode') ?? false;
 
-      final activeCount = (response as List)
-          .where((p) => p['status'] != 'completed' && p['status'] != 'paid')
-          .length;
+      if (isClientMode) {
+        // Query projects for client (no user_id filter, RLS restricts to client's projects)
+        final response = await client
+            .from('projects')
+            .select('status')
+            .timeout(const Duration(seconds: 10));
 
-      await FlutterForegroundTask.updateService(
-        notificationTitle: 'EditFlow Workspace Dashboard',
-        notificationText: 'Active: $activeCount Projects | Running in background',
-      );
-      debugPrint('[FOREGROUND TASK STATS] Updated. Active projects: $activeCount');
+        final projectList = response as List;
+        final activeCount = projectList
+            .where((p) => p['status'] != 'completed' && p['status'] != 'paid')
+            .length;
+        final reviewCount = projectList
+            .where((p) => p['status'] == 'review')
+            .length;
+
+        await FlutterForegroundTask.updateService(
+          notificationTitle: 'EditFlow Client Portal',
+          notificationText: 'Pending Review: $reviewCount | Active Projects: $activeCount',
+        );
+        debugPrint('[FOREGROUND TASK STATS] Client Mode. Review: $reviewCount, Active: $activeCount');
+      } else {
+        // Query projects for freelancer
+        final response = await client
+            .from('projects')
+            .select('status')
+            .eq('user_id', userId)
+            .timeout(const Duration(seconds: 10));
+
+        final activeCount = (response as List)
+            .where((p) => p['status'] != 'completed' && p['status'] != 'paid')
+            .length;
+
+        await FlutterForegroundTask.updateService(
+          notificationTitle: 'EditFlow Workspace Dashboard',
+          notificationText: 'Active: $activeCount Projects | Running in background',
+        );
+        debugPrint('[FOREGROUND TASK STATS] Freelancer Mode. Active projects: $activeCount');
+      }
     } catch (e) {
       debugPrint('[FOREGROUND TASK STATS ERROR] $e');
     }

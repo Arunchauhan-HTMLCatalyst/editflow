@@ -1,8 +1,12 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../models/currency_config.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../services/foreground_service.dart';
 
 class SettingsState {
   final CurrencyConfig currency;
@@ -87,6 +91,18 @@ class SettingsProvider extends StateNotifier<SettingsState> {
     final newValue = !state.isClientMode;
     await prefs.setBool('is_client_mode', newValue);
     state = state.copyWith(isClientMode: newValue);
+
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        final isRunning = await FlutterForegroundTask.isRunningService;
+        if (isRunning) {
+          await EditFlowForegroundService.stop();
+          await EditFlowForegroundService.start();
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
   }
 
   Future<void> setMonthlyGoal(double goal) async {
