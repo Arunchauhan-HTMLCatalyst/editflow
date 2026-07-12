@@ -114,22 +114,26 @@ class NotificationTaskHandler extends TaskHandler {
         // Query projects for client (no user_id filter, RLS restricts to client's projects)
         final response = await client
             .from('projects')
-            .select('status')
+            .select('status, user_id')
             .timeout(const Duration(seconds: 10));
 
         final projectList = response as List;
         final activeCount = projectList
             .where((p) => p['status'] != 'completed' && p['status'] != 'paid')
             .length;
-        final reviewCount = projectList
-            .where((p) => p['status'] == 'review')
-            .length;
+        
+        // Find unique freelancers count
+        final freelancerIds = projectList
+            .map((p) => p['user_id'] as String?)
+            .whereType<String>()
+            .toSet();
+        final freelancersCount = freelancerIds.length;
 
         await FlutterForegroundTask.updateService(
           notificationTitle: 'EditFlow Client Portal',
-          notificationText: 'Pending Review: $reviewCount | Active Projects: $activeCount',
+          notificationText: 'Freelancers: $freelancersCount | Active Projects: $activeCount',
         );
-        debugPrint('[FOREGROUND TASK STATS] Client Mode. Review: $reviewCount, Active: $activeCount');
+        debugPrint('[FOREGROUND TASK STATS] Client Mode. Freelancers: $freelancersCount, Active: $activeCount');
       } else {
         // Query projects for freelancer
         final response = await client
