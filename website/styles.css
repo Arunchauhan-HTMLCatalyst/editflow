@@ -1,14 +1,14 @@
 /* Design System Custom Variables */
 :root {
-    --bg-dark: #090D0E;
-    --bg-card: #12181B;
-    --bg-card-hover: #171E22;
-    --border-color: rgba(255, 255, 255, 0.08);
+    --bg-dark: #080C0D;
+    --bg-card: #171D1F;
+    --bg-card-hover: #1F2629;
+    --border-color: #273135;
     --border-color-hover: rgba(255, 255, 255, 0.15);
     
-    --primary: #00b4d8;
-    --primary-glow: rgba(0, 180, 216, 0.3);
-    --secondary: #00f5d4;
+    --primary: #0D9488;
+    --primary-glow: rgba(13, 148, 136, 0.3);
+    --secondary: #10B981;
     
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
@@ -92,7 +92,7 @@ img {
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(0, 180, 216, 0.5);
+    box-shadow: 0 6px 24px rgba(13, 148, 136, 0.5);
 }
 
 .btn-secondary {
@@ -113,9 +113,9 @@ img {
 
 .badge {
     display: inline-block;
-    background-color: rgba(0, 180, 216, 0.1);
+    background-color: rgba(13, 148, 136, 0.1);
     color: var(--primary);
-    border: 1px solid rgba(0, 180, 216, 0.2);
+    border: 1px solid rgba(13, 148, 136, 0.2);
     font-size: 13px;
     font-weight: 600;
     padding: 6px 14px;
@@ -275,7 +275,7 @@ img {
     border: 12px solid #1e293b;
     border-radius: 44px;
     box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.9),
-                0 0 50px rgba(0, 180, 216, 0.2);
+                0 0 50px rgba(13, 148, 136, 0.2);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -425,7 +425,7 @@ img {
     font-size: 20px;
     font-weight: 800;
     color: var(--secondary);
-    background-color: rgba(0, 245, 212, 0.08);
+    background-color: rgba(16, 185, 129, 0.08);
     width: 48px;
     height: 48px;
     border-radius: 12px;
@@ -501,7 +501,7 @@ img {
 }
 
 .project-status.in-review {
-    background-color: rgba(0, 180, 216, 0.15);
+    background-color: rgba(13, 148, 136, 0.15);
     color: var(--primary);
 }
 
@@ -540,11 +540,11 @@ img {
 }
 
 .bubble.freelancer {
-    background-color: rgba(0, 180, 216, 0.08);
+    background-color: rgba(13, 148, 136, 0.08);
     align-self: flex-end;
     border-bottom-right-radius: 4px;
     color: var(--text-main);
-    border: 1px solid rgba(0, 180, 216, 0.15);
+    border: 1px solid rgba(13, 148, 136, 0.15);
 }
 
 /* Comparison Section */
@@ -566,8 +566,8 @@ img {
 }
 
 .comp-box.positive {
-    background-color: rgba(0, 245, 212, 0.01);
-    border-color: rgba(0, 245, 212, 0.2);
+    background-color: rgba(16, 185, 129, 0.01);
+    border-color: rgba(16, 185, 129, 0.2);
 }
 
 .comp-box h3 {
@@ -607,8 +607,8 @@ img {
     max-width: 900px;
     margin: 0 auto;
     padding: 60px 40px;
-    background: linear-gradient(135deg, rgba(0, 180, 216, 0.05), rgba(0, 245, 212, 0.02));
-    border: 1px solid rgba(0, 180, 216, 0.15);
+    background: linear-gradient(135deg, rgba(13, 148, 136, 0.05), rgba(16, 185, 129, 0.02));
+    border: 1px solid rgba(13, 148, 136, 0.15);
     border-radius: 32px;
     text-align: center;
     position: relative;
