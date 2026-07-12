@@ -243,7 +243,7 @@ class ClientClientRepository extends ClientRepository {
     try {
       final response = await SupabaseService.instance
           .from('clients')
-          .select('*, profiles:user_id(full_name)')
+          .select('*')
           .eq('client_user_id', clientUserId)
           .order('created_at', ascending: false)
           .timeout(const Duration(seconds: 15));
