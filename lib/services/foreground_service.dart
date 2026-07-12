@@ -13,86 +13,99 @@ void startCallback() {
   FlutterForegroundTask.setTaskHandler(NotificationTaskHandler());
 }
 
+@pragma('vm:entry-point')
 class NotificationTaskHandler extends TaskHandler {
   StreamSubscription<List<Map<String, dynamic>>>? _streamSubscription;
   final Set<String> _seenActivityIds = {};
   bool _isFirstLoad = true;
+  SupabaseClient? _client;
+  String? _userId;
 
   @override
+  @pragma('vm:entry-point')
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     debugPrint('[FOREGROUND TASK] Background Isolate Started.');
     
     try {
-      // 1. Initialize Supabase in Isolate
-      await Supabase.initialize(
-        url: AppConstants.supabaseUrl,
-        publishableKey: AppConstants.supabaseAnonKey,
-      );
-
-      // 2. Initialize Local Notifications in Isolate
+      // 1. Initialize Local Notifications in Isolate
       await LocalNotificationService.initialize();
 
-      // 3. Connect Stream & Update Dashboard Notification Info
-      final client = Supabase.instance.client;
-      final user = client.auth.currentUser;
+      // 2. Load Auth ID and JWT Token from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('auth_user_id') ?? '';
+      final jwtToken = prefs.getString('auth_jwt_token') ?? '';
 
-      if (user != null) {
-        debugPrint('[FOREGROUND TASK] User identified: ${user.email}');
-        
-        // A. Setup Realtime activities listener
-        _streamSubscription = client
-            .from('activities')
-            .stream(primaryKey: ['id'])
-            .eq('user_id', user.id)
-            .listen(
-          (rows) {
-            try {
-              final activities = rows.map((e) => Activity.fromJson(e)).toList();
-              debugPrint('[FOREGROUND TASK STREAM] Received ${activities.length} rows.');
-              
-              if (_isFirstLoad) {
-                // Populate seen cache so we don't trigger alerts for past notifications
-                for (final act in activities) {
+      if (userId.isEmpty) {
+        debugPrint('[FOREGROUND TASK] No logged-in user ID found in SharedPreferences.');
+        return;
+      }
+
+      _userId = userId;
+
+      // 3. Create pure Dart Supabase client authenticated via the user's JWT token
+      _client = SupabaseClient(
+        AppConstants.supabaseUrl,
+        AppConstants.supabaseAnonKey,
+        headers: jwtToken.isNotEmpty ? {
+          'Authorization': 'Bearer $jwtToken',
+        } : {},
+      );
+
+      final client = _client!;
+      debugPrint('[FOREGROUND TASK] Created pure Supabase client for user: $userId');
+
+      // A. Setup Realtime activities listener
+      _streamSubscription = client
+          .from('activities')
+          .stream(primaryKey: ['id'])
+          .eq('user_id', userId)
+          .listen(
+        (rows) {
+          try {
+            final activities = rows.map((e) => Activity.fromJson(e)).toList();
+            debugPrint('[FOREGROUND TASK STREAM] Received ${activities.length} rows.');
+            
+            if (_isFirstLoad) {
+              // Populate seen cache so we don't trigger alerts for past notifications
+              for (final act in activities) {
+                _seenActivityIds.add(act.id);
+              }
+              _isFirstLoad = false;
+              debugPrint('[FOREGROUND TASK STREAM] Initialized seen activities cache.');
+            } else {
+              for (final act in activities) {
+                if (!_seenActivityIds.contains(act.id)) {
                   _seenActivityIds.add(act.id);
-                }
-                _isFirstLoad = false;
-                debugPrint('[FOREGROUND TASK STREAM] Initialized seen activities cache.');
-              } else {
-                for (final act in activities) {
-                  if (!_seenActivityIds.contains(act.id)) {
-                    _seenActivityIds.add(act.id);
-                    _triggerActivityAlert(act);
-                  }
+                  _triggerActivityAlert(act);
                 }
               }
-            } catch (e) {
-              debugPrint('[FOREGROUND TASK STREAM PARSE ERROR] $e');
             }
-          },
-          onError: (e) {
-            debugPrint('[FOREGROUND TASK STREAM ERROR] $e');
-          },
-        );
+          } catch (e) {
+            debugPrint('[FOREGROUND TASK STREAM PARSE ERROR] $e');
+          }
+        },
+        onError: (e) {
+          debugPrint('[FOREGROUND TASK STREAM ERROR] $e');
+        },
+      );
 
-        // B. Periodically refresh active project count to update persistent banner stats
-        _updateWorkspaceStats(client, user.id);
-      } else {
-        debugPrint('[FOREGROUND TASK] No logged-in user in isolate context.');
-      }
+      // B. Periodically refresh active project count to update persistent banner stats
+      _updateWorkspaceStats(client, userId);
     } catch (e, st) {
       debugPrint('[FOREGROUND TASK START ERROR] $e\n$st');
     }
   }
 
   @override
+  @pragma('vm:entry-point')
   Future<void> onRepeatEvent(DateTime timestamp) async {
     // This runs periodically based on interval setting (e.g. every 30 seconds)
     try {
-      final client = Supabase.instance.client;
-      final user = client.auth.currentUser;
-      if (user != null) {
-        await _updateWorkspaceStats(client, user.id);
-        await _pollNewActivities(client, user.id);
+      final client = _client;
+      final userId = _userId;
+      if (client != null && userId != null) {
+        await _updateWorkspaceStats(client, userId);
+        await _pollNewActivities(client, userId);
       }
     } catch (e) {
       debugPrint('[FOREGROUND TASK REPEAT ERROR] $e');
@@ -100,6 +113,7 @@ class NotificationTaskHandler extends TaskHandler {
   }
 
   @override
+  @pragma('vm:entry-point')
   Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
     debugPrint('[FOREGROUND TASK] Isolate Destroyed.');
     await _streamSubscription?.cancel();
