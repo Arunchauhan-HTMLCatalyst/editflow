@@ -69,6 +69,15 @@ class RecentActivityNotifier extends AsyncNotifier<List<Activity>> {
       case 'due_date_2d':
         title = '⏰ Deadline Warning (48h)';
         break;
+      case 'project_updated':
+        title = '✏️ Project Updated';
+        break;
+      case 'status_changed':
+        title = '🔄 Status Changed';
+        break;
+      case 'payment_received':
+        title = '💰 Payment Received';
+        break;
       case 'client_created':
         title = '👥 Client Connected';
         break;

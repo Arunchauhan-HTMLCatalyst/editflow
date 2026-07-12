@@ -273,6 +273,30 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       state = AsyncData(updatedList);
       _saveToCache(_getCacheKey(), updatedList);
       debugPrint('[ProjectProvider] updateProject: updated ${updated.id}');
+
+      // If in client mode, notify the freelancer of the edit
+      final isClient = ref.read(settingsProvider).isClientMode;
+      if (isClient) {
+        unawaited(() async {
+          try {
+            final clients = ref.read(safeClientsProvider);
+            final client = clients.firstWhereOrNull((c) => c.id == updated.clientId);
+            final clientName = client?.name ?? 'Client';
+
+            await SupabaseService.instance.from('activities').insert({
+              'user_id': updated.userId,
+              'type': 'project_updated',
+              'description': 'Client "$clientName" updated project: "${updated.name}"',
+              'reference_id': updated.id,
+              'reference_type': 'project',
+              'created_at': DateTime.now().toIso8601String(),
+            });
+            debugPrint('[PROJECT NOTIFICATION] Sent project_updated notification to freelancer ${updated.userId}');
+          } catch (err) {
+            debugPrint('[PROJECT NOTIFICATION ERROR] $err');
+          }
+        }());
+      }
     } catch (e, st) {
       debugPrint('[ProjectProvider] updateProject failed: $e');
       state = AsyncError<List<Project>>(e, st).copyWithPrevious(AsyncData(previousState));
@@ -334,13 +358,33 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       debugPrint('[ProjectProvider] updateStatus: $id -> ${newStatus.displayName}');
 
       final activityType = newStatus == ProjectStatus.paid ? 'payment_received' : 'status_changed';
-      await repo.logStatusChange(
-        type: activityType,
-        description: newStatus == ProjectStatus.paid
-            ? 'Payment completed for "${project.name}"'
-            : '"${project.name}" -> ${newStatus.displayName}',
-        projectId: project.id,
-      );
+      final isClient = ref.read(settingsProvider).isClientMode;
+
+      if (isClient) {
+        final clients = ref.read(safeClientsProvider);
+        final client = clients.firstWhereOrNull((c) => c.id == project.clientId);
+        final clientName = client?.name ?? 'Client';
+
+        await SupabaseService.instance.from('activities').insert({
+          'user_id': project.userId,
+          'type': activityType,
+          'description': newStatus == ProjectStatus.paid
+              ? 'Client "$clientName" completed payment for "${project.name}"'
+              : 'Client "$clientName" changed status of "${project.name}" to ${newStatus.displayName}',
+          'reference_id': project.id,
+          'reference_type': 'project',
+          'created_at': DateTime.now().toIso8601String(),
+        });
+        debugPrint('[PROJECT NOTIFICATION] Sent status notification to freelancer for project ${project.name}');
+      } else {
+        await repo.logStatusChange(
+          type: activityType,
+          description: newStatus == ProjectStatus.paid
+              ? 'Payment completed for "${project.name}"'
+              : '"${project.name}" -> ${newStatus.displayName}',
+          projectId: project.id,
+        );
+      }
     } catch (e, st) {
       debugPrint('[ProjectProvider] updateStatus failed: $e');
       state = AsyncError<List<Project>>(e, st).copyWithPrevious(AsyncData(previousState));
