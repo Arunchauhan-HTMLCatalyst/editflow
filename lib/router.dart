@@ -102,7 +102,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Shell (bottom nav) ──────────────────────────────────────────
       ShellRoute(
         builder: (context, state, child) {
-          return AppShell(child: child);
+          return AppShell(
+            state: state,
+            child: child,
+          );
         },
         routes: [
           // Bottom-nav tabs → fade only (no slide)

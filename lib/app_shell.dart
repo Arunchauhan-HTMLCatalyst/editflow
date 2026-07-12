@@ -9,9 +9,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/settings/providers/settings_provider.dart';
 
 class AppShell extends ConsumerStatefulWidget {
+  final GoRouterState state;
   final Widget child;
 
-  const AppShell({super.key, required this.child});
+  const AppShell({
+    super.key,
+    required this.state,
+    required this.child,
+  });
 
   @override
   ConsumerState<AppShell> createState() => _AppShellState();
@@ -73,7 +78,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
+    final location = widget.state.uri.toString();
     final isClientMode = ref.watch(settingsProvider).isClientMode;
     final currentIndex = _currentTab(location, isClientMode);
     
