@@ -34,7 +34,24 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   final Set<String> _selectedProjectIds = {};
 
   void _shareInvoiceText(Project project, CurrencyConfig currency) {
+    final authState = ref.read(authProvider);
+    final user = authState.user;
+    final fullName = user?.userMetadata?['full_name'] as String?;
+    String? rawName = fullName ?? user?.email?.split('@').first;
+    String userName = 'Freelancer';
+    if (rawName != null && rawName.isNotEmpty) {
+      userName = rawName[0].toUpperCase() + rawName.substring(1);
+    }
+    
+    final clientName = project.clientName ?? 'Client';
+
     final buffer = StringBuffer();
+    buffer.writeln('Hello $clientName,');
+    buffer.writeln('');
+    buffer.writeln('Hope you are doing well! Please find the invoice summary for our project "${project.name}" below.');
+    buffer.writeln('Greetings,');
+    buffer.writeln(userName);
+    buffer.writeln('');
     buffer.writeln('================================================');
     buffer.writeln('               E D I T F L O W                  ');
     buffer.writeln('               INVOICE SUMMARY                  ');
@@ -43,10 +60,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     buffer.writeln('  Date        : ${DateFormat('yyyy-MM-dd').format(DateTime.now())}');
     buffer.writeln('------------------------------------------------');
     buffer.writeln('  BILLED BY:');
-    buffer.writeln('  Independent Video Creative / Editor');
+    buffer.writeln('  $userName (Independent Video Creative)');
     buffer.writeln('');
     buffer.writeln('  BILLED TO:');
-    buffer.writeln('  ${project.clientName ?? 'Valued Client'}');
+    buffer.writeln('  $clientName');
     buffer.writeln('------------------------------------------------');
     buffer.writeln('  SERVICES & DESCRIPTION:');
     buffer.writeln('  • Video Production & Post-Production');
@@ -1597,22 +1614,7 @@ String _generateUpiLink({
   String? currencyCode,
 }) {
   final cleanUpi = upiId.trim();
-  final cleanName = Uri.encodeComponent(payeeName.trim());
-  var link = 'upi://pay?pa=$cleanUpi&pn=$cleanName';
-  if (amount != null && amount > 0) {
-    link += '&am=${amount.toStringAsFixed(2)}';
-  }
-  if (currencyCode != null && currencyCode.isNotEmpty) {
-    link += '&cu=${currencyCode.trim()}';
-  } else {
-    link += '&cu=INR';
-  }
-  if (transactionNote != null && transactionNote.isNotEmpty) {
-    // Keep notes simple and short to prevent URL issues in some UPI apps
-    final cleanNote = transactionNote.length > 50 ? transactionNote.substring(0, 50) : transactionNote;
-    link += '&tn=${Uri.encodeComponent(cleanNote.trim())}';
-  }
-  return link;
+  return 'upi://pay?pa=$cleanUpi';
 }
 
 class _AddUpiDialog extends StatefulWidget {

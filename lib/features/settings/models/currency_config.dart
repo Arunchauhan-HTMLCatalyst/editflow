@@ -35,9 +35,10 @@ class CurrencyConfig {
   ];
 
   static const usd = CurrencyConfig(code: 'USD', symbol: '\$', name: 'US Dollar');
+  static const inr = CurrencyConfig(code: 'INR', symbol: '₹', name: 'Indian Rupee');
 
   static CurrencyConfig fromCode(String code) =>
-      supported.firstWhere((c) => c.code == code, orElse: () => usd);
+      supported.firstWhere((c) => c.code == code, orElse: () => inr);
 
   String format(double amount) {
     final negative = amount < 0;
