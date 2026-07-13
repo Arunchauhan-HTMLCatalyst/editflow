@@ -1140,4 +1140,55 @@ img {
     .mobile-menu-toggle {
         display: flex;
     }
+
+    /* Stack main content and sidebar in mockup dashboard on smaller screens */
+    .mock-app-body {
+        grid-template-columns: 1fr;
+        padding: 14px;
+    }
+
+    .mock-sidebar {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 12px;
+    }
+    
+    .mock-radial-container {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 560px) {
+    .hero-content h1 {
+        font-size: 32px;
+    }
+    
+    .hero-visual {
+        display: flex;
+        justify-content: center;
+        padding: 0 8px;
+    }
+
+    .app-dashboard-mockup {
+        border-radius: 12px;
+    }
+
+    /* Stack mockup sidebar items completely on very small screens */
+    .mock-sidebar {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .mock-metrics-grid {
+        grid-template-columns: 1fr; /* Stack metrics cards vertically */
+        gap: 6px;
+    }
+
+    .mock-greeting {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
 }
