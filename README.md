@@ -168,6 +168,30 @@ EditFlow features compressed voice notes for project feedback to stay well withi
 
 ---
 
+---
+
+## 🔋 Android Foreground Service & Background Synchronization
+
+EditFlow runs a persistent Android Foreground Service isolating notifications and metrics synchronization:
+* **Background Isolate Thread**: Uses `flutter_foreground_task` to query updates directly on a background isolate thread context, avoiding app sleep suspensions.
+* **SharedPreferences Auth Bridge**: Since UI-heavy `Supabase.initialize` fails in background isolates during release builds, the isolate queries user credentials (ID & Session JWT token) stored safely inside `SharedPreferences` by the main thread on login/refresh. It instantiates a pure Dart `SupabaseClient` with `Authorization: Bearer <token>` headers to bypass UI storage dependencies.
+* **Dual Monitoring Modes**: 
+  - **Freelancer Mode**: Persistently shows active project count: `Active: X Projects | Running in background`.
+  - **Client Mode**: Persistently shows total assigned creative collaborators: `Freelancers: X | Active Projects: Y`.
+* **Robust WebSockets & Polling Fallback**: streams data in real-time using Supabase database subscriptions. If the background socket connection drops, it automatically falls back to secure REST HTTP polling every 30 seconds.
+* **VM Entry-point Protection**: Callback entrypoints and handling classes/methods are guarded with `@pragma('vm:entry-point')` to prevent the R8 compiler from stripping or obfuscating background isolate routines in release builds.
+
+---
+
+## 🌐 Marketing Website & GitHub Pages Deployment
+
+The `/docs/` folder contains a responsive marketing landing page optimized to deploy directly via **GitHub Pages**:
+* **Assets and Mono-Logo**: Employs the custom-designed programmatic **"ef" vector monogram** (`logo.svg`) and holds the compiled production APK (`editflow.apk`) for direct user downloads.
+* **Custom Mobile Mockup**: An interactive CSS frame notch holds the real dashboard screenshot. Configured with a smooth transition scrolling the viewport on hover.
+* **Features Grid**: Details dedicated value propositions for Freelancer Workspace and Client Portal systems.
+
+---
+
 ## 🚀 Getting Started & Agent Commands
 
 ### 1. Environment Setup
@@ -177,15 +201,25 @@ SUPABASE_URL=your_supabase_project_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 2. Standard Development Tasks
+### 2. Default System Configurations
+* **Currency**: Defaults to **INR (₹)** for all projects, pipelines, and dashboard counters on both portals.
+* **Theme**: Defaults to **Dark Mode** on initial launch and clear-data startups.
+
+### 3. Standard Development Tasks
 * **Fetch Dependencies**: `flutter pub get`
 * **Static Analysis**: `flutter analyze` (ensure `lib/` directory remains with 0 issues).
 * **Run Tests**: `flutter test` (all 10 unit/widget tests must pass).
-* **Build Android APK**: `flutter build apk --release` (generates release binaries inside `build/app/outputs/flutter-apk/app-release.apk`).
+* **Build Android APK**: `flutter build apk --release` (generates release binaries inside `build/app/outputs/flutter-apk/app-release.apk` and copies to `docs/editflow.apk` for the site).
 
-### 3. ProGuard / R8 Release Build Exceptions
-Release compilations optimize binary code using R8. Add the following rules to `android/app/proguard-rules.pro` to prevent stripping of Supabase authentication session models:
+### 4. ProGuard / R8 Release Build Exceptions
+Release compilations optimize binary code using R8. Add the following rules to `android/app/proguard-rules.pro` to prevent stripping of Supabase authentication session models and isolate task callbacks:
 ```proguard
 -keep class com.supabase.** { *; }
 -keep class io.supabase.** { *; }
+
+# Keep background service task handler entrypoints
+-keep class * extends com.pravera.flutter_foreground_task.models.TaskHandler { *; }
+-keepclassmembers class * {
+    @kotlin.jvm.JvmStatic <methods>;
+}
 ```

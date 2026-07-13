@@ -1,3 +1,30 @@
+# Release Notes - EditFlow v1.2.0
+
+We are excited to release **EditFlow v1.2.0**, introducing a persistent Android Foreground Service with WebSocket/polling synchronization fallback, two-way status notification portals, custom-branded landing website (hosted via GitHub Pages), default INR currency support, and simplified compliant UPI deep links.
+
+---
+
+## 🚀 What's New in v1.2.0
+
+### 🔋 Persistent Android Foreground Service
+* **Background Isolate & SharedPreferences Bridge**: Configured the service to run on a background isolate. Rewrote Supabase client creation using pure Dart `SupabaseClient` with credentials retrieved from `SharedPreferences` to bypass `WidgetsFlutterBinding` initialize crashes in release builds.
+* **Dual Monitoring Stats**: Notification drawer dynamically updates to show active workspace metrics:
+  - **Freelancer**: `Active: X Projects | Running in background`
+  - **Client**: `Freelancers: X | Active Projects: Y` (reads unique creative collaborators count).
+* **WS Stream & 30s Polling Fallback**: streams alerts in real-time, automatically falling back to secure HTTP polling every 30 seconds if the socket connection drops.
+* **VM Protection**: Guarded task handler methods with `@pragma('vm:entry-point')` to prevent R8 optimizer from stripping background isolate routines in release APKs.
+
+### 💵 Defaults and Custom Sharing
+* **INR Default**: Swapped default currency token to **INR (₹)** for both Freelancer and Client Portal systems.
+* **Simple UPI Links**: Simplified UPI deep links to `upi://pay?pa=upiId` without amount or note parameters, ensuring compatibility across all mobile banking apps.
+* **Invoice Greeting Message**: Prepend custom greeting text block to shared invoices mentioning the client's name, project details, and a freelancer sign-off greeting dynamically.
+
+### 🌐 GitHub Pages Deployment (/docs)
+* **docs/ Landing Folder**: Relocated the marketing website files to the `/docs/` folder, allowing instant free static hosting via GitHub Pages.
+* **Vector logo & Interactive Mockup**: Employs the programmatic **"ef" monogram logo** as an SVG vector (`logo.svg`) and a CSS phone notch frame that scrolls the viewport screenshot automatically on hover.
+
+---
+
 # Release Notes - EditFlow v1.1.0
 
 We are excited to release **EditFlow v1.1.0**, featuring major visual upgrades, a client-facing view mode, real-time collaboration comment streams, and custom scan-to-pay UPI payment QR codes.
