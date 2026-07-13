@@ -1025,7 +1025,7 @@ img {
 .cta-buttons {
     display: flex;
     justify-content: center;
-    gap: 16px;
+    gap: 20px;
     margin-bottom: 20px;
 }
 
