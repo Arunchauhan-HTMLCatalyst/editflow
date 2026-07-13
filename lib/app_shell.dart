@@ -4,9 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_spacing.dart';
+import 'core/theme/app_layout.dart';
+import 'core/theme/app_text_styles.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/settings/providers/settings_provider.dart';
+import 'features/auth/providers/auth_provider.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   final GoRouterState state;
@@ -94,6 +97,77 @@ class _AppShellState extends ConsumerState<AppShell> {
             _NavItem('Payments', Icons.credit_card_rounded),
           ];
 
+    final isTablet = AppLayout.isTablet(context);
+
+    final widgetScaffold = isTablet
+        ? Scaffold(
+            body: Row(
+              children: [
+                _DesktopSidebar(
+                  currentIndex: currentIndex,
+                  navItems: navItems,
+                  onTap: (index) {
+                    HapticFeedback.selectionClick();
+                    if (isClientMode) {
+                      switch (index) {
+                        case 0:
+                          context.go('/dashboard');
+                        case 1:
+                          context.go('/clients');
+                      }
+                    } else {
+                      switch (index) {
+                        case 0:
+                          context.go('/dashboard');
+                        case 1:
+                          context.go('/clients');
+                        case 2:
+                          context.go('/calendar');
+                        case 3:
+                          context.go('/payments');
+                      }
+                    }
+                  },
+                ),
+                Expanded(
+                  child: widget.child,
+                ),
+              ],
+            ),
+          )
+        : Scaffold(
+            body: Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.navBarMargin + 4),
+              child: widget.child,
+            ),
+            bottomNavigationBar: _FloatingNavBar(
+              currentIndex: currentIndex,
+              navItems: navItems,
+              onTap: (index) {
+                HapticFeedback.selectionClick();
+                if (isClientMode) {
+                  switch (index) {
+                    case 0:
+                      context.go('/dashboard');
+                    case 1:
+                      context.go('/clients');
+                  }
+                } else {
+                  switch (index) {
+                    case 0:
+                      context.go('/dashboard');
+                    case 1:
+                      context.go('/clients');
+                    case 2:
+                      context.go('/calendar');
+                    case 3:
+                      context.go('/payments');
+                  }
+                }
+              },
+            ),
+          );
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
@@ -101,38 +175,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           await _onWillPop();
         }
       },
-      child: Scaffold(
-        body: Padding(
-          padding: EdgeInsets.only(bottom: AppSpacing.navBarMargin + 4),
-          child: widget.child,
-        ),
-        bottomNavigationBar: _FloatingNavBar(
-          currentIndex: currentIndex,
-          navItems: navItems,
-          onTap: (index) {
-            HapticFeedback.selectionClick();
-            if (isClientMode) {
-              switch (index) {
-                case 0:
-                  context.go('/dashboard');
-                case 1:
-                  context.go('/clients');
-              }
-            } else {
-              switch (index) {
-                case 0:
-                  context.go('/dashboard');
-                case 1:
-                  context.go('/clients');
-                case 2:
-                  context.go('/calendar');
-                case 3:
-                  context.go('/payments');
-              }
-            }
-          },
-        ),
-      ),
+      child: widgetScaffold,
     );
   }
 }
@@ -318,4 +361,354 @@ class _NavItem {
   final String label;
   final IconData icon;
   const _NavItem(this.label, this.icon);
+}
+
+class _DesktopSidebar extends ConsumerWidget {
+  final int currentIndex;
+  final List<_NavItem> navItems;
+  final ValueChanged<int> onTap;
+
+  const _DesktopSidebar({
+    required this.currentIndex,
+    required this.navItems,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final settings = ref.watch(settingsProvider);
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+    final fullName = user?.userMetadata?['full_name'] ?? 'User';
+    final email = user?.email ?? '';
+
+    final isClientMode = settings.isClientMode;
+
+    return Container(
+      width: 250,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
+        border: Border(
+          right: BorderSide(
+            color: isDark ? AppColors.border.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
+            width: 0.8,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // App Logo Header
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: AppColors.primaryGradient,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'EF',
+                        style: TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'EditFlow',
+                    style: TextStyle(
+                      fontFamily: 'Outfit',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Mode Selector Widget
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Container(
+                padding: const EdgeInsets.all(4.0),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.card : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                    width: 0.8,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          if (isClientMode) {
+                            ref.read(settingsProvider.notifier).toggleClientMode();
+                            context.go('/dashboard');
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: !isClientMode
+                                ? (isDark ? AppColors.elevated : Colors.white)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: !isClientMode
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    )
+                                  ]
+                                : null,
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Freelancer',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: !isClientMode ? FontWeight.bold : FontWeight.w600,
+                                color: !isClientMode
+                                    ? AppColors.primary
+                                    : (isDark ? AppColors.textSecondary : const Color(0xFF64748B)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!isClientMode) {
+                            ref.read(settingsProvider.notifier).toggleClientMode();
+                            context.go('/dashboard');
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isClientMode
+                                ? (isDark ? AppColors.elevated : Colors.white)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: isClientMode
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    )
+                                  ]
+                                : null,
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Client Portal',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isClientMode ? FontWeight.bold : FontWeight.w600,
+                                color: isClientMode
+                                    ? AppColors.primary
+                                    : (isDark ? AppColors.textSecondary : const Color(0xFF64748B)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Navigation Items
+            Expanded(
+              child: ListView.builder(
+                itemCount: navItems.length,
+                itemBuilder: (context, index) {
+                  final item = navItems[index];
+                  final isActive = index == currentIndex;
+
+                  final activeColor = isDark ? AppColors.primaryNeon : AppColors.primary;
+                  final inactiveColor = isDark ? AppColors.textSecondary : const Color(0xFF64748B);
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Material(
+                        color: isActive
+                            ? activeColor.withValues(alpha: 0.08)
+                            : Colors.transparent,
+                        child: InkWell(
+                          onTap: () => onTap(index),
+                          child: Container(
+                            height: 44,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              border: isActive
+                                  ? Border(
+                                      left: BorderSide(
+                                        color: activeColor,
+                                        width: 3,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  item.icon,
+                                  size: 18,
+                                  color: isActive ? activeColor : inactiveColor,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  item.label,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                                    color: isActive
+                                        ? (isDark ? Colors.white : activeColor)
+                                        : inactiveColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // Bottom Profile / Settings / Log out
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: isDark ? AppColors.border.withValues(alpha: 0.3) : const Color(0xFFE2E8F0),
+                    width: 0.8,
+                  ),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                        child: Text(
+                          (fullName.isNotEmpty ? fullName[0] : (email.isNotEmpty ? email[0] : 'U')).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: activeColorHelper(isDark),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              fullName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              email,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.push('/settings'),
+                          icon: const Icon(Icons.settings_outlined, size: 14),
+                          label: const Text('Settings', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: isDark ? Colors.white : AppColors.primary,
+                            side: BorderSide(
+                              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                              width: 0.8,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () {
+                          ref.read(authProvider.notifier).signOut();
+                        },
+                        icon: const Icon(Icons.logout_rounded, size: 16),
+                        style: IconButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          backgroundColor: AppColors.error.withValues(alpha: 0.08),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color activeColorHelper(bool isDark) {
+    return isDark ? AppColors.primaryNeon : AppColors.primary;
+  }
 }
