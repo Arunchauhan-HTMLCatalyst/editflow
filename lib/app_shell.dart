@@ -123,7 +123,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 textColor: AppColors.primaryNeon,
                 onPressed: () {
                   if (act.referenceType == 'project' && act.referenceId != null) {
-                    context.push('/projects/detail/${act.referenceId}');
+                    context.push('/projects/${act.referenceId}');
                   } else {
                     context.push('/dashboard');
                   }
@@ -135,7 +135,11 @@ class _AppShellState extends ConsumerState<AppShell> {
                 borderRadius: BorderRadius.circular(12),
                 side: const BorderSide(color: AppColors.border, width: 0.8),
               ),
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height - 90,
+                left: 16,
+                right: 16,
+              ),
               duration: const Duration(seconds: 4),
             ),
           );
