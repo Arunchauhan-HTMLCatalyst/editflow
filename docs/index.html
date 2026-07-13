@@ -60,7 +60,69 @@
                 <div class="hero-meta">
                     <span>⚡ Real-Time Sync</span>
                     <span>🔒 Safe Database</span>
-                    <span>🔋 Low Battery Background Run</span>
+                    <span>🔋 Low Battery Run</span>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <!-- Glowing ambient background -->
+                <div class="glowing-orb"></div>
+                
+                <!-- Interactive Video Feedback Simulator -->
+                <div class="video-simulator">
+                    <div class="sim-header">
+                        <div class="sim-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                        <div class="sim-title">Client Feedback Portal (Realtime)</div>
+                    </div>
+                    
+                    <!-- Player Screen -->
+                    <div class="sim-player">
+                        <!-- Video Mockup Canvas/Container -->
+                        <div class="sim-video-canvas" id="simVideoCanvas">
+                            <div class="video-overlay" id="simVideoOverlay">
+                                <div class="scene-active" id="sceneContent">✨ Brand Logo (v1) ✨</div>
+                            </div>
+                            <div class="play-btn-pulse">▶</div>
+                        </div>
+                        
+                        <!-- Timeline controls -->
+                        <div class="sim-timeline-bar" id="simTimelineBar">
+                            <div class="timeline-track">
+                                <div class="timeline-fill" id="timelineFill"></div>
+                                <div class="timeline-handle" id="timelineHandle"></div>
+                                <!-- Timeline dots/comment markers -->
+                                <span class="timeline-dot" style="left: 15%;" data-time="15" title="0:15 - Logo Glow"></span>
+                                <span class="timeline-dot" style="left: 45%;" data-time="45" title="0:45 - Volume Cut"></span>
+                                <span class="timeline-dot" style="left: 80%;" data-time="80" title="1:20 - Text Color"></span>
+                            </div>
+                            <div class="time-readout">
+                                <span id="timeCurrent">0:15</span> / <span>1:40</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Comments section -->
+                    <div class="sim-comments-panel">
+                        <div class="sim-comment-item active" data-marker="15" data-desc="Logo Glow" data-time="0:15" data-filter="glow">
+                            <div class="comment-author">Alex (Client) <span class="timestamp">0:15</span></div>
+                            <p>"Can we add a subtle neon glow to the brand logo here?"</p>
+                            <span class="comment-status">✓ Resolved</span>
+                        </div>
+                        <div class="sim-comment-item" data-marker="45" data-desc="Volume Cut" data-time="0:45" data-filter="grayscale">
+                            <div class="comment-author">Alex (Client) <span class="timestamp">0:45</span></div>
+                            <p>"Apply a dramatic black & white filter to this cinematic cut."</p>
+                            <span class="comment-status">✓ Done</span>
+                        </div>
+                        <div class="sim-comment-item" data-marker="80" data-desc="Text Color" data-time="1:20" data-filter="neonText">
+                            <div class="comment-author">Alex (Client) <span class="timestamp">1:20</span></div>
+                            <p>"Change the placeholder text title color to bright neon teal."</p>
+                            <span class="comment-status">✓ Applied</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
