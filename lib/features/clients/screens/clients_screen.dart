@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../providers/client_provider.dart';
+import '../../projects/providers/project_provider.dart';
 import '../widgets/client_card.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -177,6 +178,8 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isClient = ref.watch(settingsProvider).isClientMode;
     final freelancersList = ref.watch(dashboardMetricsProvider).topFreelancers;
+    final projectsAsync = ref.watch(projectProvider);
+    final isLoading = projectsAsync.isLoading || clientsAsync.isLoading;
 
     final headerTitle = isClient ? 'Freelancers' : 'Clients';
     final subtitleCount = isClient
@@ -257,94 +260,102 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
               ),
             ),
           Expanded(
-            child: isClient
-                ? _buildFreelancersList(freelancersList, padding)
-                : clientsAsync.when(
-              loading: () => ListView(
-                padding: EdgeInsets.all(padding),
-                children: List.generate(4, (i) => Padding(
-                  padding: EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: const ShimmerCard(height: 140, borderRadius: 16),
-                )),
-              ),
-              error: (e, _) => ErrorStateWidget(
-                message: e.toString(),
-                onRetry: () => ref.read(clientProvider.notifier).refresh(),
-              ),
-              data: (_) {
-                final filtered = clientDataList
-                    .where((d) =>
-                        d.client.name.toLowerCase().contains(_searchQuery) ||
-                        (d.client.company?.toLowerCase().contains(_searchQuery) ?? false) ||
-                        (d.client.email?.toLowerCase().contains(_searchQuery) ?? false))
-                    .toList();
-
-                if (filtered.isEmpty) {
-                  return EmptyStateWidget(
-                    icon: Icons.people_outline_rounded,
-                    title: _searchQuery.isNotEmpty
-                        ? 'No clients found'
-                        : 'No clients yet',
-                    subtitle: _searchQuery.isNotEmpty
-                        ? 'Try a different search'
-                        : 'Add your first client to get started',
-                    actionLabel: 'Add Client',
-                    onAction: () => context.push('/add-client'),
-                  );
-                }
-
-                if (columns > 1) {
-                  return GridView.builder(
+            child: isLoading
+                ? ListView(
                     padding: EdgeInsets.all(padding),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      mainAxisSpacing: AppSpacing.sm,
-                      crossAxisSpacing: AppSpacing.sm,
-                      childAspectRatio: columns == 2 ? 1.6 : 1.8,
-                    ),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final d = filtered[index];
-                      return AnimatedListItem(
-                        index: index,
-                        child: RepaintBoundary(
-                          child: ClientCard(
-                            client: d.client,
-                            onTap: () => context.push('/clients/${d.client.id}'),
-                            totalRevenue: d.revenue,
-                            pendingRevenue: d.pending,
-                            projectCount: d.projectCount,
-                            currency: currency,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }
+                    children: List.generate(4, (i) => Padding(
+                      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: const ShimmerCard(height: 140, borderRadius: 16),
+                    )),
+                  )
+                : (isClient
+                    ? _buildFreelancersList(freelancersList, padding)
+                    : clientsAsync.when(
+                  loading: () => ListView(
+                    padding: EdgeInsets.all(padding),
+                    children: List.generate(4, (i) => Padding(
+                      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: const ShimmerCard(height: 140, borderRadius: 16),
+                    )),
+                  ),
+                  error: (e, _) => ErrorStateWidget(
+                    message: e.toString(),
+                    onRetry: () => ref.read(clientProvider.notifier).refresh(),
+                  ),
+                  data: (_) {
+                    final filtered = clientDataList
+                        .where((d) =>
+                            d.client.name.toLowerCase().contains(_searchQuery) ||
+                            (d.client.company?.toLowerCase().contains(_searchQuery) ?? false) ||
+                            (d.client.email?.toLowerCase().contains(_searchQuery) ?? false))
+                        .toList();
 
-                return ListView.builder(
-                  padding: EdgeInsets.all(padding),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final d = filtered[index];
-                    return AnimatedListItem(
-                      index: index,
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: ClientCard(
-                          client: d.client,
-                          onTap: () => context.push('/clients/${d.client.id}'),
-                          totalRevenue: d.revenue,
-                          pendingRevenue: d.pending,
-                          projectCount: d.projectCount,
-                          currency: currency,
+                    if (filtered.isEmpty) {
+                      return EmptyStateWidget(
+                        icon: Icons.people_outline_rounded,
+                        title: _searchQuery.isNotEmpty
+                            ? 'No clients found'
+                            : 'No clients yet',
+                        subtitle: _searchQuery.isNotEmpty
+                            ? 'Try a different search'
+                            : 'Add your first client to get started',
+                        actionLabel: 'Add Client',
+                        onAction: () => context.push('/add-client'),
+                      );
+                    }
+
+                    if (columns > 1) {
+                      return GridView.builder(
+                        padding: EdgeInsets.all(padding),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          mainAxisSpacing: AppSpacing.sm,
+                          crossAxisSpacing: AppSpacing.sm,
+                          childAspectRatio: columns == 2 ? 1.6 : 1.8,
                         ),
-                      ),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final d = filtered[index];
+                          return AnimatedListItem(
+                            index: index,
+                            child: RepaintBoundary(
+                              child: ClientCard(
+                                client: d.client,
+                                onTap: () => context.push('/clients/${d.client.id}'),
+                                totalRevenue: d.revenue,
+                                pendingRevenue: d.pending,
+                                projectCount: d.projectCount,
+                                currency: currency,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: EdgeInsets.all(padding),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final d = filtered[index];
+                        return AnimatedListItem(
+                          index: index,
+                          child: Padding(
+                            padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                            child: ClientCard(
+                              client: d.client,
+                              onTap: () => context.push('/clients/${d.client.id}'),
+                              totalRevenue: d.revenue,
+                              pendingRevenue: d.pending,
+                              projectCount: d.projectCount,
+                              currency: currency,
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                )),
           ),
         ],
       ),
