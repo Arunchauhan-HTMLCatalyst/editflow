@@ -6,6 +6,7 @@ import '../providers/project_provider.dart';
 import '../widgets/project_card.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
@@ -188,24 +189,50 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                               actionLabel: isClient ? 'Assign Project' : 'Add Project',
                               onAction: () => context.push('/projects/add'),
                             )
-                          : ListView.builder(
-                              padding: EdgeInsets.all(AppSpacing.pageHorizontal),
-                              itemCount: filtered.length,
-                              itemBuilder: (context, index) {
-                                final project = filtered[index];
-                                return AnimatedListItem(
-                                  index: index,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(bottom: AppSpacing.sm),
-                                    child: ProjectCard(
-                                      project: project,
-                                      currency: currency,
-                                      onTap: () => context.push('/projects/${project.id}'),
-                                    ),
+                          : () {
+                              final columns = AppLayout.gridColumns(context);
+                              if (columns > 1) {
+                                return GridView.builder(
+                                  padding: EdgeInsets.all(AppSpacing.pageHorizontal),
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: columns,
+                                    mainAxisSpacing: AppSpacing.sm,
+                                    crossAxisSpacing: AppSpacing.sm,
+                                    childAspectRatio: columns == 2 ? 1.6 : 1.8,
                                   ),
+                                  itemCount: filtered.length,
+                                  itemBuilder: (context, index) {
+                                    final project = filtered[index];
+                                    return AnimatedListItem(
+                                      index: index,
+                                      child: ProjectCard(
+                                        project: project,
+                                        currency: currency,
+                                        onTap: () => context.push('/projects/${project.id}'),
+                                      ),
+                                    );
+                                  },
                                 );
-                              },
-                            ),
+                              }
+                              return ListView.builder(
+                                padding: EdgeInsets.all(AppSpacing.pageHorizontal),
+                                itemCount: filtered.length,
+                                itemBuilder: (context, index) {
+                                  final project = filtered[index];
+                                  return AnimatedListItem(
+                                    index: index,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                                      child: ProjectCard(
+                                        project: project,
+                                        currency: currency,
+                                        onTap: () => context.push('/projects/${project.id}'),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            }(),
                     ),
                   ],
                 );

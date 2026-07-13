@@ -169,13 +169,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   ),
                                 ],
                               ),
-                              IconButton(
-                                icon: Icon(
-                                  Icons.settings_outlined,
-                                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                              if (!AppLayout.isTablet(context))
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.settings_outlined,
+                                    color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                  ),
+                                  onPressed: () => context.push('/settings'),
                                 ),
-                                onPressed: () => context.push('/settings'),
-                              ),
                             ],
                           ),
                           SizedBox(
@@ -349,48 +350,49 @@ class _DashboardLayout extends StatelessWidget {
                     ],
                   ),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          width: 0.8,
+                if (!AppLayout.isTablet(context))
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.notifications_none_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          onPressed: () => context.push('/notifications'),
                         ),
                       ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.notifications_none_rounded,
-                          color: Colors.white,
-                          size: 20,
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            width: 0.8,
+                          ),
                         ),
-                        onPressed: () => context.push('/notifications'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          width: 0.8,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.settings_outlined,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          onPressed: () => context.push('/settings'),
                         ),
                       ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.settings_outlined,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        onPressed: () => context.push('/settings'),
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           ),

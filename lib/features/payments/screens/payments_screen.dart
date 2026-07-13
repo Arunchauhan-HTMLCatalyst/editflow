@@ -1,5 +1,8 @@
 import 'dart:ui' as ui;
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import '../../../shared/utils/web_helper.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +13,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../projects/providers/project_provider.dart';
 import '../../projects/models/project.dart';
 import '../../projects/models/project_status.dart';
@@ -301,49 +305,91 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SummaryCard(
-                        label: 'Total budget',
-                        value: currency.format(overview.totalAmount),
-                        color: AppColors.primary,
-                        isDark: isDark,
+                if (AppLayout.isTablet(context))
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryCard(
+                          label: 'Total budget',
+                          value: currency.format(overview.totalAmount),
+                          color: AppColors.primary,
+                          isDark: isDark,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _SummaryCard(
-                        label: 'Advance paid',
-                        value: currency.format(overview.receivedAmount),
-                        color: AppColors.success,
-                        isDark: isDark,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SummaryCard(
+                          label: 'Advance paid',
+                          value: currency.format(overview.receivedAmount),
+                          color: AppColors.success,
+                          isDark: isDark,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SummaryCard(
-                        label: 'Remaining balance',
-                        value: currency.format(overview.remaining),
-                        color: AppColors.warning,
-                        isDark: isDark,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SummaryCard(
+                          label: 'Remaining balance',
+                          value: currency.format(overview.remaining),
+                          color: AppColors.warning,
+                          isDark: isDark,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _SummaryCard(
-                        label: 'Paid projects',
-                        value: '${overview.paidProjects.length}',
-                        color: AppColors.success,
-                        isDark: isDark,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SummaryCard(
+                          label: 'Paid projects',
+                          value: '${overview.paidProjects.length}',
+                          color: AppColors.success,
+                          isDark: isDark,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  )
+                else ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryCard(
+                          label: 'Total budget',
+                          value: currency.format(overview.totalAmount),
+                          color: AppColors.primary,
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SummaryCard(
+                          label: 'Advance paid',
+                          value: currency.format(overview.receivedAmount),
+                          color: AppColors.success,
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryCard(
+                          label: 'Remaining balance',
+                          value: currency.format(overview.remaining),
+                          color: AppColors.warning,
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SummaryCard(
+                          label: 'Paid projects',
+                          value: '${overview.paidProjects.length}',
+                          color: AppColors.success,
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 28),
                 if (overview.overdueProjects.isNotEmpty && !_isSelectMode) ...[
                   Row(
@@ -383,6 +429,42 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                     icon: Icons.attach_money,
                     title: 'No payments yet',
                     subtitle: 'Create a project to start tracking payments',
+                  )
+                else if (AppLayout.isTablet(context))
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: AppLayout.gridColumns(context) == 3 ? 2 : 2,
+                      mainAxisSpacing: 12.0,
+                      crossAxisSpacing: 12.0,
+                      childAspectRatio: 2.2,
+                    ),
+                    itemCount: projects.length,
+                    itemBuilder: (context, index) {
+                      final p = projects[index];
+                      final isSelected = _selectedProjectIds.contains(p.id);
+                      return RepaintBoundary(
+                        key: ValueKey(p.id),
+                        child: _PaymentProjectCard(
+                          project: p,
+                          isDark: isDark,
+                          currency: currency,
+                          isSelectMode: _isSelectMode,
+                          isSelected: isSelected,
+                          onSelectedChanged: (val) {
+                            setState(() {
+                              if (val == true) {
+                                _selectedProjectIds.add(p.id);
+                              } else {
+                                _selectedProjectIds.remove(p.id);
+                              }
+                            });
+                          },
+                          onSharePressed: () => _shareInvoice(p, currency),
+                        ),
+                      );
+                    },
                   )
                 else
                   ...projects.map((p) {
@@ -898,14 +980,10 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
-      
-      final pngBytes = byteData.buffer.asUint8List();
-      final tempDir = Directory.systemTemp;
+       final pngBytes = byteData.buffer.asUint8List();
       final fileName = widget.project != null
           ? 'invoice_${widget.project!.id.substring(0, 8)}.png'
           : 'combined_invoice_${DateTime.now().millisecondsSinceEpoch}.png';
-      final file = File('${tempDir.path}/$fileName');
-      await file.writeAsBytes(pngBytes);
 
       final settings = ref.read(settingsProvider);
       String shareText = 'Freelance Invoice';
@@ -945,7 +1023,27 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
         shareText = 'Freelance Invoice\nPay via UPI: $upiLink';
       }
 
-      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], text: shareText));
+      if (kIsWeb) {
+        final base64Str = base64Encode(pngBytes);
+        downloadFileWeb(
+          base64Data: base64Str,
+          fileName: fileName,
+          mimeType: 'image/png',
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invoice PNG downloaded to your computer!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } else {
+        final tempDir = Directory.systemTemp;
+        final file = File('${tempDir.path}/$fileName');
+        await file.writeAsBytes(pngBytes);
+        await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], text: shareText));
+      }
     } catch (e) {
       debugPrint('Error sharing image: $e');
       if (mounted) {

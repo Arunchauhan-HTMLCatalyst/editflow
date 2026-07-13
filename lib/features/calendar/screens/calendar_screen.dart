@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../projects/providers/project_provider.dart';
 import '../../projects/models/project.dart';
 import '../../projects/models/project_status.dart';
@@ -62,6 +63,100 @@ class _CalendarViewState extends State<_CalendarView> {
     _selectedDate = DateTime.now();
   }
 
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        Text(
+          DateFormat('MMMM yyyy').format(_currentMonth),
+          style: AppTextStyles.title2(widget.isDark).copyWith(
+            fontWeight: FontWeight.w800,
+            fontSize: 19,
+            color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+            letterSpacing: -0.3,
+          ),
+        ),
+        const Spacer(),
+        // Today Button
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            setState(() {
+              _currentMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
+              _selectedDate = DateTime.now();
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: widget.isDark ? AppColors.surface : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                width: 0.8,
+              ),
+            ),
+            child: Text(
+              'Today',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Prev Button
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => setState(() {
+            _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
+          }),
+          child: Container(
+            padding: const EdgeInsets.all(6.0),
+            decoration: BoxDecoration(
+              color: widget.isDark ? AppColors.surface : Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                width: 0.8,
+              ),
+            ),
+            child: Icon(
+              CupertinoIcons.chevron_left,
+              size: 14,
+              color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Next Button
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => setState(() {
+            _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+          }),
+          child: Container(
+            padding: const EdgeInsets.all(6.0),
+            decoration: BoxDecoration(
+              color: widget.isDark ? AppColors.surface : Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                width: 0.8,
+              ),
+            ),
+            child: Icon(
+              CupertinoIcons.chevron_right,
+              size: 14,
+              color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final daysInMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
@@ -75,233 +170,178 @@ class _CalendarViewState extends State<_CalendarView> {
             p.deadline!.day == _selectedDate!.day)
         : <Project>[];
 
+    final isTablet = AppLayout.isTablet(context);
+
+    final calendarCard = Container(
+      decoration: BoxDecoration(
+        color: widget.isDark ? AppColors.card : Colors.white,
+        borderRadius: BorderRadius.circular(20.0),
+        border: Border.all(
+          color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: widget.isDark ? 0.1 : 0.02),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: Column(
+          children: [
+            // Days of the week header
+            Row(
+              children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+                  .map((d) => Expanded(
+                        child: Center(
+                          child: Text(
+                            d,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: widget.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ))
+                  .toList(),
+            ),
+            const SizedBox(height: 10),
+            ...() {
+              final List<Widget> cells = [];
+              for (int i = 0; i < firstWeekday; i++) {
+                cells.add(const SizedBox(height: 38));
+              }
+              for (int i = 0; i < daysInMonth; i++) {
+                final day = i + 1;
+                final date = DateTime(_currentMonth.year, _currentMonth.month, day);
+                final isToday = date.year == today.year && date.month == today.month && date.day == today.day;
+                final isSelected = _selectedDate != null &&
+                    date.year == _selectedDate!.year &&
+                    date.month == _selectedDate!.month &&
+                    date.day == _selectedDate!.day;
+                final hasDeadline = widget.deadlines.any((p) =>
+                    p.deadline!.year == date.year &&
+                    p.deadline!.month == date.month &&
+                    p.deadline!.day == date.day);
+                final isPast = date.isBefore(DateTime.now().subtract(const Duration(days: 1)));
+
+                cells.add(
+                  _CalendarDayCell(
+                    day: day,
+                    isToday: isToday,
+                    isSelected: isSelected,
+                    hasDeadline: hasDeadline,
+                    isPast: isPast,
+                    isDark: widget.isDark,
+                    onTap: () => setState(() => _selectedDate = date),
+                  ),
+                );
+              }
+              
+              final remainder = cells.length % 7;
+              if (remainder > 0) {
+                final padCount = 7 - remainder;
+                for (int i = 0; i < padCount; i++) {
+                  cells.add(const SizedBox(height: 38));
+                }
+              }
+
+              final List<Widget> weekRows = [];
+              for (int i = 0; i < cells.length; i += 7) {
+                final rowCells = cells.sublist(i, i + 7);
+                weekRows.add(
+                  Row(
+                    children: rowCells.map((c) => Expanded(child: c)).toList(),
+                  ),
+                );
+              }
+              return weekRows;
+            }(),
+          ],
+        ),
+      ),
+    );
+
+    final agendaList = _selectedDate != null
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                DateFormat('MMMM d, yyyy').format(_selectedDate!),
+                style: AppTextStyles.title3(widget.isDark).copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (dayProjects.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40.0),
+                  child: Center(
+                    child: Text(
+                      'No deadlines on this day',
+                      style: AppTextStyles.small(widget.isDark).copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ...dayProjects.map((p) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10.0),
+                      child: _AgendaProjectItem(
+                        project: p,
+                        isDark: widget.isDark,
+                        currency: widget.currency,
+                      ),
+                    )),
+            ],
+          )
+        : const SizedBox.shrink();
+
+    if (isTablet) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+        child: Column(
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: calendarCard,
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 2,
+                  child: SingleChildScrollView(
+                    child: agendaList,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with Navigation controls
-          Row(
-            children: [
-              Text(
-                DateFormat('MMMM yyyy').format(_currentMonth),
-                style: AppTextStyles.title2(widget.isDark).copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 19,
-                  color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const Spacer(),
-              // Today Button
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  setState(() {
-                    _currentMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
-                    _selectedDate = DateTime.now();
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: widget.isDark ? AppColors.surface : Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Text(
-                    'Today',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Prev Button
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () => setState(() {
-                  _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
-                }),
-                child: Container(
-                  padding: const EdgeInsets.all(6.0),
-                  decoration: BoxDecoration(
-                    color: widget.isDark ? AppColors.surface : Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Icon(
-                    CupertinoIcons.chevron_left,
-                    size: 14,
-                    color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Next Button
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () => setState(() {
-                  _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
-                }),
-                child: Container(
-                  padding: const EdgeInsets.all(6.0),
-                  decoration: BoxDecoration(
-                    color: widget.isDark ? AppColors.surface : Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Icon(
-                    CupertinoIcons.chevron_right,
-                    size: 14,
-                    color: widget.isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          _buildHeader(),
           const SizedBox(height: 20),
-
-          // Wrap in a Premium Calendar Grid Card
-          Container(
-            decoration: BoxDecoration(
-              color: widget.isDark ? AppColors.card : Colors.white,
-              borderRadius: BorderRadius.circular(20.0),
-              border: Border.all(
-                color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                width: 0.8,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: widget.isDark ? 0.1 : 0.02),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-              child: Column(
-                children: [
-                  // Days of the week header
-                  Row(
-                    children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                        .map((d) => Expanded(
-                              child: Center(
-                                child: Text(
-                                  d,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: widget.isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                  const SizedBox(height: 10),
-                  ...() {
-                    final List<Widget> cells = [];
-                    for (int i = 0; i < firstWeekday; i++) {
-                      cells.add(const SizedBox(height: 38));
-                    }
-                    for (int i = 0; i < daysInMonth; i++) {
-                      final day = i + 1;
-                      final date = DateTime(_currentMonth.year, _currentMonth.month, day);
-                      final isToday = date.year == today.year && date.month == today.month && date.day == today.day;
-                      final isSelected = _selectedDate != null &&
-                          date.year == _selectedDate!.year &&
-                          date.month == _selectedDate!.month &&
-                          date.day == _selectedDate!.day;
-                      final hasDeadline = widget.deadlines.any((p) =>
-                          p.deadline!.year == date.year &&
-                          p.deadline!.month == date.month &&
-                          p.deadline!.day == date.day);
-                      final isPast = date.isBefore(DateTime.now().subtract(const Duration(days: 1)));
-
-                      cells.add(
-                        _CalendarDayCell(
-                          day: day,
-                          isToday: isToday,
-                          isSelected: isSelected,
-                          hasDeadline: hasDeadline,
-                          isPast: isPast,
-                          isDark: widget.isDark,
-                          onTap: () => setState(() => _selectedDate = date),
-                        ),
-                      );
-                    }
-                    
-                    final remainder = cells.length % 7;
-                    if (remainder > 0) {
-                      final padCount = 7 - remainder;
-                      for (int i = 0; i < padCount; i++) {
-                        cells.add(const SizedBox(height: 38));
-                      }
-                    }
-
-                    final List<Widget> weekRows = [];
-                    for (int i = 0; i < cells.length; i += 7) {
-                      final rowCells = cells.sublist(i, i + 7);
-                      weekRows.add(
-                        Row(
-                          children: rowCells.map((c) => Expanded(child: c)).toList(),
-                        ),
-                      );
-                    }
-                    return weekRows;
-                  }(),
-                ],
-              ),
-            ),
-          ),
+          calendarCard,
           const SizedBox(height: 28),
-
-          if (_selectedDate != null) ...[
-            Text(
-              DateFormat('MMMM d, yyyy').format(_selectedDate!),
-              style: AppTextStyles.title3(widget.isDark).copyWith(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 14),
-            if (dayProjects.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40.0),
-                child: Center(
-                  child: Text(
-                    'No deadlines on this day',
-                    style: AppTextStyles.small(widget.isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              )
-            else
-              ...dayProjects.map((p) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10.0),
-                    child: _AgendaProjectItem(
-                      project: p,
-                      isDark: widget.isDark,
-                      currency: widget.currency,
-                    ),
-                  )),
-          ],
+          agendaList,
         ],
       ),
     );

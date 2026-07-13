@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_spacing.dart';
 import 'core/theme/app_layout.dart';
-import 'core/theme/app_text_styles.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/settings/providers/settings_provider.dart';
@@ -685,13 +684,11 @@ class _DesktopSidebar extends ConsumerWidget {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        onPressed: () {
-                          ref.read(authProvider.notifier).signOut();
-                        },
-                        icon: const Icon(Icons.logout_rounded, size: 16),
+                        onPressed: () => context.push('/notifications'),
+                        icon: const Icon(Icons.notifications_none_rounded, size: 16),
                         style: IconButton.styleFrom(
-                          foregroundColor: AppColors.error,
-                          backgroundColor: AppColors.error.withValues(alpha: 0.08),
+                          foregroundColor: isDark ? Colors.white : AppColors.primary,
+                          backgroundColor: isDark ? AppColors.border.withValues(alpha: 0.3) : const Color(0xFFF1F5F9),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),

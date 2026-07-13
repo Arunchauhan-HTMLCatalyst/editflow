@@ -15,6 +15,7 @@ import '../providers/settings_provider.dart';
 import '../models/currency_config.dart';
 import 'dart:convert';
 import 'dart:io';
+import '../../../shared/utils/web_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../projects/providers/project_provider.dart';
@@ -669,13 +670,32 @@ class SettingsScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(16),
                     onTap: () async {
                       Navigator.pop(context);
-                      final tempDir = Directory.systemTemp;
-                      final file = File('${tempDir.path}/editflow_backup_${DateTime.now().millisecondsSinceEpoch}.json');
-                      await file.writeAsString(jsonStr);
-                      await SharePlus.instance.share(ShareParams(
-                        files: [XFile(file.path)],
-                        text: 'EditFlow Data Backup',
-                      ));
+                      if (kIsWeb) {
+                        final bytes = utf8.encode(jsonStr);
+                        final base64Str = base64Encode(bytes);
+                        final fileName = 'editflow_backup_${DateTime.now().millisecondsSinceEpoch}.json';
+                        downloadFileWeb(
+                          base64Data: base64Str,
+                          fileName: fileName,
+                          mimeType: 'application/json',
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Backup JSON downloaded to your computer!'),
+                              backgroundColor: AppColors.success,
+                            ),
+                          );
+                        }
+                      } else {
+                        final tempDir = Directory.systemTemp;
+                        final file = File('${tempDir.path}/editflow_backup_${DateTime.now().millisecondsSinceEpoch}.json');
+                        await file.writeAsString(jsonStr);
+                        await SharePlus.instance.share(ShareParams(
+                          files: [XFile(file.path)],
+                          text: 'EditFlow Data Backup',
+                        ));
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -735,7 +755,17 @@ class SettingsScreen extends ConsumerWidget {
                       try {
                         String? savedFilePath;
 
-                        if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+                        if (kIsWeb) {
+                          final bytes = utf8.encode(jsonStr);
+                          final base64Str = base64Encode(bytes);
+                          final fileName = 'editflow_backup_${DateTime.now().millisecondsSinceEpoch}.json';
+                          downloadFileWeb(
+                            base64Data: base64Str,
+                            fileName: fileName,
+                            mimeType: 'application/json',
+                          );
+                          savedFilePath = 'web_download';
+                        } else if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
                           try {
                             savedFilePath = await FilePicker.platform.saveFile(
                               dialogTitle: 'Select download location:',
@@ -776,14 +806,16 @@ class SettingsScreen extends ConsumerWidget {
                             savedFilePath = null;
                           }
                         }
-
+ 
                         if (savedFilePath != null) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text((!kIsWeb && Platform.isIOS) 
-                                    ? 'Backup saved! Open Files app -> On My iPhone -> Editflow'
-                                    : 'Backup saved directly to downloads folder!'),
+                                content: Text(kIsWeb
+                                    ? 'Backup JSON downloaded successfully!'
+                                    : ((!kIsWeb && Platform.isIOS) 
+                                        ? 'Backup saved! Open Files app -> On My iPhone -> Editflow'
+                                        : 'Backup saved directly to downloads folder!')),
                                 backgroundColor: AppColors.success,
                                 duration: const Duration(seconds: 4),
                               ),
@@ -793,7 +825,7 @@ class SettingsScreen extends ConsumerWidget {
                           final tempDir = Directory.systemTemp;
                           final backupFile = File('${tempDir.path}/editflow_backup_${DateTime.now().millisecondsSinceEpoch}.json');
                           await backupFile.writeAsString(jsonStr);
-
+ 
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(

@@ -46,6 +46,30 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
       );
     }
 
+    final columns = AppLayout.gridColumns(context);
+    if (columns > 1) {
+      return GridView.builder(
+        padding: EdgeInsets.all(padding),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
+          mainAxisSpacing: AppSpacing.sm,
+          crossAxisSpacing: AppSpacing.sm,
+          childAspectRatio: columns == 2 ? 1.8 : 2.0,
+        ),
+        itemCount: filtered.length,
+        itemBuilder: (context, index) {
+          final f = filtered[index];
+          final initials = f.name.isNotEmpty
+              ? f.name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+              : '?';
+          return AnimatedListItem(
+            index: index,
+            child: _buildFreelancerItem(f, initials, isDark),
+          );
+        },
+      );
+    }
+
     return ListView.builder(
       padding: EdgeInsets.all(padding),
       itemCount: filtered.length,
@@ -57,113 +81,126 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
 
         return AnimatedListItem(
           index: index,
-          child: GestureDetector(
-            onTap: () => context.push('/freelancers/${f.id}'),
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              margin: EdgeInsets.only(bottom: AppSpacing.sm),
-              padding: const EdgeInsets.all(16.0),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: AppSpacing.sm),
+            child: _buildFreelancerItem(f, initials, isDark),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFreelancerItem(TopFreelancerEntry f, String initials, bool isDark) {
+    return GestureDetector(
+      onTap: () => context.push('/freelancers/${f.id}'),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1A1F21) : Colors.white,
+          borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(
+            color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+            width: 0.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1A1F21) : Colors.white,
-                borderRadius: BorderRadius.circular(16.0),
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.15),
+                    AppColors.primaryNeon.withValues(alpha: 0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12.0),
                 border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+                  color: AppColors.primary.withValues(alpha: 0.25),
                   width: 0.8,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+              ),
+              child: Center(
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    f.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${f.activeProjectsCount} active projects',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                    ),
                   ),
                 ],
               ),
-              child: Row(
+            ),
+            if (f.nextDeadline != null) ...[
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.15),
-                          AppColors.primaryNeon.withValues(alpha: 0.05),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12.0),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.25),
-                        width: 0.8,
-                      ),
-                    ),
-                  child: Center(
-                    child: Text(
-                      initials,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
+                  Text(
+                    'Next Deadline',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        f.name,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${f.activeProjectsCount} active projects',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (f.nextDeadline != null) ...[
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Next Deadline',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        DateFormat('MMM d, yyyy').format(f.nextDeadline!),
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: f.nextDeadline!.isBefore(DateTime.now())
-                              ? AppColors.error
-                              : AppColors.primaryNeon,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 2),
+                  Text(
+                    DateFormat('MMM d, yyyy').format(f.nextDeadline!),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: f.nextDeadline!.isBefore(DateTime.now())
+                          ? AppColors.error
+                          : AppColors.primaryNeon,
+                    ),
                   ),
                 ],
-              ],
-            ),
-          ),
-        ));
-      },
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

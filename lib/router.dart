@@ -16,10 +16,13 @@ import 'features/projects/screens/add_project_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/calendar_screen.dart';
 import 'features/dashboard/screens/notification_center_screen.dart';
+import 'features/auth/providers/auth_provider.dart';
 import 'app_shell.dart';
 import 'core/theme/app_transitions.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authProvider);
+
   return GoRouter(
     initialLocation: '/splash',
     redirect: (context, state) {
@@ -28,6 +31,23 @@ final routerProvider = Provider<GoRouter>((ref) {
           loc.contains('/callback?code=')) {
         return '/splash';
       }
+
+      final isAuthRoute = loc == '/login' ||
+          loc == '/register' ||
+          loc == '/forgot-password' ||
+          loc == '/splash';
+
+      final isUnauthenticated = authState.status == AuthStatus.unauthenticated;
+      final isAuthenticated = authState.status == AuthStatus.authenticated;
+
+      if (isUnauthenticated && !isAuthRoute) {
+        return '/login';
+      }
+
+      if (isAuthenticated && isAuthRoute && loc != '/splash') {
+        return '/dashboard';
+      }
+
       return null;
     },
     errorBuilder: (context, state) => Scaffold(

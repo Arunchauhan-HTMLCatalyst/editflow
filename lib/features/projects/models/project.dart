@@ -75,6 +75,8 @@ class Project {
         'status': status.value,
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
+        'client_name': clientName,
+        'freelancer_name': freelancerName,
       };
 
   Project copyWith({
