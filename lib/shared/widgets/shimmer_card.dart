@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
+import '../../features/settings/providers/settings_provider.dart';
 
 /// A premium shimmer skeleton tile.
 ///
 /// Features a fast left-to-right highlight sweep layered on top of a
 /// softly-pulsing base colour, giving loading states a polished, modern feel.
-class ShimmerCard extends StatefulWidget {
+class ShimmerCard extends ConsumerStatefulWidget {
   final double width;
   final double height;
   final double borderRadius;
@@ -19,10 +21,10 @@ class ShimmerCard extends StatefulWidget {
   });
 
   @override
-  State<ShimmerCard> createState() => _ShimmerCardState();
+  ConsumerState<ShimmerCard> createState() => _ShimmerCardState();
 }
 
-class _ShimmerCardState extends State<ShimmerCard>
+class _ShimmerCardState extends ConsumerState<ShimmerCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _sweepAnim;
@@ -60,15 +62,16 @@ class _ShimmerCardState extends State<ShimmerCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final settings = ref.watch(settingsProvider);
+    final isDark = settings.isDarkMode;
 
     // Base / highlight colours tuned for dark and light modes
     final baseColor =
-        isDark ? const Color(0xFF1C1F2E) : const Color(0xFFEFF3F8);
+        isDark ? const Color(0xFF101517) : const Color(0xFFEFF3F8);
     final borderColor =
-        isDark ? const Color(0xFF2A2D3E) : const Color(0xFFDDE3ED);
+        isDark ? const Color(0xFF171D1F) : const Color(0xFFDDE3ED);
     final sweepColor =
-        isDark ? const Color(0xFF2E3348) : const Color(0xFFFFFFFF);
+        isDark ? const Color(0xFF1E2629) : const Color(0xFFFFFFFF);
 
     return AnimatedBuilder(
       animation: _controller,
