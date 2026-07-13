@@ -216,7 +216,7 @@ img {
 
 /* Hero Section */
 .hero {
-    padding: 140px 0 100px;
+    padding: 120px 0 80px;
     position: relative;
     overflow: hidden;
 }
@@ -227,7 +227,7 @@ img {
     padding: 0 24px;
     display: grid;
     grid-template-columns: 1.15fr 0.85fr;
-    gap: 48px;
+    gap: 40px;
     align-items: center;
     overflow: hidden;
 }
@@ -237,22 +237,22 @@ img {
 }
 
 .hero-content h1 {
-    font-size: 52px;
+    font-size: 48px;
     line-height: 1.15;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .hero-content p {
-    font-size: 17px;
+    font-size: 16px;
     color: var(--text-muted);
-    margin-bottom: 36px;
-    max-width: 580px;
+    margin-bottom: 28px;
+    max-width: 520px;
 }
 
 .hero-actions {
     display: flex;
-    gap: 16px;
-    margin-bottom: 40px;
+    gap: 14px;
+    margin-bottom: 28px;
     justify-content: flex-start;
 }
 
@@ -1085,11 +1085,15 @@ img {
 
 /* Mobile Responsiveness */
 @media (max-width: 992px) {
+    .hero {
+        padding: 100px 0 60px;
+    }
+
     .hero-container {
         grid-template-columns: 1fr;
         text-align: center;
-        gap: 40px;
-        padding: 0 16px;
+        gap: 32px;
+        padding: 0 20px;
     }
 
     .hero-visual {
@@ -1102,12 +1106,13 @@ img {
     }
     
     .hero-content h1 {
-        font-size: 42px;
+        font-size: 38px;
     }
-    
+
     .hero-content p {
         margin-left: auto;
         margin-right: auto;
+        font-size: 15px;
     }
     
     .hero-actions {
@@ -1174,14 +1179,40 @@ img {
 }
 
 @media (max-width: 560px) {
+    .hero {
+        padding: 90px 0 48px;
+    }
+
+    .hero-container {
+        gap: 24px;
+        padding: 0 16px;
+    }
+
     .hero-content h1 {
-        font-size: 32px;
+        font-size: 28px;
+        margin-bottom: 12px;
+    }
+
+    .hero-content p {
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .hero-meta {
+        gap: 16px;
+        font-size: 11px;
     }
     
     .hero-visual {
         display: flex;
         justify-content: center;
-        padding: 0 8px;
+        padding: 0;
     }
 
     .app-dashboard-mockup {
@@ -1195,7 +1226,7 @@ img {
     }
     
     .mock-metrics-grid {
-        grid-template-columns: 1fr; /* Stack metrics cards vertically */
+        grid-template-columns: 1fr;
         gap: 6px;
     }
 
