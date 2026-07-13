@@ -62,14 +62,15 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
     final cacheKey = isClient ? 'cached_projects_client_$uid' : 'cached_projects_freelancer_$uid';
 
     // Set up a periodic timer to automatically refresh data every 30 seconds on Web
-    _periodicTimer?.cancel();
-    if (kIsWeb) {
+    if (kIsWeb && (_periodicTimer == null || !_periodicTimer!.isActive)) {
+      debugPrint('[PROJECT PROVIDER] Starting global periodic 30s auto-refresh');
       _periodicTimer = Timer.periodic(const Duration(seconds: 30), (t) {
-        debugPrint('[PROJECT PROVIDER] Periodic 30s auto-refresh');
+        debugPrint('[PROJECT PROVIDER] Periodic 30s auto-refresh triggered');
         _backgroundRefresh(cacheKey, repo);
       });
       ref.onDispose(() {
         _periodicTimer?.cancel();
+        _periodicTimer = null;
       });
     }
 
@@ -77,6 +78,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       debugPrint('[PROJECT DISPOSED]');
       _subscription?.cancel();
       _periodicTimer?.cancel();
+      _periodicTimer = null;
     });
 
     if (_hasLoadedOnce) {
@@ -102,7 +104,8 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         } else {
           var disposed = false;
           ref.onDispose(() => disposed = true);
-          Future.delayed(const Duration(milliseconds: 600), () {
+          final refreshDelay = kIsWeb ? 1500 : 600;
+          Future.delayed(Duration(milliseconds: refreshDelay), () {
             if (!disposed) {
               _backgroundRefresh(cacheKey, repo);
             }
