@@ -18,7 +18,7 @@ class AuthRepository {
 
   Future<void> signInWithGoogle() async {
     final String redirectTo = kIsWeb
-        ? Uri.base.origin
+        ? (Uri.base.origin + Uri.base.path)
         : AppConstants.supabaseRedirectUrl;
 
     await SupabaseService.instance.auth.signInWithOAuth(
