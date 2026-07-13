@@ -1481,7 +1481,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -1504,7 +1504,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
                       ),
                       version: QrVersions.auto,
                       errorCorrectionLevel: QrErrorCorrectLevel.H,
-                      size: 85.0,
+                      size: 150.0,
                       gapless: false,
                       eyeStyle: const QrEyeStyle(
                         eyeShape: QrEyeShape.square,
