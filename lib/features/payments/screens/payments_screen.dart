@@ -435,10 +435,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: AppLayout.gridColumns(context) == 3 ? 2 : 2,
+                      crossAxisCount: AppLayout.gridColumns(context) == 3 ? 3 : 2,
                       mainAxisSpacing: 12.0,
                       crossAxisSpacing: 12.0,
-                      childAspectRatio: 2.2,
+                      childAspectRatio: AppLayout.gridColumns(context) == 3 ? 2.8 : 2.2,
                     ),
                     itemCount: projects.length,
                     itemBuilder: (context, index) {
@@ -1199,7 +1199,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
       key: _globalKey,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         decoration: BoxDecoration(
           gradient: widget.isDark
               ? const LinearGradient(
@@ -1293,12 +1293,12 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           Divider(
             color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
             height: 1,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1306,7 +1306,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
               _buildMetaItem('Date', DateFormat('yyyy-MM-dd').format(DateTime.now())),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1315,12 +1315,12 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
               Expanded(child: _buildBillingSection('Billed To', clientName)),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           Divider(
             color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
             height: 1,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Row(
             children: [
               Container(
@@ -1343,7 +1343,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           if (isSingle)
             _buildServiceRow(
               widget.project!.name,
@@ -1352,14 +1352,14 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
             )
           else
             ...widget.projects!.map((p) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
+                  padding: const EdgeInsets.only(bottom: 6.0),
                   child: _buildServiceRow(
                     p.name,
                     p.clientName ?? 'Client',
                     widget.currency.format(p.price),
                   ),
                 )),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           // Total Budget
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1382,7 +1382,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           // Received Amount
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1405,7 +1405,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           // Balance Due Highlight Container (Full Width)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1446,7 +1446,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
           ),
           // Centered QR Code for UPI Payment if configured & unpaid
           if (settings.upiId.isNotEmpty && totalRemaining > 0) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -1475,20 +1475,20 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 8,
+                          blurRadius: 6,
                           spreadRadius: 1,
                         ),
                       ],
@@ -1504,7 +1504,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
                       ),
                       version: QrVersions.auto,
                       errorCorrectionLevel: QrErrorCorrectLevel.H,
-                      size: 110.0,
+                      size: 85.0,
                       gapless: false,
                       eyeStyle: const QrEyeStyle(
                         eyeShape: QrEyeShape.square,
@@ -1516,21 +1516,21 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
                       ),
                       embeddedImage: const AssetImage('assets/images/app_logo_qr.png'),
                       embeddedImageStyle: const QrEmbeddedImageStyle(
-                        size: Size(22, 22),
+                        size: Size(18, 18),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   Text(
                     'SCAN TO PAY',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.8,
                       color: widget.isDark ? AppColors.textSecondary : const Color(0xFF64748B),
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 1),
                   Text(
                     settings.upiId,
                     style: TextStyle(
@@ -1576,7 +1576,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
     final screenHeight = MediaQuery.of(context).size.height;
     return Container(
       constraints: BoxConstraints(
-        maxHeight: screenHeight * 0.80,
+        maxHeight: screenHeight * 0.90,
       ),
       decoration: BoxDecoration(
         color: widget.isDark ? AppColors.surface : const Color(0xFFF4FDFB),

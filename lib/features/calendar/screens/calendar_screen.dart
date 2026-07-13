@@ -213,8 +213,9 @@ class _CalendarViewState extends State<_CalendarView> {
             const SizedBox(height: 10),
             ...() {
               final List<Widget> cells = [];
+              final double cellHeight = isTablet ? 60 : 38;
               for (int i = 0; i < firstWeekday; i++) {
-                cells.add(const SizedBox(height: 38));
+                cells.add(SizedBox(height: cellHeight));
               }
               for (int i = 0; i < daysInMonth; i++) {
                 final day = i + 1;
@@ -238,6 +239,7 @@ class _CalendarViewState extends State<_CalendarView> {
                     hasDeadline: hasDeadline,
                     isPast: isPast,
                     isDark: widget.isDark,
+                    cellHeight: cellHeight,
                     onTap: () => setState(() => _selectedDate = date),
                   ),
                 );
@@ -247,7 +249,7 @@ class _CalendarViewState extends State<_CalendarView> {
               if (remainder > 0) {
                 final padCount = 7 - remainder;
                 for (int i = 0; i < padCount; i++) {
-                  cells.add(const SizedBox(height: 38));
+                  cells.add(SizedBox(height: cellHeight));
                 }
               }
 
@@ -355,6 +357,7 @@ class _CalendarDayCell extends StatefulWidget {
   final bool hasDeadline;
   final bool isPast;
   final bool isDark;
+  final double cellHeight;
   final VoidCallback onTap;
 
   const _CalendarDayCell({
@@ -364,6 +367,7 @@ class _CalendarDayCell extends StatefulWidget {
     required this.hasDeadline,
     required this.isPast,
     required this.isDark,
+    required this.cellHeight,
     required this.onTap,
   });
 
@@ -391,9 +395,11 @@ class _CalendarDayCellState extends State<_CalendarDayCell> {
       textColor = isDark ? AppColors.textPrimary : const Color(0xFF0F172A);
     }
 
+    final double contentSize = widget.cellHeight - 8;
+
     Widget cellContent = Container(
-      width: 30,
-      height: 30,
+      width: contentSize,
+      height: contentSize,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: isSelected
@@ -418,7 +424,7 @@ class _CalendarDayCellState extends State<_CalendarDayCell> {
       child: Text(
         '${widget.day}',
         style: TextStyle(
-          fontSize: 12.5,
+          fontSize: widget.cellHeight > 45 ? 15.0 : 12.5,
           fontWeight: isToday || isSelected ? FontWeight.w800 : FontWeight.w600,
           color: textColor,
         ),
@@ -431,7 +437,7 @@ class _CalendarDayCellState extends State<_CalendarDayCell> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          height: 38,
+          height: widget.cellHeight,
           color: Colors.transparent, // Ensure full hit testing area
           alignment: Alignment.center,
           child: Column(
