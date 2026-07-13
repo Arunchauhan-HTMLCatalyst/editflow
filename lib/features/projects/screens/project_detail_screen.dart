@@ -73,7 +73,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
     return projectAsync.when(
       loading: () => Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? AppColors.background : CupertinoColors.systemBackground,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -107,7 +107,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         ),
       ),
       error: (err, stack) => Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? AppColors.background : CupertinoColors.systemBackground,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -167,7 +167,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         }
 
         return Scaffold(
-          backgroundColor: Colors.transparent,
+          backgroundColor: isDark ? AppColors.background : CupertinoColors.systemBackground,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
