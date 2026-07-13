@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -734,7 +735,7 @@ class SettingsScreen extends ConsumerWidget {
                       try {
                         String? savedFilePath;
 
-                        if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+                        if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
                           try {
                             savedFilePath = await FilePicker.platform.saveFile(
                               dialogTitle: 'Select download location:',
@@ -749,13 +750,13 @@ class SettingsScreen extends ConsumerWidget {
                           } catch (e) {
                             savedFilePath = null;
                           }
-                        } else if (Platform.isIOS) {
+                        } else if (!kIsWeb && Platform.isIOS) {
                           final docsDir = await getApplicationDocumentsDirectory();
                           final fileName = 'editflow_backup_${DateTime.now().millisecondsSinceEpoch}.json';
                           final file = File('${docsDir.path}/$fileName');
                           await file.writeAsString(jsonStr);
                           savedFilePath = file.path;
-                        } else if (Platform.isAndroid) {
+                        } else if (!kIsWeb && Platform.isAndroid) {
                           try {
                             final downloadsDir = Directory('/storage/emulated/0/Download');
                             if (await downloadsDir.exists()) {
@@ -780,7 +781,7 @@ class SettingsScreen extends ConsumerWidget {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(Platform.isIOS 
+                                content: Text((!kIsWeb && Platform.isIOS) 
                                     ? 'Backup saved! Open Files app -> On My iPhone -> Editflow'
                                     : 'Backup saved directly to downloads folder!'),
                                 backgroundColor: AppColors.success,

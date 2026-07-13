@@ -18,6 +18,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
   StreamSubscription<List<Map<String, dynamic>>>? _subscription;
   List<Project> _lastValidData = [];
   bool _hasLoadedOnce = false;
+  Timer? _periodicTimer;
   bool? _lastIsClient;
 
   List<Project> _sort(List<Project> projects) {
@@ -51,23 +52,37 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       debugPrint('[PROJECT BUILD] not authenticated - clearing cache');
       _lastValidData = [];
       _hasLoadedOnce = false;
+      _periodicTimer?.cancel();
       return [];
     }
 
     final uid = authState.user?.id ?? SupabaseService.userId;
     debugPrint('[PROJECT BUILD] uid=$uid hasLoaded=$_hasLoadedOnce cacheLen=${_lastValidData.length}');
 
+    final cacheKey = isClient ? 'cached_projects_client_$uid' : 'cached_projects_freelancer_$uid';
+
+    // Set up a periodic timer to automatically refresh data every 30 seconds on Web
+    _periodicTimer?.cancel();
+    if (kIsWeb) {
+      _periodicTimer = Timer.periodic(const Duration(seconds: 30), (t) {
+        debugPrint('[PROJECT PROVIDER] Periodic 30s auto-refresh');
+        _backgroundRefresh(cacheKey, repo);
+      });
+      ref.onDispose(() {
+        _periodicTimer?.cancel();
+      });
+    }
+
     ref.onDispose(() {
       debugPrint('[PROJECT DISPOSED]');
       _subscription?.cancel();
+      _periodicTimer?.cancel();
     });
 
     if (_hasLoadedOnce) {
       debugPrint('[PROJECT BUILD] returning CACHED ${_lastValidData.length} projects');
       return _lastValidData;
     }
-
-    final cacheKey = isClient ? 'cached_projects_client_$uid' : 'cached_projects_freelancer_$uid';
 
     // 1. Try to load from SharedPreferences cache first
     try {
@@ -82,7 +97,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         debugPrint('[PROJECT BUILD] Loaded ${list.length} projects from local storage cache. Starting delayed background refresh.');
         
         // Start background refresh. In tests, run immediately to avoid pumpAndSettle timeout.
-        if (Platform.environment.containsKey('FLUTTER_TEST')) {
+        if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
           _backgroundRefresh(cacheKey, repo);
         } else {
           var disposed = false;

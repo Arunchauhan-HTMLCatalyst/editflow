@@ -14,7 +14,10 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
   StreamSubscription<List<Map<String, dynamic>>>? _subscription;
   List<Client> _lastValidData = [];
   bool _hasLoadedOnce = false;
+  Timer? _periodicTimer;
   bool? _lastIsClient;
+
+
 
   String _getCacheKey() {
     final settings = ref.read(settingsProvider);
@@ -43,11 +46,26 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
       debugPrint('[CLIENT BUILD] not authenticated - clearing cache');
       _lastValidData = [];
       _hasLoadedOnce = false;
+      _periodicTimer?.cancel();
       return [];
     }
 
     final uid = authState.user?.id ?? SupabaseService.userId;
     debugPrint('[CLIENT BUILD] uid=$uid hasLoaded=$_hasLoadedOnce cacheLen=${_lastValidData.length}');
+
+    final cacheKey = isClient ? 'cached_clients_client_$uid' : 'cached_clients_freelancer_$uid';
+
+    // Set up a periodic timer to automatically refresh data every 30 seconds on Web
+    _periodicTimer?.cancel();
+    if (kIsWeb) {
+      _periodicTimer = Timer.periodic(const Duration(seconds: 30), (t) {
+        debugPrint('[CLIENT PROVIDER] Periodic 30s auto-refresh');
+        _backgroundRefresh(cacheKey, repo);
+      });
+      ref.onDispose(() {
+        _periodicTimer?.cancel();
+      });
+    }
 
     // Auto-link client record by email if authenticated
     final email = authState.user?.email;
@@ -78,14 +96,13 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
     ref.onDispose(() {
       debugPrint('[CLIENT DISPOSED]');
       _subscription?.cancel();
+      _periodicTimer?.cancel();
     });
 
     if (_hasLoadedOnce) {
       debugPrint('[CLIENT BUILD] returning CACHED ${_lastValidData.length} clients');
       return _lastValidData;
     }
-
-    final cacheKey = isClient ? 'cached_clients_client_$uid' : 'cached_clients_freelancer_$uid';
 
     // 1. Try to load from SharedPreferences cache first
     try {
@@ -100,7 +117,7 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
         debugPrint('[CLIENT BUILD] Loaded ${list.length} clients from local storage cache. Starting delayed background refresh.');
         
         // Start background refresh. In tests, run immediately to avoid pumpAndSettle timeout.
-        if (Platform.environment.containsKey('FLUTTER_TEST')) {
+        if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
           _backgroundRefresh(cacheKey, repo);
         } else {
           var disposed = false;

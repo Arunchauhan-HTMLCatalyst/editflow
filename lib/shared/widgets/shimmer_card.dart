@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 
 /// A premium shimmer skeleton tile.
@@ -35,7 +36,7 @@ class _ShimmerCardState extends State<ShimmerCard>
       duration: const Duration(milliseconds: 1400),
     );
 
-    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (kIsWeb || !Platform.environment.containsKey('FLUTTER_TEST')) {
       _controller.repeat();
     }
 
