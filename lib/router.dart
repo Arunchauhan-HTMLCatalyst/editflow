@@ -20,11 +20,21 @@ import 'features/auth/providers/auth_provider.dart';
 import 'app_shell.dart';
 import 'core/theme/app_transitions.dart';
 
+class GoRouterRefreshListenable extends ChangeNotifier {
+  GoRouterRefreshListenable(Ref ref) {
+    ref.listen(
+      authProvider,
+      (previous, next) => notifyListeners(),
+    );
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final refreshListenable = GoRouterRefreshListenable(ref);
 
   return GoRouter(
     initialLocation: '/splash',
+    refreshListenable: refreshListenable,
     redirect: (context, state) {
       final loc = state.uri.toString();
       if (loc.contains('io.supabase.flutter') ||
@@ -37,6 +47,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           loc == '/forgot-password' ||
           loc == '/splash';
 
+      final authState = ref.read(authProvider);
       final isUnauthenticated = authState.status == AuthStatus.unauthenticated;
       final isAuthenticated = authState.status == AuthStatus.authenticated;
 
