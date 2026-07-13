@@ -47,109 +47,23 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', revealOnScroll);
     revealOnScroll(); // Trigger once on load
 
-    // --- Interactive Video Feedback Simulator Logic ---
-    const simComments = document.querySelectorAll('.sim-comment-item');
-    const simVideoCanvas = document.getElementById('simVideoCanvas');
-    const sceneContent = document.getElementById('sceneContent');
-    const timelineFill = document.getElementById('timelineFill');
-    const timelineHandle = document.getElementById('timelineHandle');
-    const timeCurrent = document.getElementById('timeCurrent');
-    
-    // Config for each simulator state
-    const simStates = {
-        '15': {
-            filter: 'glow',
-            text: '✨ Brand Logo (Glowing) ✨',
-            timeStr: '0:15',
-            fillPct: '15%'
-        },
-        '45': {
-            filter: 'grayscale',
-            text: '🎬 B&W Cinematic Scene',
-            timeStr: '0:45',
-            fillPct: '45%'
-        },
-        '80': {
-            filter: 'neonText',
-            text: '🎬 EditFlow Web Portal',
-            timeStr: '1:20',
-            fillPct: '80%'
-        }
-    };
-
-    let activeStateId = '15';
-    let autoCycleTimer = null;
-
-    const setSimulatorState = (stateId) => {
-        const state = simStates[stateId];
-        if (!state) return;
-
-        activeStateId = stateId;
-
-        // Update comments active status
-        simComments.forEach(item => {
-            if (item.getAttribute('data-marker') === stateId) {
-                item.classList.add('active');
-                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } else {
-                item.classList.remove('active');
+    // --- Mockup Dashboard Radial Progress Animation ---
+    const radialFill = document.querySelector('.radial-fill');
+    if (radialFill) {
+        // Set transition property
+        radialFill.style.transition = 'stroke-dashoffset 1.8s cubic-bezier(0.4, 0, 0.2, 1)';
+        radialFill.style.strokeDashoffset = '251.2'; // start empty
+        
+        // Trigger fill animation when header section is visible
+        const animateRadial = () => {
+            const rect = radialFill.getBoundingClientRect();
+            if (rect.top < window.innerHeight && rect.bottom > 0) {
+                // 74% progress = 251.2 - (251.2 * 0.74) = 65.3
+                radialFill.style.strokeDashoffset = '65.3';
+                window.removeEventListener('scroll', animateRadial);
             }
-        });
-
-        // Update video canvas filter classes
-        simVideoCanvas.className = 'sim-video-canvas'; // reset
-        if (state.filter) {
-            simVideoCanvas.classList.add(state.filter);
-        }
-
-        // Update screen text
-        sceneContent.textContent = state.text;
-
-        // Update timeline graphics
-        timelineFill.style.width = state.fillPct;
-        timelineHandle.style.left = state.fillPct;
-        timeCurrent.textContent = state.timeStr;
-    };
-
-    const startAutoCycle = () => {
-        stopAutoCycle();
-        autoCycleTimer = setInterval(() => {
-            const keys = Object.keys(simStates);
-            const currentIndex = keys.indexOf(activeStateId);
-            const nextIndex = (currentIndex + 1) % keys.length;
-            setSimulatorState(keys[nextIndex]);
-        }, 5000); // cycle every 5 seconds
-    };
-
-    const stopAutoCycle = () => {
-        if (autoCycleTimer) {
-            clearInterval(autoCycleTimer);
-            autoCycleTimer = null;
-        }
-    };
-
-    // Add click event listeners to comments
-    simComments.forEach(item => {
-        item.addEventListener('click', () => {
-            stopAutoCycle();
-            const marker = item.getAttribute('data-marker');
-            setSimulatorState(marker);
-            // Restart cycle after 10s of inactivity
-            setTimeout(startAutoCycle, 10000);
-        });
-
-        item.addEventListener('mouseenter', () => {
-            stopAutoCycle();
-            const marker = item.getAttribute('data-marker');
-            setSimulatorState(marker);
-        });
-
-        item.addEventListener('mouseleave', () => {
-            startAutoCycle();
-        });
-    });
-
-    // Initialize Simulator
-    setSimulatorState('15');
-    startAutoCycle();
+        };
+        window.addEventListener('scroll', animateRadial);
+        setTimeout(animateRadial, 300); // trigger on load
+    }
 });
