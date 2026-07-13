@@ -103,11 +103,7 @@ class GlobalNotificationListener extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
                 side: const BorderSide(color: AppColors.border, width: 0.8),
               ),
-              margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height - 90,
-                left: 16,
-                right: 16,
-              ),
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               duration: const Duration(seconds: 4),
             ),
           );

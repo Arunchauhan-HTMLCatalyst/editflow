@@ -61,11 +61,11 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
 
     final cacheKey = isClient ? 'cached_projects_client_$uid' : 'cached_projects_freelancer_$uid';
 
-    // Set up a periodic timer to automatically refresh data every 30 seconds on Web
+    // Set up a periodic timer to automatically refresh data every 2.5 minutes on Web
     if (kIsWeb && (_periodicTimer == null || !_periodicTimer!.isActive)) {
-      debugPrint('[PROJECT PROVIDER] Starting global periodic 30s auto-refresh');
-      _periodicTimer = Timer.periodic(const Duration(seconds: 30), (t) {
-        debugPrint('[PROJECT PROVIDER] Periodic 30s auto-refresh triggered');
+      debugPrint('[PROJECT PROVIDER] Starting global periodic 2.5m auto-refresh');
+      _periodicTimer = Timer.periodic(const Duration(minutes: 2, seconds: 30), (t) {
+        debugPrint('[PROJECT PROVIDER] Periodic 2.5m auto-refresh triggered');
         _backgroundRefresh(cacheKey, repo);
       });
       ref.onDispose(() {
