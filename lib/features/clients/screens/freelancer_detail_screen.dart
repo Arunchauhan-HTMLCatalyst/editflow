@@ -95,12 +95,19 @@ class FreelancerDetailScreen extends ConsumerWidget {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Left Column: Profile card
+                    // Left Column: Profile card & Revenue metrics
                     Expanded(
                       flex: 4,
                       child: SingleChildScrollView(
                         padding: EdgeInsets.all(padding),
-                        child: _buildProfileCard(isDark, name, initials),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildProfileCard(isDark, name, initials),
+                            const SizedBox(height: 14),
+                            _buildMetricsBar(isDark, totalValue, totalPaid, totalRemaining, projects, currency),
+                          ],
+                        ),
                       ),
                     ),
                     // Divider
@@ -108,7 +115,7 @@ class FreelancerDetailScreen extends ConsumerWidget {
                       width: 1,
                       color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
                     ),
-                    // Right Column: Metrics & Projects list
+                    // Right Column: Projects list
                     Expanded(
                       flex: 6,
                       child: SingleChildScrollView(
@@ -116,8 +123,6 @@ class FreelancerDetailScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildMetricsBar(isDark, totalValue, totalPaid, totalRemaining, projects, currency),
-                            const SizedBox(height: 20),
                             _buildProjectsSectionHeader(context, isDark, name, freelancerId),
                             const SizedBox(height: 12),
                             _buildProjectsList(context, projects, currency),

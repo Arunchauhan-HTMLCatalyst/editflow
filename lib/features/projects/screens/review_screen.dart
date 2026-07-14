@@ -517,7 +517,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                                   child: Stack(
                                                     alignment: Alignment.center,
                                                     children: [
-                                                      VideoPlayer(_controller!),
+                                                      IgnorePointer(
+                                                        child: VideoPlayer(_controller!),
+                                                      ),
                                                       if (!_controller!.value.isPlaying)
                                                         Container(
                                                           width: 44,
@@ -613,7 +615,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                         child: Stack(
                                           alignment: Alignment.center,
                                           children: [
-                                            VideoPlayer(_controller!),
+                                            IgnorePointer(
+                                              child: VideoPlayer(_controller!),
+                                            ),
                                             if (!_controller!.value.isPlaying)
                                               Container(
                                                 width: 44,
@@ -725,39 +729,86 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   Widget _buildScrubberWidget(BuildContext context, bool isDark) {
     return Container(
       color: Colors.black,
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: SliderTheme(
-        data: SliderTheme.of(context).copyWith(
-          trackHeight: 3,
-          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-          activeTrackColor: AppColors.primary,
-          inactiveTrackColor: isDark ? Colors.white24 : Colors.black12,
-          thumbColor: AppColors.primary,
-        ),
-        child: ValueListenableBuilder<Duration>(
-          valueListenable: _currentPositionNotifier,
-          builder: (context, currentPosition, child) {
-            return Slider(
-              value: currentPosition.inMilliseconds.toDouble().clamp(
-                0.0,
-                _totalDuration.inMilliseconds.toDouble(),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      child: Row(
+        children: [
+          // Play/Pause button
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: Icon(
+              _controller != null && _controller!.value.isPlaying
+                  ? CupertinoIcons.pause_fill
+                  : CupertinoIcons.play_fill,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: () async {
+              if (_controller != null) {
+                if (_controller!.value.isPlaying) {
+                  await _controller!.pause();
+                } else {
+                  await _controller!.play();
+                }
+                setState(() {});
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+          // Timeline Slider
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                activeTrackColor: AppColors.primary,
+                inactiveTrackColor: isDark ? Colors.white24 : Colors.black12,
+                thumbColor: AppColors.primary,
               ),
-              min: 0.0,
-              max: _totalDuration.inMilliseconds.toDouble() > 0
-                  ? _totalDuration.inMilliseconds.toDouble()
-                  : 100.0,
-              onChanged: (value) {
-                _isDragging = true;
-                _currentPositionNotifier.value = Duration(milliseconds: value.toInt());
-              },
-              onChangeEnd: (value) async {
-                await _seekTo(Duration(milliseconds: value.toInt()));
-                _isDragging = false;
-              },
-            );
-          },
-        ),
+              child: ValueListenableBuilder<Duration>(
+                valueListenable: _currentPositionNotifier,
+                builder: (context, currentPosition, child) {
+                  return Slider(
+                    value: currentPosition.inMilliseconds.toDouble().clamp(
+                      0.0,
+                      _totalDuration.inMilliseconds.toDouble(),
+                    ),
+                    min: 0.0,
+                    max: _totalDuration.inMilliseconds.toDouble() > 0
+                        ? _totalDuration.inMilliseconds.toDouble()
+                        : 100.0,
+                    onChanged: (value) {
+                      _isDragging = true;
+                      _currentPositionNotifier.value = Duration(milliseconds: value.toInt());
+                    },
+                    onChangeEnd: (value) async {
+                      await _seekTo(Duration(milliseconds: value.toInt()));
+                      _isDragging = false;
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Position label / Total duration
+          ValueListenableBuilder<Duration>(
+            valueListenable: _currentPositionNotifier,
+            builder: (context, currentPosition, child) {
+              final currentStr = _formatDuration(currentPosition);
+              final totalStr = _formatDuration(_totalDuration);
+              return Text(
+                '$currentStr / $totalStr',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

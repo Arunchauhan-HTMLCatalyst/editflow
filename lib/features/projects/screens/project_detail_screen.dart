@@ -352,7 +352,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                               padding: const EdgeInsets.all(20.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: _buildLeftDetailWidgets(isDark, p, currency, isClient),
+                                children: _buildLeftDetailWidgets(isDark, p, currency, isClient, isDesktop: true),
                               ),
                             ),
                           ),
@@ -362,13 +362,24 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                           width: 1,
                           color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
                         ),
-                        // Right column: Comments section
+                        // Right column: Review Feedback & Status Comments
                         Expanded(
                           flex: 4,
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: const EdgeInsets.all(20.0),
-                            child: _buildCommentsSection(isDark, p),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (p.status == ProjectStatus.reviewPending ||
+                                    p.status == ProjectStatus.revisionPending ||
+                                    p.status == ProjectStatus.completed) ...[
+                                  _buildReviewSection(isDark, p, isClient),
+                                  const SizedBox(height: 20),
+                                ],
+                                _buildCommentsSection(isDark, p),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -423,7 +434,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
 
-  List<Widget> _buildLeftDetailWidgets(bool isDark, Project project, CurrencyConfig currency, bool isClient) {
+  List<Widget> _buildLeftDetailWidgets(bool isDark, Project project, CurrencyConfig currency, bool isClient, {required bool isDesktop}) {
     final progress = project.price > 0
         ? (project.receivedAmount / project.price * 100).clamp(0.0, 100.0)
         : 0.0;
@@ -639,9 +650,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         const SizedBox(height: 12),
       ],
 
-      if (project.status == ProjectStatus.reviewPending ||
-          project.status == ProjectStatus.revisionPending ||
-          project.status == ProjectStatus.completed) ...[
+      if (!isDesktop &&
+          (project.status == ProjectStatus.reviewPending ||
+              project.status == ProjectStatus.revisionPending ||
+              project.status == ProjectStatus.completed)) ...[
         _buildReviewSection(isDark, project, isClient),
         const SizedBox(height: 20),
       ],
@@ -715,7 +727,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ..._buildLeftDetailWidgets(isDark, project, currency, isClient),
+        ..._buildLeftDetailWidgets(isDark, project, currency, isClient, isDesktop: false),
         _buildCommentsSection(isDark, project),
         const SizedBox(height: 24),
       ],

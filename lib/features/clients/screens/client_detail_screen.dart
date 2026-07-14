@@ -573,6 +573,15 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         ],
       ),
       const SizedBox(height: 20),
+      _HealthChips(
+        total: metrics.totalValue,
+        revenue: metrics.revenue,
+        pending: metrics.pending,
+        projects: metrics.projectCount,
+        isDark: isDark,
+        currency: currency,
+      ),
+      const SizedBox(height: 20),
     ];
   }
 
@@ -584,15 +593,6 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     CurrencyConfig currency,
   ) {
     return [
-      _HealthChips(
-        total: metrics.totalValue,
-        revenue: metrics.revenue,
-        pending: metrics.pending,
-        projects: metrics.projectCount,
-        isDark: isDark,
-        currency: currency,
-      ),
-      const SizedBox(height: 20),
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
