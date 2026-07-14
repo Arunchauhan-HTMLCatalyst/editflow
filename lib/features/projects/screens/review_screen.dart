@@ -319,67 +319,122 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   }
 
   Future<void> _approveReview(Review review) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Approve Review?'),
-        content: const Text('Approving will mark the project as completed and delete the review video data.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.green),
-            child: const Text('Approve'),
-          ),
-        ],
-      ),
-    );
+    try {
+      final videos = await ref.read(reviewRepositoryProvider).getReviewVideos(review.id);
+      final currentVideo = videos.firstWhere((v) => v.id == widget.videoId, orElse: () => videos.first);
+      final isMultiple = videos.length > 1;
 
-    if (confirmed == true && mounted) {
-      try {
-        // 1. Approve the review (sets status + activity log)
-        await ref.read(reviewRepositoryProvider).approveReview(review.id);
+      if (!mounted) return;
 
-        // 2. Delete all comments for each video
-        final videos = await ref.read(reviewRepositoryProvider).getReviewVideos(review.id);
-        for (final video in videos) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(isMultiple ? 'Approve Video?' : 'Approve Review?'),
+          content: Text(isMultiple
+              ? 'Are you sure you want to approve "${currentVideo.name}"? This video will be marked as completed and removed from the active review list.'
+              : 'Approving will mark the project as completed and delete the review video data.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+              child: const Text('Approve'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true && mounted) {
+        if (isMultiple) {
+          // 1. Delete comments for ONLY the current video
           await SupabaseService.instance
               .from('review_comments')
               .delete()
-              .eq('video_id', video.id)
+              .eq('video_id', widget.videoId)
               .timeout(const Duration(seconds: 10));
+
+          // 2. Delete ONLY the current review video
+          await SupabaseService.instance
+              .from('review_videos')
+              .delete()
+              .eq('id', widget.videoId)
+              .timeout(const Duration(seconds: 10));
+
+          // 3. Log activity for the freelancer
+          try {
+            final projectRes = await SupabaseService.instance
+                .from('projects')
+                .select('name, user_id')
+                .eq('id', widget.projectId)
+                .single()
+                .timeout(const Duration(seconds: 10));
+
+            final freelancerUserId = projectRes['user_id'] as String;
+            final projectName = projectRes['name'] as String;
+
+            await SupabaseService.instance.from('activities').insert({
+              'user_id': freelancerUserId,
+              'type': 'video_approved',
+              'description': 'Client approved video "${currentVideo.name}" for "$projectName"',
+              'reference_id': widget.projectId,
+              'reference_type': 'project',
+              'created_at': DateTime.now().toIso8601String(),
+            }).timeout(const Duration(seconds: 10));
+          } catch (e) {
+            debugPrint('Failed to log video approval activity: $e');
+          }
+
+          ref.invalidate(latestReviewProvider(widget.projectId));
+          await ref.read(projectProvider.notifier).refresh();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Video "${currentVideo.name}" approved!')),
+            );
+            context.pop();
+          }
+        } else {
+          // 1. Approve the review (sets status + activity log)
+          await ref.read(reviewRepositoryProvider).approveReview(review.id);
+
+          // 2. Delete all comments for the video
+          await SupabaseService.instance
+              .from('review_comments')
+              .delete()
+              .eq('video_id', widget.videoId)
+              .timeout(const Duration(seconds: 10));
+
+          // 3. Delete the review video
+          await SupabaseService.instance
+              .from('review_videos')
+              .delete()
+              .eq('id', widget.videoId)
+              .timeout(const Duration(seconds: 10));
+
+          // 4. Update project status to completed
+          await ref.read(projectProvider.notifier).updateStatus(
+            widget.projectId,
+            ProjectStatus.completed,
+          );
+
+          await ref.read(projectProvider.notifier).refresh();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Review approved! Project marked as completed.')),
+            );
+            context.pop();
+          }
         }
-
-        // 3. Delete all review videos
-        await SupabaseService.instance
-            .from('review_videos')
-            .delete()
-            .eq('review_id', review.id)
-            .timeout(const Duration(seconds: 10));
-
-        // 4. Update project status to completed
-        await ref.read(projectProvider.notifier).updateStatus(
-          widget.projectId,
-          ProjectStatus.completed,
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to approve review: $e')),
         );
-
-        await ref.read(projectProvider.notifier).refresh();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Review approved! Project marked as completed.')),
-          );
-          context.pop();
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to approve review: $e')),
-          );
-        }
       }
     }
   }
