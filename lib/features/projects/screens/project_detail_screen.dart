@@ -371,6 +371,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                if (!isClient && p.status == ProjectStatus.revisionPending) ...[
+                                  _buildRevisionPendingBanner(context, isDark, p),
+                                  const SizedBox(height: 16),
+                                ],
                                 if (p.status == ProjectStatus.reviewPending ||
                                     p.status == ProjectStatus.revisionPending ||
                                     p.status == ProjectStatus.completed) ...[
@@ -616,37 +620,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       ),
       const SizedBox(height: 20),
 
-      if (!isClient && project.status == ProjectStatus.revisionPending) ...[
-        Container(
-          padding: const EdgeInsets.all(12.0),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12.0),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 0.8),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.info_outline, color: AppColors.primary, size: 16),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Client requested changes. Mark done once fixed.',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                ),
-              ),
-              TextButton(
-                onPressed: () => _markRevisionsCompleted(context, project),
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                ),
-                child: const Text('Mark Done', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        ),
+      if (!isDesktop && !isClient && project.status == ProjectStatus.revisionPending) ...[
+        _buildRevisionPendingBanner(context, isDark, project),
         const SizedBox(height: 12),
       ],
 
@@ -829,11 +804,38 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 12.0),
       color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
     );
+  }  Widget _buildRevisionPendingBanner(BuildContext context, bool isDark, Project project) {
+    return Container(
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 0.8),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: AppColors.primary, size: 16),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'Client requested changes. Mark done once fixed.',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ),
+          TextButton(
+            onPressed: () => _markRevisionsCompleted(context, project),
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            ),
+            child: const Text('Mark Done', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
-
-
-
-
   Widget _buildCommentsSection(bool isDark, Project project) {
     final projectId = project.id;
     final commentsAsync = ref.watch(projectCommentsProvider(projectId));
