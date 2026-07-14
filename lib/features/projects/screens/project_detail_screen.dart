@@ -315,19 +315,80 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             topGlowColor: _getStatusGlowColor(p.status),
             bottomGlowColor: _getStatusGlowColor(p.status),
             child: SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(projectProvider);
-                  ref.invalidate(latestReviewProvider(p.id));
-                  await ref.read(projectProvider.notifier).refresh();
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isDesktop = constraints.maxWidth > 800;
+
+                  if (_isEditing) {
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        ref.invalidate(projectProvider);
+                        ref.invalidate(latestReviewProvider(p.id));
+                        await ref.read(projectProvider.notifier).refresh();
+                      },
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                        child: _buildEditForm(isDark, p),
+                      ),
+                    );
+                  }
+
+                  if (isDesktop) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Left column: Scrollable details
+                        Expanded(
+                          flex: 6,
+                          child: RefreshIndicator(
+                            onRefresh: () async {
+                              ref.invalidate(projectProvider);
+                              ref.invalidate(latestReviewProvider(p.id));
+                              await ref.read(projectProvider.notifier).refresh();
+                            },
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: _buildLeftDetailWidgets(isDark, p, currency, isClient),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Vertical divider
+                        Container(
+                          width: 1,
+                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                        ),
+                        // Right column: Comments section
+                        Expanded(
+                          flex: 4,
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.all(20.0),
+                            child: _buildCommentsSection(isDark, p),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  // Mobile layout
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(projectProvider);
+                      ref.invalidate(latestReviewProvider(p.id));
+                      await ref.read(projectProvider.notifier).refresh();
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                      child: _buildDetail(isDark, p, currency, isClient),
+                    ),
+                  );
                 },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                  child: _isEditing
-                      ? _buildEditForm(isDark, p)
-                      : _buildDetail(isDark, p, currency, isClient),
-                ),
               ),
             ),
           ),
@@ -362,7 +423,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
 
-  Widget _buildDetail(bool isDark, Project project, CurrencyConfig currency, bool isClient) {
+  List<Widget> _buildLeftDetailWidgets(bool isDark, Project project, CurrencyConfig currency, bool isClient) {
     final progress = project.price > 0
         ? (project.receivedAmount / project.price * 100).clamp(0.0, 100.0)
         : 0.0;
@@ -375,280 +436,286 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         ? displayName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join()
         : '?';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Hero header card
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [const Color(0xFF171D1F), const Color(0xFF101517)]
-                  : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20.0),
-            border: Border.all(
-              color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
-              width: 0.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? AppColors.primary.withValues(alpha: 0.04)
-                    : AppColors.primary.withValues(alpha: 0.12),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              )
-            ],
+    return [
+      // Hero header card
+      Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+                : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Row: Project Name & Status Badge
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        project.name,
-                        style: AppTextStyles.title1(isDark).copyWith(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          height: 1.2,
-                        ),
+          borderRadius: BorderRadius.circular(20.0),
+          border: Border.all(
+            color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+            width: 0.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? AppColors.primary.withValues(alpha: 0.04)
+                  : AppColors.primary.withValues(alpha: 0.12),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            )
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Row: Project Name & Status Badge
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      project.name,
+                      style: AppTextStyles.title1(isDark).copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1.2,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    StatusBadge(status: project.status),
-                  ],
-                ),
-                
-                const SizedBox(height: 12),
-                Divider(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: 0.12),
-                ),
-                const SizedBox(height: 12),
-                
-                // Bottom Row: Profile & Deadline
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Profile Block
-                    if (displayName != null)
-                      Row(
-                        children: [
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              initials.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                            ),
+                  ),
+                  const SizedBox(width: 12),
+                  StatusBadge(status: project.status),
+                ],
+              ),
+              
+              const SizedBox(height: 12),
+              Divider(
+                height: 1,
+                color: Colors.white.withValues(alpha: 0.12),
+              ),
+              const SizedBox(height: 12),
+              
+              // Bottom Row: Profile & Deadline
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Profile Block
+                  if (displayName != null)
+                    Row(
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                showFreelancer ? 'FREELANCER' : 'CLIENT',
-                                style: TextStyle(
-                                  fontSize: 7.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white.withValues(alpha: 0.55),
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                              const SizedBox(height: 1),
-                              Text(
-                                displayName,
-                                style: const TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    
-                    // Deadline Block (Glass Pill)
-                    if (project.deadline != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: overdue ? 0.2 : 0.08),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: overdue ? 0.35 : 0.12),
-                            width: 0.8,
+                          alignment: Alignment.center,
+                          child: Text(
+                            initials.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              CupertinoIcons.calendar,
-                              size: 13,
-                              color: Colors.white.withValues(alpha: overdue ? 0.95 : 0.85),
-                            ),
-                            const SizedBox(width: 6),
                             Text(
-                              DateFormat('MMM d').format(project.deadline!),
+                              showFreelancer ? 'FREELANCER' : 'CLIENT',
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 7.5,
                                 fontWeight: FontWeight.w800,
-                                color: Colors.white.withValues(alpha: overdue ? 0.95 : 0.85),
+                                color: Colors.white.withValues(alpha: 0.55),
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              displayName,
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
                               ),
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                  
+                  // Deadline Block (Glass Pill)
+                  if (project.deadline != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: overdue ? 0.2 : 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: overdue ? 0.35 : 0.12),
+                          width: 0.8,
+                        ),
                       ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Payment progress
-        _PaymentProgress(
-          progress: progress,
-          received: project.receivedAmount,
-          remaining: project.remainingAmount,
-          total: project.price,
-          currency: currency,
-          isDark: isDark,
-        ),
-        const SizedBox(height: 16),
-
-        // Status pipeline — read-only in client mode
-        _StatusPipeline(
-          currentStatus: project.status,
-          isDark: isDark,
-          onStatusTap: isClient ? null : (s) => _changeStatus(project, s),
-        ),
-        const SizedBox(height: 20),
-
-        if (!isClient && project.status == ProjectStatus.revisionPending) ...[
-          Container(
-            padding: const EdgeInsets.all(12.0),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12.0),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 0.8),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline, color: AppColors.primary, size: 16),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Client requested changes. Mark done once fixed.',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => _markRevisionsCompleted(context, project),
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  ),
-                  child: const Text('Mark Done', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-
-        if (project.status == ProjectStatus.reviewPending ||
-            project.status == ProjectStatus.revisionPending ||
-            project.status == ProjectStatus.completed) ...[
-          _buildReviewSection(isDark, project, isClient),
-          const SizedBox(height: 20),
-        ],
-
-        // Details title
-        Text(
-          'PROJECT METADATA & DETAILS',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 10),
-        
-        // Full-width Description Car        // Full-width Description Card
-        if (project.description != null && project.description!.isNotEmpty) ...[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(16.0),
-              border: Border.all(
-                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                width: 0.8,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(CupertinoIcons.doc_text, size: 14, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'DESCRIPTION',
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                        letterSpacing: 0.5,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            CupertinoIcons.calendar,
+                            size: 13,
+                            color: Colors.white.withValues(alpha: overdue ? 0.95 : 0.85),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            DateFormat('MMM d').format(project.deadline!),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white.withValues(alpha: overdue ? 0.95 : 0.85),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+
+      // Payment progress
+      _PaymentProgress(
+        progress: progress,
+        received: project.receivedAmount,
+        remaining: project.remainingAmount,
+        total: project.price,
+        currency: currency,
+        isDark: isDark,
+      ),
+      const SizedBox(height: 16),
+
+      // Status pipeline — read-only in client mode
+      _StatusPipeline(
+        currentStatus: project.status,
+        isDark: isDark,
+        onStatusTap: isClient ? null : (s) => _changeStatus(project, s),
+      ),
+      const SizedBox(height: 20),
+
+      if (!isClient && project.status == ProjectStatus.revisionPending) ...[
+        Container(
+          padding: const EdgeInsets.all(12.0),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 0.8),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: AppColors.primary, size: 16),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Client requested changes. Mark done once fixed.',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 10),
-                RichLinkText(
-                  text: project.description!,
-                  isDark: isDark,
-                  textStyle: TextStyle(
-                    fontSize: 13,
-                    height: 1.5,
-                    color: isDark ? AppColors.textSecondary : const Color(0xFF334155),
-                  ),
+              ),
+              TextButton(
+                onPressed: () => _markRevisionsCompleted(context, project),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 ),
-              ],
+                child: const Text('Mark Done', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+
+      if (project.status == ProjectStatus.reviewPending ||
+          project.status == ProjectStatus.revisionPending ||
+          project.status == ProjectStatus.completed) ...[
+        _buildReviewSection(isDark, project, isClient),
+        const SizedBox(height: 20),
+      ],
+
+      // Details title
+      Text(
+        'PROJECT METADATA & DETAILS',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+          letterSpacing: 0.8,
+        ),
+      ),
+      const SizedBox(height: 10),
+      
+      // Full-width Description Card
+      if (project.description != null && project.description!.isNotEmpty) ...[
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(
+              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+              width: 0.8,
             ),
           ),
-          const SizedBox(height: 12),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(CupertinoIcons.doc_text, size: 14, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'DESCRIPTION',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              RichLinkText(
+                text: project.description!,
+                isDark: isDark,
+                textStyle: TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: isDark ? AppColors.textSecondary : const Color(0xFF334155),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
 
-        // Dedicated Horizontal Dates Card
-        _buildDatesCard(isDark, project, overdue),
-        const SizedBox(height: 24),
+      // Dedicated Horizontal Dates Card
+      _buildDatesCard(isDark, project, overdue),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  Widget _buildDetail(bool isDark, Project project, CurrencyConfig currency, bool isClient) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ..._buildLeftDetailWidgets(isDark, project, currency, isClient),
         _buildCommentsSection(isDark, project),
         const SizedBox(height: 24),
       ],

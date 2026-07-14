@@ -87,219 +87,289 @@ class FreelancerDetailScreen extends ConsumerWidget {
       ),
       body: AmbientGlowContainer(
         child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.all(padding),
-            children: [
-              // Compact Profile Header
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isDark
-                        ? [const Color(0xFF171D1F), const Color(0xFF101517)]
-                        : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16.0),
-                  border: Border.all(
-                    color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
-                    width: 0.8,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDark
-                          ? AppColors.primary.withValues(alpha: 0.04)
-                          : AppColors.primary.withValues(alpha: 0.12),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    )
-                  ],
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth > 800;
+
+              if (isDesktop) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isDark
-                              ? [const Color(0xFF273135), const Color(0xFF1F2629)]
-                              : [Colors.white.withValues(alpha: 0.25), Colors.white.withValues(alpha: 0.12)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(
-                          color: isDark ? AppColors.border : Colors.white.withValues(alpha: 0.35),
-                          width: 1.0,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        initials.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
+                    // Left Column: Profile card
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? AppColors.primaryNeon.withValues(alpha: 0.15)
-                                      : Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'PARTNER CREATIVE',
-                                  style: TextStyle(
-                                    fontSize: 7.0,
-                                    fontWeight: FontWeight.w900,
-                                    color: isDark ? AppColors.primaryNeon : Colors.white,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            'Active Collaborator',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ],
+                      flex: 4,
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.all(padding),
+                        child: _buildProfileCard(isDark, name, initials),
+                      ),
+                    ),
+                    // Divider
+                    Container(
+                      width: 1,
+                      color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                    ),
+                    // Right Column: Metrics & Projects list
+                    Expanded(
+                      flex: 6,
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.all(padding),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildMetricsBar(isDark, totalValue, totalPaid, totalRemaining, projects, currency),
+                            const SizedBox(height: 20),
+                            _buildProjectsSectionHeader(context, isDark, name, freelancerId),
+                            const SizedBox(height: 12),
+                            _buildProjectsList(context, projects, currency),
+                          ],
+                        ),
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 14),
+                );
+              }
 
-              // Compact Horizontal Metrics Bar
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF14191B) : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
-                    width: 0.8,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _metricColumn('TOTAL', currency.format(totalValue), AppColors.primary, isDark),
-                    _divider(isDark),
-                    _metricColumn('PAID', currency.format(totalPaid), AppColors.success, isDark),
-                    _divider(isDark),
-                    _metricColumn('PENDING', currency.format(totalRemaining), AppColors.warning, isDark),
-                    _divider(isDark),
-                    _metricColumn('ACTIVE', '${projects.length}', AppColors.info, isDark),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Mobile layout
+              return ListView(
+                padding: EdgeInsets.all(padding),
                 children: [
-                  Text(
-                    'PROJECTS',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(CupertinoIcons.plus, size: 12, color: AppColors.primary),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Assign Project',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    onPressed: () {
-                      context.push('/projects/add?freelancerId=$freelancerId&freelancerName=${Uri.encodeComponent(name)}');
-                    },
-                  ),
+                  _buildProfileCard(isDark, name, initials),
+                  const SizedBox(height: 14),
+                  _buildMetricsBar(isDark, totalValue, totalPaid, totalRemaining, projects, currency),
+                  const SizedBox(height: 20),
+                  _buildProjectsSectionHeader(context, isDark, name, freelancerId),
+                  const SizedBox(height: 12),
+                  _buildProjectsList(context, projects, currency),
                 ],
-              ),
-              const SizedBox(height: 12),
-
-              if (projects.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40.0),
-                  child: EmptyStateWidget(
-                    icon: Icons.assignment_outlined,
-                    title: 'No Projects Found',
-                    subtitle: 'There are no projects assigned under this freelancer.',
-                  ),
-                )
-              else
-                ...List.generate(projects.length, (index) {
-                  final project = projects[index];
-                  return AnimatedListItem(
-                    key: ValueKey(project.id),
-                    index: index,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: _FreelancerProjectCard(
-                        key: ValueKey(project.id),
-                        project: project,
-                        currency: currency,
-                        onTap: () => context.push('/projects/${project.id}'),
-                      ),
-                    ),
-                  );
-                }),
-            ],
+              );
+            },
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileCard(bool isDark, String name, String initials) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+              : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(
+          color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? AppColors.primary.withValues(alpha: 0.04)
+                : AppColors.primary.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF273135), const Color(0xFF1F2629)]
+                    : [Colors.white.withValues(alpha: 0.25), Colors.white.withValues(alpha: 0.12)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(
+                color: isDark ? AppColors.border : Colors.white.withValues(alpha: 0.35),
+                width: 1.0,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initials,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.primaryNeon.withValues(alpha: 0.15)
+                            : Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'PARTNER CREATIVE',
+                        style: TextStyle(
+                          fontSize: 7.0,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? AppColors.primaryNeon : Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Active Collaborator',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricsBar(
+    bool isDark,
+    double totalValue,
+    double totalPaid,
+    double totalRemaining,
+    List<Project> projects,
+    CurrencyConfig currency,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF14191B) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _metricColumn('TOTAL', currency.format(totalValue), AppColors.primary, isDark),
+          _divider(isDark),
+          _metricColumn('PAID', currency.format(totalPaid), AppColors.success, isDark),
+          _divider(isDark),
+          _metricColumn('PENDING', currency.format(totalRemaining), AppColors.warning, isDark),
+          _divider(isDark),
+          _metricColumn('ACTIVE', '${projects.length}', AppColors.info, isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectsSectionHeader(
+    BuildContext context,
+    bool isDark,
+    String name,
+    String freelancerId,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'PROJECTS',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+            letterSpacing: 0.5,
+          ),
+        ),
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(CupertinoIcons.plus, size: 12, color: AppColors.primary),
+                const SizedBox(width: 4),
+                Text(
+                  'Assign Project',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          onPressed: () {
+            context.push('/projects/add?freelancerId=$freelancerId&freelancerName=${Uri.encodeComponent(name)}');
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProjectsList(BuildContext context, List<Project> projects, CurrencyConfig currency) {
+    if (projects.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40.0),
+        child: EmptyStateWidget(
+          icon: Icons.assignment_outlined,
+          title: 'No Projects Found',
+          subtitle: 'There are no projects assigned under this freelancer.',
+        ),
+      );
+    }
+    return Column(
+      children: List.generate(projects.length, (index) {
+        final project = projects[index];
+        return AnimatedListItem(
+          key: ValueKey(project.id),
+          index: index,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: _FreelancerProjectCard(
+              key: ValueKey(project.id),
+              project: project,
+              currency: currency,
+              onTap: () => context.push('/projects/${project.id}'),
+            ),
+          ),
+        );
+      }),
     );
   }
 

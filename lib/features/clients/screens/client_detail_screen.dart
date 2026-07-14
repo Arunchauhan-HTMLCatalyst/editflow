@@ -264,26 +264,89 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
       ),
       body: AmbientGlowContainer(
         child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(clientProvider);
-              ref.invalidate(projectProvider);
-              await Future.delayed(const Duration(milliseconds: 500));
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth > 800;
+
+              if (_isEditing) {
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(clientProvider);
+                    ref.invalidate(projectProvider);
+                    await Future.delayed(const Duration(milliseconds: 500));
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                    child: _buildEditForm(isDark),
+                  ),
+                );
+              }
+
+              if (isDesktop) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Left Column: Profile Card & Quick Actions
+                    Expanded(
+                      flex: 4,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: _buildLeftClientDetailWidgets(isDark, cl, metrics, displayProjects, currency),
+                        ),
+                      ),
+                    ),
+                    // Divider
+                    Container(
+                      width: 1,
+                      color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                    ),
+                    // Right Column: Projects list
+                    Expanded(
+                      flex: 6,
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(clientProvider);
+                          ref.invalidate(projectProvider);
+                          await Future.delayed(const Duration(milliseconds: 500));
+                        },
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: _buildRightClientDetailWidgets(isDark, cl, metrics, displayProjects, currency),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              // Mobile Layout
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(clientProvider);
+                  ref.invalidate(projectProvider);
+                  await Future.delayed(const Duration(milliseconds: 500));
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                  child: _buildDetail(isDark, cl, metrics, displayProjects, currency),
+                ),
+              );
             },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-              child: _isEditing
-                  ? _buildEditForm(isDark)
-                  : _buildDetail(isDark, cl, metrics, displayProjects, currency),
-            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildDetail(
+  List<Widget> _buildLeftClientDetailWidgets(
     bool isDark,
     Client client,
     ClientMetrics metrics,
@@ -294,294 +357,308 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         ? client.name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join()
         : '?';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [const Color(0xFF171D1F), const Color(0xFF101517)]
-                  : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16.0),
-            border: Border.all(
-              color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
-              width: 0.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? AppColors.primary.withValues(alpha: 0.04)
-                    : AppColors.primary.withValues(alpha: 0.12),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
+    return [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+                : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isDark
-                            ? [const Color(0xFF273135), const Color(0xFF1F2629)]
-                            : [Colors.white.withValues(alpha: 0.25), Colors.white.withValues(alpha: 0.12)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12.0),
-                      border: Border.all(
-                        color: isDark ? AppColors.border : Colors.white.withValues(alpha: 0.35),
-                        width: 1.0,
-                      ),
+          borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(
+            color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+            width: 0.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? AppColors.primary.withValues(alpha: 0.04)
+                  : AppColors.primary.withValues(alpha: 0.12),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            )
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [const Color(0xFF273135), const Color(0xFF1F2629)]
+                          : [Colors.white.withValues(alpha: 0.25), Colors.white.withValues(alpha: 0.12)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      initials.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(
+                      color: isDark ? AppColors.border : Colors.white.withValues(alpha: 0.35),
+                      width: 1.0,
                     ),
                   ),
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: client.clientUserId != null && client.clientUserId!.isNotEmpty
-                            ? AppColors.success
-                            : AppColors.textMuted,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isDark ? const Color(0xFF101517) : Colors.white,
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          if (client.clientUserId != null && client.clientUserId!.isNotEmpty)
-                            BoxShadow(
-                              color: AppColors.success.withValues(alpha: 0.4),
-                              blurRadius: 4,
-                              spreadRadius: 0.5,
-                            ),
-                        ],
+                  alignment: Alignment.center,
+                  child: Text(
+                    initials.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: client.clientUserId != null && client.clientUserId!.isNotEmpty
+                          ? AppColors.success
+                          : AppColors.textMuted,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF101517) : Colors.white,
+                        width: 1.5,
                       ),
+                      boxShadow: [
+                        if (client.clientUserId != null && client.clientUserId!.isNotEmpty)
+                          BoxShadow(
+                            color: AppColors.success.withValues(alpha: 0.4),
+                            blurRadius: 4,
+                            spreadRadius: 0.5,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.primaryNeon.withValues(alpha: 0.15)
+                              : Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          client.clientUserId != null && client.clientUserId!.isNotEmpty
+                              ? 'SYNCED PARTNER'
+                              : 'COLLABORATOR CLIENT',
+                          style: TextStyle(
+                            fontSize: 7.0,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? AppColors.primaryNeon : Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    client.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    client.company ?? 'Independent Client',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(width: 14),
-              Expanded(
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 14),
+
+      if (client.email != null || client.phone != null) ...[
+        GestureDetector(
+          onTap: () => setState(() => _contactExpanded = !_contactExpanded),
+          child: Row(
+            children: [
+              const Icon(CupertinoIcons.info_circle, size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text('Contact Info', style: AppTextStyles.caption(isDark).copyWith(fontWeight: FontWeight.w700, fontSize: 12)),
+              const Spacer(),
+              AnimatedRotation(
+                turns: _contactExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Column(
+              children: [
+                if (client.email != null && client.email!.isNotEmpty)
+                  _contactRow(isDark, CupertinoIcons.mail, client.email!),
+                if (client.email != null && client.email!.isNotEmpty && client.phone != null && client.phone!.isNotEmpty)
+                  const SizedBox(height: 8),
+                if (client.phone != null && client.phone!.isNotEmpty)
+                  _contactRow(isDark, CupertinoIcons.phone, client.phone!),
+              ],
+            ),
+          ),
+          crossFadeState: _contactExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 200),
+        ),
+        const SizedBox(height: 14),
+      ],
+
+      Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _showCreateProjectSheet,
+              icon: const Icon(CupertinoIcons.add, size: 14),
+              label: const Text('New Project', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _showRecordPaymentSheet(clientProjects, currency),
+              icon: const Icon(CupertinoIcons.creditcard, size: 14),
+              label: const Text('Payment', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 20),
+    ];
+  }
+
+  List<Widget> _buildRightClientDetailWidgets(
+    bool isDark,
+    Client client,
+    ClientMetrics metrics,
+    List<Project> clientProjects,
+    CurrencyConfig currency,
+  ) {
+    return [
+      _HealthChips(
+        total: metrics.totalValue,
+        revenue: metrics.revenue,
+        pending: metrics.pending,
+        projects: metrics.projectCount,
+        isDark: isDark,
+        currency: currency,
+      ),
+      const SizedBox(height: 20),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('Projects for ${client.name}', style: AppTextStyles.title3(isDark).copyWith(fontSize: 18, fontWeight: FontWeight.w800)),
+          Text('${clientProjects.length} total', style: AppTextStyles.small(isDark).copyWith(fontWeight: FontWeight.w600)),
+        ],
+      ),
+      const SizedBox(height: 12),
+      if (clientProjects.isEmpty)
+        Card(
+          key: const ValueKey('empty_client_projects_card'),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(
+                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                width: 0.8,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppColors.primaryNeon.withValues(alpha: 0.15)
-                                : Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            client.clientUserId != null && client.clientUserId!.isNotEmpty
-                                ? 'SYNCED PARTNER'
-                                : 'COLLABORATOR CLIENT',
-                            style: TextStyle(
-                              fontSize: 7.0,
-                              fontWeight: FontWeight.w900,
-                              color: isDark ? AppColors.primaryNeon : Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      client.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      client.company ?? 'Independent Client',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.8),
-                      ),
+                    const Icon(CupertinoIcons.folder_badge_plus, size: 36, color: AppColors.textMuted),
+                    const SizedBox(height: 12),
+                    Text('No projects yet', style: AppTextStyles.caption(isDark)),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: _showCreateProjectSheet,
+                      icon: const Icon(CupertinoIcons.add, size: 16),
+                      label: const Text('Create first project'),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        _HealthChips(
-          total: metrics.totalValue,
-          revenue: metrics.revenue,
-          pending: metrics.pending,
-          projects: metrics.projectCount,
-          isDark: isDark,
-          currency: currency,
-        ),
-        const SizedBox(height: 14),
-
-        if (client.email != null || client.phone != null) ...[
-          GestureDetector(
-            onTap: () => setState(() => _contactExpanded = !_contactExpanded),
-            child: Row(
-              children: [
-                const Icon(CupertinoIcons.info_circle, size: 14, color: AppColors.textSecondary),
-                const SizedBox(width: 6),
-                Text('Contact Info', style: AppTextStyles.caption(isDark).copyWith(fontWeight: FontWeight.w700, fontSize: 12)),
-                const Spacer(),
-                AnimatedRotation(
-                  turns: _contactExpanded ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: AppColors.textSecondary),
-                ),
-              ],
             ),
           ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox.shrink(),
-            secondChild: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Column(
-                children: [
-                  if (client.email != null && client.email!.isNotEmpty)
-                    _contactRow(isDark, CupertinoIcons.mail, client.email!),
-                  if (client.email != null && client.email!.isNotEmpty && client.phone != null && client.phone!.isNotEmpty)
-                    const SizedBox(height: 8),
-                  if (client.phone != null && client.phone!.isNotEmpty)
-                    _contactRow(isDark, CupertinoIcons.phone, client.phone!),
-                ],
-              ),
-            ),
-            crossFadeState: _contactExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
-          ),
-          const SizedBox(height: 14),
-        ],
-
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _showCreateProjectSheet,
-                icon: const Icon(CupertinoIcons.add, size: 14),
-                label: const Text('New Project', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _showRecordPaymentSheet(clientProjects, currency),
-                icon: const Icon(CupertinoIcons.creditcard, size: 14),
-                label: const Text('Payment', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Projects for ${client.name}', style: AppTextStyles.title3(isDark).copyWith(fontSize: 18, fontWeight: FontWeight.w800)),
-            SizedBox(
-              width: 0,
-              height: 0,
-              child: Text(
-                client.name,
-                style: const TextStyle(fontSize: 0),
-              ),
-            ),
-            Text('${clientProjects.length} total', style: AppTextStyles.small(isDark).copyWith(fontWeight: FontWeight.w600)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (clientProjects.isEmpty)
-          Card(
-            key: const ValueKey('empty_client_projects_card'),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16.0),
-                border: Border.all(
-                  color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                  width: 0.8,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Center(
-                  child: Column(
-                    children: [
-                      const Icon(CupertinoIcons.folder_badge_plus, size: 36, color: AppColors.textMuted),
-                      const SizedBox(height: 12),
-                      Text('No projects yet', style: AppTextStyles.caption(isDark)),
-                      const SizedBox(height: 12),
-                      TextButton.icon(
-                        onPressed: _showCreateProjectSheet,
-                        icon: const Icon(CupertinoIcons.add, size: 16),
-                        label: const Text('Create first project'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          )
-        else
-          ...clientProjects.map((p) => Padding(
+        )
+      else
+        ...clientProjects.map((p) => Padding(
+              key: ValueKey(p.id),
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: _ClientProjectCard(
                 key: ValueKey(p.id),
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: _ClientProjectCard(
-                  key: ValueKey(p.id),
-                  project: p,
-                  currency: currency,
-                  onTap: () => context.push('/projects/${p.id}'),
-                ),
-              )),
-        const SizedBox(height: 24),
+                project: p,
+                currency: currency,
+                onTap: () => context.push('/projects/${p.id}'),
+              ),
+            )),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  Widget _buildDetail(
+    bool isDark,
+    Client client,
+    ClientMetrics metrics,
+    List<Project> clientProjects,
+    CurrencyConfig currency,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ..._buildLeftClientDetailWidgets(isDark, client, metrics, clientProjects, currency),
+        ..._buildRightClientDetailWidgets(isDark, client, metrics, clientProjects, currency),
       ],
     );
   }
