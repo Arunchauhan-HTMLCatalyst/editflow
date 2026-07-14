@@ -6,6 +6,7 @@ import 'core/theme/app_colors.dart';
 import 'core/theme/app_spacing.dart';
 import 'core/theme/app_layout.dart';
 
+import 'shared/widgets/ef_logo.dart';
 import 'shared/providers/computed_providers.dart';
 import 'features/dashboard/screens/notification_center_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -417,30 +418,7 @@ class _DesktopSidebar extends ConsumerWidget {
               padding: const EdgeInsets.all(20.0),
               child: Row(
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: AppColors.primaryGradient,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'EF',
-                        style: TextStyle(
-                          fontFamily: 'Outfit',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -1,
-                        ),
-                      ),
-                    ),
-                  ),
+                  const EfLogo(size: 36),
                   const SizedBox(width: 12),
                   const Text(
                     'EditFlow',
