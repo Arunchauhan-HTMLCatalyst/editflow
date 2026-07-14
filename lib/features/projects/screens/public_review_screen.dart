@@ -81,9 +81,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
       final share = await repo.getReviewShare(widget.shareToken);
       if (share == null || share.isExpired) {
         setState(() {
-          _errorMessage = share == null
-              ? 'This share link is invalid.'
-              : 'This share link has expired.';
+          _errorMessage = 'This share link has expired.';
           _isLoading = false;
         });
         return;

@@ -114,3 +114,18 @@ final publicReviewCommentsProvider = StreamProvider.family<List<ReviewComment>, 
   return controller.stream;
 });
 
+final projectReviewCommentsCountProvider = Provider.family<int, String>((ref, projectId) {
+  final review = ref.watch(latestReviewProvider(projectId)).valueOrNull;
+  if (review == null) return 0;
+
+  final videos = ref.watch(reviewVideosProvider(review.id)).valueOrNull ?? [];
+  if (videos.isEmpty) return 0;
+
+  int total = 0;
+  for (final video in videos) {
+    final comments = ref.watch(reviewCommentsProvider(video.id)).valueOrNull ?? [];
+    total += comments.length;
+  }
+  return total;
+});
+

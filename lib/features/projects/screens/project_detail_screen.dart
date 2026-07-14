@@ -371,10 +371,21 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (!isClient && p.status == ProjectStatus.revisionPending) ...[
-                                  _buildRevisionPendingBanner(context, isDark, p),
-                                  const SizedBox(height: 16),
-                                ],
+                                 Builder(
+                                   builder: (context) {
+                                     final commentsCount = ref.watch(projectReviewCommentsCountProvider(p.id));
+                                     final showRevisionBanner = !isClient && 
+                                         (p.status == ProjectStatus.revisionPending || 
+                                          (p.status == ProjectStatus.reviewPending && commentsCount > 0));
+                                     if (showRevisionBanner) {
+                                       return Padding(
+                                         padding: const EdgeInsets.only(bottom: 16.0),
+                                         child: _buildRevisionPendingBanner(context, isDark, p),
+                                       );
+                                     }
+                                     return const SizedBox.shrink();
+                                   },
+                                 ),
                                 if (p.status == ProjectStatus.reviewPending ||
                                     p.status == ProjectStatus.revisionPending ||
                                     p.status == ProjectStatus.completed) ...[
@@ -620,10 +631,22 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       ),
       const SizedBox(height: 20),
 
-      if (!isDesktop && !isClient && project.status == ProjectStatus.revisionPending) ...[
-        _buildRevisionPendingBanner(context, isDark, project),
-        const SizedBox(height: 12),
-      ],
+      if (!isDesktop)
+        Builder(
+          builder: (context) {
+            final commentsCount = ref.watch(projectReviewCommentsCountProvider(project.id));
+            final showRevisionBanner = !isClient && 
+                (project.status == ProjectStatus.revisionPending || 
+                 (project.status == ProjectStatus.reviewPending && commentsCount > 0));
+            if (showRevisionBanner) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: _buildRevisionPendingBanner(context, isDark, project),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
 
       if (!isDesktop &&
           (project.status == ProjectStatus.reviewPending ||
@@ -1491,6 +1514,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 .timeout(const Duration(seconds: 10));
 
             await SupabaseService.instance
+                .from('review_shares')
+                .delete()
+                .eq('review_id', review.id)
+                .timeout(const Duration(seconds: 10));
+
+            await SupabaseService.instance
                 .from('reviews')
                 .update({'status': 'completed'})
                 .eq('id', review.id)
@@ -2222,6 +2251,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
         await SupabaseService.instance
             .from('review_videos')
+            .delete()
+            .eq('review_id', review.id)
+            .timeout(const Duration(seconds: 10));
+
+        await SupabaseService.instance
+            .from('review_shares')
             .delete()
             .eq('review_id', review.id)
             .timeout(const Duration(seconds: 10));
