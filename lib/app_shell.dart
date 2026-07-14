@@ -6,6 +6,7 @@ import 'core/theme/app_colors.dart';
 import 'core/theme/app_spacing.dart';
 import 'core/theme/app_layout.dart';
 
+import 'shared/providers/computed_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/settings/providers/settings_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -695,16 +696,32 @@ class _DesktopSidebar extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () => context.push('/notifications'),
-                        icon: const Icon(Icons.notifications_none_rounded, size: 16),
-                        style: IconButton.styleFrom(
-                          foregroundColor: isDark ? Colors.white : AppColors.primary,
-                          backgroundColor: isDark ? AppColors.border.withValues(alpha: 0.3) : const Color(0xFFF1F5F9),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final activitiesAsync = ref.watch(recentActivityProvider);
+                          final count = activitiesAsync.valueOrNull?.length ?? 0;
+                          
+                          final iconButton = IconButton(
+                            onPressed: () => context.push('/notifications'),
+                            icon: const Icon(Icons.notifications_none_rounded, size: 16),
+                            style: IconButton.styleFrom(
+                              foregroundColor: isDark ? Colors.white : AppColors.primary,
+                              backgroundColor: isDark ? AppColors.border.withValues(alpha: 0.3) : const Color(0xFFF1F5F9),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          );
+
+                          if (count > 0) {
+                            return Badge(
+                              label: Text('$count', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white)),
+                              backgroundColor: AppColors.error,
+                              child: iconButton,
+                            );
+                          }
+                          return iconButton;
+                        },
                       ),
                     ],
                   ),

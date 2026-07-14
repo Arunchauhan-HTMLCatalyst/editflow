@@ -376,13 +376,29 @@ class _DashboardLayout extends ConsumerWidget {
                               width: 0.8,
                             ),
                           ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.notifications_none_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            onPressed: () => context.push('/notifications'),
+                          child: Builder(
+                            builder: (context) {
+                              final activitiesAsync = ref.watch(recentActivityProvider);
+                              final count = activitiesAsync.valueOrNull?.length ?? 0;
+                              
+                              final iconButton = IconButton(
+                                icon: const Icon(
+                                  Icons.notifications_none_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                onPressed: () => context.push('/notifications'),
+                              );
+
+                              if (count > 0) {
+                                return Badge(
+                                  label: Text('$count', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  backgroundColor: AppColors.error,
+                                  child: iconButton,
+                                );
+                              }
+                              return iconButton;
+                            },
                           ),
                         ),
                         const SizedBox(width: 8),
