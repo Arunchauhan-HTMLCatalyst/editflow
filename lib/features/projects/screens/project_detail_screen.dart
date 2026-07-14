@@ -1469,6 +1469,38 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       ),
     );
     if (confirmed == true) {
+      if (newStatus == ProjectStatus.completed) {
+        try {
+          final review = await ref.read(reviewRepositoryProvider).getLatestReview(project.id);
+          if (review != null) {
+            final videos = await ref.read(reviewRepositoryProvider).getReviewVideos(review.id);
+            final videoIds = videos.map((v) => v.id).toList();
+
+            for (final vid in videoIds) {
+              await SupabaseService.instance
+                  .from('review_comments')
+                  .delete()
+                  .eq('video_id', vid)
+                  .timeout(const Duration(seconds: 10));
+            }
+
+            await SupabaseService.instance
+                .from('review_videos')
+                .delete()
+                .eq('review_id', review.id)
+                .timeout(const Duration(seconds: 10));
+
+            await SupabaseService.instance
+                .from('reviews')
+                .update({'status': 'completed'})
+                .eq('id', review.id)
+                .timeout(const Duration(seconds: 10));
+          }
+        } catch (e) {
+          debugPrint('Failed to clear review data on manual completed transition: $e');
+        }
+      }
+
       await ref.read(projectProvider.notifier).updateStatus(project.id, newStatus);
       if (newStatus == ProjectStatus.reviewPending) {
         try {
@@ -1478,12 +1510,13 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 .from('reviews')
                 .update({'status': 'pending'})
                 .eq('id', review.id);
-            ref.invalidate(latestReviewProvider(project.id));
           }
         } catch (e) {
           debugPrint('Failed to reopen review: $e');
         }
       }
+      ref.invalidate(latestReviewProvider(project.id));
+      await ref.read(projectProvider.notifier).refresh();
     }
   }
 

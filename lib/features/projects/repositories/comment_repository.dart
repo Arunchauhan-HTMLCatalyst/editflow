@@ -100,7 +100,17 @@ class CommentRepository {
           .eq('project_id', projectId)
           .map((rows) {
             debugPrint('[COMMENT STREAM] got ${rows.length} rows');
-            final list = rows.map((e) => Comment.fromJson(e)).toList();
+            // Deduplicate to prevent realtime duplication issues
+            final seenIds = <String>{};
+            final uniqueList = <Map<String, dynamic>>[];
+            for (final item in rows) {
+              final id = item['id'] as String?;
+              if (id != null && !seenIds.contains(id)) {
+                seenIds.add(id);
+                uniqueList.add(item);
+              }
+            }
+            final list = uniqueList.map((e) => Comment.fromJson(e)).toList();
             list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
             return list;
           });

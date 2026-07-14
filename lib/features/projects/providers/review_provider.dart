@@ -29,7 +29,17 @@ final reviewVideosProvider = StreamProvider.family<List<ReviewVideo>, String>((r
       .stream(primaryKey: ['id'])
       .eq('review_id', reviewId)
       .map((list) {
-        final sorted = List<Map<String, dynamic>>.from(list);
+        // Deduplicate to prevent realtime stream duplication bugs
+        final seenIds = <String>{};
+        final uniqueList = <Map<String, dynamic>>[];
+        for (final item in list) {
+          final id = item['id'] as String?;
+          if (id != null && !seenIds.contains(id)) {
+            seenIds.add(id);
+            uniqueList.add(item);
+          }
+        }
+        final sorted = List<Map<String, dynamic>>.from(uniqueList);
         sorted.sort((a, b) => DateTime.parse(a['created_at'] as String)
             .compareTo(DateTime.parse(b['created_at'] as String)));
         return sorted.map((e) => ReviewVideo.fromJson(e)).toList();
@@ -42,7 +52,17 @@ final reviewCommentsProvider = StreamProvider.family<List<ReviewComment>, String
       .stream(primaryKey: ['id'])
       .eq('video_id', videoId)
       .map((list) {
-        final sorted = List<Map<String, dynamic>>.from(list);
+        // Deduplicate to prevent realtime stream duplication bugs
+        final seenIds = <String>{};
+        final uniqueList = <Map<String, dynamic>>[];
+        for (final item in list) {
+          final id = item['id'] as String?;
+          if (id != null && !seenIds.contains(id)) {
+            seenIds.add(id);
+            uniqueList.add(item);
+          }
+        }
+        final sorted = List<Map<String, dynamic>>.from(uniqueList);
         sorted.sort((a, b) => (a['timestamp_ms'] as num)
             .compareTo(b['timestamp_ms'] as num));
         return sorted.map((e) => ReviewComment.fromJson(e)).toList();
