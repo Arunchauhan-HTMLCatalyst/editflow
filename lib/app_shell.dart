@@ -7,6 +7,7 @@ import 'core/theme/app_spacing.dart';
 import 'core/theme/app_layout.dart';
 
 import 'shared/providers/computed_providers.dart';
+import 'features/dashboard/screens/notification_center_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/settings/providers/settings_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -702,7 +703,34 @@ class _DesktopSidebar extends ConsumerWidget {
                           final count = activitiesAsync.valueOrNull?.length ?? 0;
                           
                           final iconButton = IconButton(
-                            onPressed: () => context.push('/notifications'),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                barrierColor: Colors.black26,
+                                builder: (context) {
+                                  return Center(
+                                    child: Container(
+                                      width: 420,
+                                      height: 600,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.2),
+                                            blurRadius: 12,
+                                            spreadRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: const NotificationCenterScreen(isDialog: true),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
                             icon: const Icon(Icons.notifications_none_rounded, size: 16),
                             style: IconButton.styleFrom(
                               foregroundColor: isDark ? Colors.white : AppColors.primary,

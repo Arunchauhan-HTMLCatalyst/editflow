@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'notification_center_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -387,7 +388,39 @@ class _DashboardLayout extends ConsumerWidget {
                                   color: Colors.white,
                                   size: 20,
                                 ),
-                                onPressed: () => context.push('/notifications'),
+                                onPressed: () {
+                                  final isDesktop = MediaQuery.of(context).size.width > 800;
+                                  if (isDesktop) {
+                                    showDialog(
+                                      context: context,
+                                      barrierColor: Colors.black26,
+                                      builder: (context) {
+                                        return Center(
+                                          child: Container(
+                                            width: 420,
+                                            height: 600,
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(16),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withValues(alpha: 0.2),
+                                                  blurRadius: 12,
+                                                  spreadRadius: 2,
+                                                ),
+                                              ],
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(16),
+                                              child: const NotificationCenterScreen(isDialog: true),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    context.push('/notifications');
+                                  }
+                                },
                               );
 
                               if (count > 0) {

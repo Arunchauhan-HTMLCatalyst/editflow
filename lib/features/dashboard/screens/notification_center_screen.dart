@@ -9,7 +9,8 @@ import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../../shared/widgets/empty_state.dart';
 
 class NotificationCenterScreen extends ConsumerWidget {
-  const NotificationCenterScreen({super.key});
+  final bool isDialog;
+  const NotificationCenterScreen({super.key, this.isDialog = false});
 
   IconData _getIconForType(String type) {
     switch (type) {
@@ -91,7 +92,7 @@ class NotificationCenterScreen extends ConsumerWidget {
                 ),
               ),
               child: Icon(
-                CupertinoIcons.back,
+                isDialog ? CupertinoIcons.clear : CupertinoIcons.back,
                 size: 18,
                 color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
               ),
