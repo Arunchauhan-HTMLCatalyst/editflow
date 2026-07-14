@@ -37,6 +37,10 @@
       margin: 0;
       padding: 0;
     }
+    /* Allow Flutter gestures to pass through HTML video elements to our GestureDetector */
+    flt-platform-view {
+      pointer-events: none !important;
+    }
   </style>
 </head>
 <body>
