@@ -479,528 +479,622 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           data: (review) {
             if (review == null) return const Center(child: Text('Review session not found.'));
 
-             return LayoutBuilder(
+            return LayoutBuilder(
               builder: (context, constraints) {
                 final availableHeight = constraints.maxHeight;
+                final isDesktop = constraints.maxWidth > 800;
                 final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0 || _commentFocusNode.hasFocus;
 
-                return Column(
-              children: [
-                // 1. VIDEO PLAYER WINDOW
-                if (_isPlayerInitialized && _controller != null)
-                  Column(
+                if (isDesktop) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Container(
-                        constraints: BoxConstraints(
-                          maxHeight: keyboardOpen
-                              ? availableHeight * 0.25
-                              : availableHeight * 0.35,
-                        ),
-                        color: Colors.black,
-                        child: Center(
-                          child: AspectRatio(
-                            aspectRatio: _controller!.value.aspectRatio,
-                            child: RepaintBoundary(
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  GestureDetector(
-                                    onTap: () async {
-                                      if (_controller!.value.isPlaying) {
-                                        await _controller!.pause();
-                                      } else {
-                                        await _controller!.play();
-                                      }
-                                      setState(() {});
-                                    },
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        VideoPlayer(_controller!),
-                                        if (!_controller!.value.isPlaying)
-                                          Container(
-                                            width: 44,
-                                            height: 44,
-                                            decoration: BoxDecoration(
-                                              color: Colors.black54,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              CupertinoIcons.play_fill,
-                                              size: 22,
-                                              color: Colors.white,
+                      // LEFT SIDE: Video Player & Scrubber
+                      Expanded(
+                        flex: 6, // 60% width
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                color: Colors.black,
+                                child: Center(
+                                  child: _isPlayerInitialized && _controller != null
+                                      ? AspectRatio(
+                                          aspectRatio: _controller!.value.aspectRatio,
+                                          child: RepaintBoundary(
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                GestureDetector(
+                                                  onTap: () async {
+                                                    if (_controller!.value.isPlaying) {
+                                                      await _controller!.pause();
+                                                    } else {
+                                                      await _controller!.play();
+                                                    }
+                                                    setState(() {});
+                                                  },
+                                                  child: Stack(
+                                                    alignment: Alignment.center,
+                                                    children: [
+                                                      VideoPlayer(_controller!),
+                                                      if (!_controller!.value.isPlaying)
+                                                        Container(
+                                                          width: 44,
+                                                          height: 44,
+                                                          decoration: const BoxDecoration(
+                                                            color: Colors.black54,
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                          child: const Icon(
+                                                            CupertinoIcons.play_fill,
+                                                            size: 22,
+                                                            color: Colors.white,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                if (_controller!.value.isBuffering)
+                                                  Container(
+                                                    color: Colors.black38,
+                                                    child: const Center(
+                                                      child: CircularProgressIndicator(
+                                                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
                                           ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (_controller!.value.isBuffering)
-                                    Container(
-                                      color: Colors.black38,
-                                      child: const Center(
-                                        child: CircularProgressIndicator(
-                                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                                        ),
-                                      ),
-                                    ),
-                                ],
+                                        )
+                                      : _hasPlayerError
+                                          ? _buildPlayerErrorWidget()
+                                          : const Center(child: CircularProgressIndicator()),
+                                ),
                               ),
                             ),
-                          ),
+                            if (_isPlayerInitialized && _controller != null)
+                              _buildScrubberWidget(context, isDark),
+                          ],
                         ),
                       ),
-                      // Playhead slider (always visible for scrubbing)
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-                          activeTrackColor: AppColors.primary,
-                          inactiveTrackColor: isDark ? Colors.white24 : Colors.black12,
-                          thumbColor: AppColors.primary,
-                        ),
-                        child: ValueListenableBuilder<Duration>(
-                          valueListenable: _currentPositionNotifier,
-                          builder: (context, currentPosition, child) {
-                            return Slider(
-                              value: currentPosition.inMilliseconds.toDouble().clamp(
-                                0.0,
-                                _totalDuration.inMilliseconds.toDouble(),
-                              ),
-                              min: 0.0,
-                              max: _totalDuration.inMilliseconds.toDouble() > 0
-                                  ? _totalDuration.inMilliseconds.toDouble()
-                                  : 100.0,
-                              onChanged: (value) {
-                                _isDragging = true;
-                                _currentPositionNotifier.value = Duration(milliseconds: value.toInt());
-                              },
-                              onChangeEnd: (value) async {
-                                await _seekTo(Duration(milliseconds: value.toInt()));
-                                _isDragging = false;
-                              },
-                            );
-                          },
-                        ),
+                      // Divider
+                      Container(
+                        width: 1,
+                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
                       ),
-                    ],
-                  )
-                else if (_hasPlayerError)
-                  // Player load failure fallback card
-                  Container(
-                    margin: const EdgeInsets.all(16.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.cloud_off_rounded, size: 40, color: Colors.amber),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Direct playback unsupported',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        const SizedBox(height: 6),
-                         const Text(
-                          'Some cloud settings or private Dropbox links cannot stream directly in-app. Click below to open in your browser, then type comments below.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: 14),
-                        // Fetch the video detail URL
-                        FutureBuilder<Map<String, dynamic>>(
-                          future: SupabaseService.instance
-                              .from('review_videos')
-                              .select('url')
-                              .eq('id', widget.videoId)
-                              .single(),
-                          builder: (ctx, snap) {
-                            if (snap.connectionState == ConnectionState.done && snap.hasData) {
-                              final videoUrl = snap.data!['url'] as String;
-                              return ElevatedButton.icon(
-                                icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                                label: const Text('Open Video Link'),
-                                onPressed: () => _openExternalLink(videoUrl),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  const Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: CircularProgressIndicator(),
-                  ),
-
-                // 2. COMMENTS LIST
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (!keyboardOpen)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 6.0),
-                          child: Text(
-                            'FEEDBACK COMMENTS TIMELINE',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
+                      // RIGHT SIDE: Comments Timeline & Action Footer
                       Expanded(
-                        child: commentsAsync.when(
-                          loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (err, _) => Center(child: Text('Comments error: $err')),
-                          data: (comments) {
-                            if (comments.isEmpty) {
-                              return keyboardOpen
-                                  ? const Center(
-                                      child: Text(
-                                        'No comments yet',
-                                        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                                      ),
-                                    )
-                                  : const EmptyStateWidget(
-                                      icon: CupertinoIcons.chat_bubble_2,
-                                      title: 'No Feedback Comments Yet',
-                                      subtitle: 'Use the floating action button to leave time-coded comments.',
-                                    );
-                            }
-             return ListView.builder(
-                              itemCount: comments.length,
-                              padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 1.0),
-                              itemBuilder: (itemCtx, index) {
-                                final comment = comments[index];
-                                final authorNameAsync = ref.watch(profileNameProvider(comment.authorId));
-
-                                 String timeAgo(DateTime dateTime) {
-                                   final difference = DateTime.now().difference(dateTime);
-                                   if (difference.inDays >= 7) {
-                                     return DateFormat('MMM d').format(dateTime);
-                                   } else if (difference.inDays >= 1) {
-                                     return '${difference.inDays}d ago';
-                                   } else if (difference.inHours >= 1) {
-                                     return '${difference.inHours}h ago';
-                                   } else if (difference.inMinutes >= 1) {
-                                     return '${difference.inMinutes}m ago';
-                                   } else {
-                                     return 'just now';
-                                   }
-                                 }
-
-                                 return Container(
-                                   margin: const EdgeInsets.symmetric(vertical: 2.0),
-                                   padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                                   decoration: BoxDecoration(
-                                     color: const Color(0xFF161A1D),
-                                     borderRadius: BorderRadius.circular(12),
-                                     border: Border.all(
-                                       color: const Color(0xFF2B3237),
-                                       width: 1.0,
-                                     ),
-                                   ),
-                                   child: Row(
-                                     crossAxisAlignment: CrossAxisAlignment.center,
-                                     children: [
-                                       InkWell(
-                                         onTap: () {
-                                           final target = Duration(milliseconds: comment.timestampMs);
-                                           _currentPositionNotifier.value = target;
-                                           if (_controller != null && _isPlayerInitialized) {
-                                             _seekTo(target);
-                                             if (!_controller!.value.isPlaying) {
-                                               _controller!.play();
-                                             }
-                                           }
-                                         },
-                                         child: Container(
-                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                           decoration: BoxDecoration(
-                                             color: const Color(0xFF00C7A5).withValues(alpha: 0.15),
-                                             borderRadius: BorderRadius.circular(999),
-                                           ),
-                                           child: Text(
-                                             comment.formattedTimestamp,
-                                             style: const TextStyle(
-                                               fontSize: 10,
-                                               fontWeight: FontWeight.w700,
-                                               color: Color(0xFF00D7B5),
-                                             ),
-                                           ),
-                                         ),
-                                       ),
-                                       const SizedBox(width: 12),
-                                       // Comment and Metadata Column
-                                       Expanded(
-                                         child: Column(
-                                           crossAxisAlignment: CrossAxisAlignment.start,
-                                           children: [
-                                             // Comment text (14sp Medium White)
-                                             Text(
-                                               comment.comment,
-                                               style: const TextStyle(
-                                                 fontSize: 14,
-                                                 fontWeight: FontWeight.w500,
-                                                 height: 1.35,
-                                                 color: Colors.white,
-                                               ),
-                                             ),
-                                             const SizedBox(height: 4),
-                                             // Metadata row (11sp Grey 500, Name in Color(0xFF00D7B5))
-                                             Row(
-                                               children: [
-                                                 authorNameAsync.when(
-                                                   loading: () => const SizedBox.shrink(),
-                                                   error: (_, __) => const SizedBox.shrink(),
-                                                   data: (name) => Text(
-                                                     name,
-                                                     style: const TextStyle(
-                                                       fontWeight: FontWeight.w500,
-                                                       fontSize: 11,
-                                                       color: Color(0xFF00D7B5),
-                                                     ),
-                                                   ),
-                                                 ),
-                                                 const SizedBox(width: 6),
-                                                 Text(
-                                                    '•',
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      color: Colors.grey.shade500,
-                                                    ),
-                                                 ),
-                                                 const SizedBox(width: 6),
-                                                 Text(
-                                                   timeAgo(comment.createdAt),
-                                                   style: TextStyle(
-                                                     fontSize: 11,
-                                                     color: Colors.grey.shade500,
-                                                   ),
-                                                 ),
-                                               ],
-                                             ),
-                                           ],
-                                         ),
-                                       ),
-                                       if (comment.authorId == SupabaseService.userId)
-                                         PopupMenuButton<String>(
-                                           icon: Icon(Icons.more_vert_rounded, size: 20, color: Colors.grey.shade500),
-                                           padding: EdgeInsets.zero,
-                                           constraints: const BoxConstraints(),
-                                           onSelected: (value) {
-                                             if (value == 'edit') {
-                                               _showEditCommentDialog(comment);
-                                             } else if (value == 'delete') {
-                                               _confirmDeleteComment(comment);
-                                             }
-                                           },
-                                           itemBuilder: (context) => [
-                                             const PopupMenuItem(
-                                               value: 'edit',
-                                               height: 32,
-                                               child: Row(
-                                                 children: [
-                                                   Icon(Icons.edit_rounded, size: 14),
-                                                   SizedBox(width: 8),
-                                                   Text('Edit', style: TextStyle(fontSize: 12)),
-                                                 ],
-                                               ),
-                                             ),
-                                             const PopupMenuItem(
-                                               value: 'delete',
-                                               height: 32,
-                                               child: Row(
-                                                 children: [
-                                                   Icon(Icons.delete_rounded, size: 14, color: Colors.red),
-                                                   SizedBox(width: 8),
-                                                   Text('Delete', style: TextStyle(fontSize: 12, color: Colors.red)),
-                                                 ],
-                                               ),
-                                             ),
-                                           ],
-                                         ),
-                                     ],
-                                   ),
-                                 );
-                              },
-                            );
-                          },
+                        flex: 4, // 40% width
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: _buildCommentsListWidget(isDark, keyboardOpen, commentsAsync),
+                            ),
+                            _buildActionFooterWidget(isDark, isClient, review),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ),
+                  );
+                }
 
-                // 3. ACTION FOOTER (Type a comment bar & Submit button)
-                if (isClient && review.status != 'approved' && review.status != 'completed')
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.card : Colors.white,
-                      border: Border(
-                        top: BorderSide(
-                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                          width: 0.8,
-                        ),
-                      ),
-                    ),
-                    child: SafeArea(
-                      top: false,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                // Mobile Layout
+                return Column(
+                  children: [
+                    // 1. VIDEO PLAYER WINDOW
+                    if (_isPlayerInitialized && _controller != null)
+                      Column(
                         children: [
-                          // Timestamp badge
-                          ValueListenableBuilder<Duration>(
-                            valueListenable: _currentPositionNotifier,
-                            builder: (context, currentPosition, child) {
-                              return Container(
-                                height: 32,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.primary.withValues(alpha: 0.12),
-                                      AppColors.primary.withValues(alpha: 0.05),
+                          Container(
+                            constraints: BoxConstraints(
+                              maxHeight: keyboardOpen
+                                  ? availableHeight * 0.25
+                                  : availableHeight * 0.35,
+                            ),
+                            color: Colors.black,
+                            child: Center(
+                              child: AspectRatio(
+                                aspectRatio: _controller!.value.aspectRatio,
+                                child: RepaintBoundary(
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () async {
+                                          if (_controller!.value.isPlaying) {
+                                            await _controller!.pause();
+                                          } else {
+                                            await _controller!.play();
+                                          }
+                                          setState(() {});
+                                        },
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            VideoPlayer(_controller!),
+                                            if (!_controller!.value.isPlaying)
+                                              Container(
+                                                width: 44,
+                                                height: 44,
+                                                decoration: const BoxDecoration(
+                                                  color: Colors.black54,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: const Icon(
+                                                  CupertinoIcons.play_fill,
+                                                  size: 22,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (_controller!.value.isBuffering)
+                                        Container(
+                                          color: Colors.black38,
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                            ),
+                                          ),
+                                        ),
                                     ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: AppColors.primary.withValues(alpha: 0.2),
-                                    width: 0.8,
                                   ),
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    _formatDuration(currentPosition),
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.primary,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          // Comment input with integrated send
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _commentInputController,
-                                    focusNode: _commentFocusNode,
-                                    maxLines: 2,
-                                    minLines: 1,
-                                    keyboardType: TextInputType.multiline,
-                                    textCapitalization: TextCapitalization.sentences,
-                                    decoration: InputDecoration(
-                                      hintText: 'Add feedback or comment...',
-                                      hintStyle: TextStyle(
-                                        color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
-                                        fontSize: 13,
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(24),
-                                        borderSide: BorderSide(
-                                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                                          width: 0.8,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(24),
-                                        borderSide: BorderSide(
-                                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                                          width: 0.8,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(24),
-                                        borderSide: const BorderSide(
-                                          color: AppColors.primary,
-                                          width: 1.2,
-                                        ),
-                                      ),
-                                      filled: true,
-                                      fillColor: isDark ? const Color(0xFF131320) : const Color(0xFFF8FAFC),
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                                    ),
-                                    onTap: () {
-                                      if (_controller?.value.isPlaying ?? false) {
-                                        _controller!.pause();
-                                      }
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: IconButton(
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    icon: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
-                                    onPressed: () => _addCommentFromInput(review),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
+                          _buildScrubberWidget(context, isDark),
                         ],
+                      )
+                    else if (_hasPlayerError)
+                      _buildPlayerErrorWidget()
+                    else
+                      const Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: CircularProgressIndicator(),
                       ),
+
+                    // 2. COMMENTS LIST
+                    Expanded(
+                      child: _buildCommentsListWidget(isDark, keyboardOpen, commentsAsync),
                     ),
-                  )
-                else if (review.status == 'approved' || review.status == 'completed')
-                  Container(
-                    padding: const EdgeInsets.all(16.0),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.08),
-                      border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
-                    ),
-                    child: SafeArea(
-                      top: false,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            review.status == 'approved' ? 'Review Approved' : 'Revisions Completed',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
+
+                    // 3. ACTION FOOTER
+                    _buildActionFooterWidget(isDark, isClient, review),
+                  ],
+                );
+              },
             );
           },
-        );
-      },
-    ),
+        ),
       ),
     );
+  }
+
+  Widget _buildPlayerErrorWidget() {
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.cloud_off_rounded, size: 40, color: Colors.amber),
+          const SizedBox(height: 12),
+          const Text(
+            'Direct playback unsupported',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Some cloud settings or private Dropbox links cannot stream directly in-app. Click below to open in your browser, then type comments below.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          FutureBuilder<Map<String, dynamic>>(
+            future: SupabaseService.instance
+                .from('review_videos')
+                .select('url')
+                .eq('id', widget.videoId)
+                .single(),
+            builder: (ctx, snap) {
+              if (snap.connectionState == ConnectionState.done && snap.hasData) {
+                final videoUrl = snap.data!['url'] as String;
+                return ElevatedButton.icon(
+                  icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                  label: const Text('Open Video Link'),
+                  onPressed: () => _openExternalLink(videoUrl),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScrubberWidget(BuildContext context, bool isDark) {
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: SliderTheme(
+        data: SliderTheme.of(context).copyWith(
+          trackHeight: 3,
+          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+          activeTrackColor: AppColors.primary,
+          inactiveTrackColor: isDark ? Colors.white24 : Colors.black12,
+          thumbColor: AppColors.primary,
+        ),
+        child: ValueListenableBuilder<Duration>(
+          valueListenable: _currentPositionNotifier,
+          builder: (context, currentPosition, child) {
+            return Slider(
+              value: currentPosition.inMilliseconds.toDouble().clamp(
+                0.0,
+                _totalDuration.inMilliseconds.toDouble(),
+              ),
+              min: 0.0,
+              max: _totalDuration.inMilliseconds.toDouble() > 0
+                  ? _totalDuration.inMilliseconds.toDouble()
+                  : 100.0,
+              onChanged: (value) {
+                _isDragging = true;
+                _currentPositionNotifier.value = Duration(milliseconds: value.toInt());
+              },
+              onChangeEnd: (value) async {
+                await _seekTo(Duration(milliseconds: value.toInt()));
+                _isDragging = false;
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommentsListWidget(
+    bool isDark,
+    bool keyboardOpen,
+    AsyncValue<List<ReviewComment>> commentsAsync,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!keyboardOpen)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 6.0),
+            child: Text(
+              'FEEDBACK COMMENTS TIMELINE',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        Expanded(
+          child: commentsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Comments error: $err')),
+            data: (comments) {
+              if (comments.isEmpty) {
+                return keyboardOpen
+                    ? const Center(
+                        child: Text(
+                          'No comments yet',
+                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        ),
+                      )
+                    : const EmptyStateWidget(
+                        icon: CupertinoIcons.chat_bubble_2,
+                        title: 'No Feedback Comments Yet',
+                        subtitle: 'Use the floating action button to leave time-coded comments.',
+                      );
+              }
+              return ListView.builder(
+                itemCount: comments.length,
+                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 1.0),
+                itemBuilder: (itemCtx, index) {
+                  final comment = comments[index];
+                  final authorNameAsync = ref.watch(profileNameProvider(comment.authorId));
+
+                  String timeAgo(DateTime dateTime) {
+                    final difference = DateTime.now().difference(dateTime);
+                    if (difference.inDays >= 7) {
+                      return DateFormat('MMM d').format(dateTime);
+                    } else if (difference.inDays >= 1) {
+                      return '${difference.inDays}d ago';
+                    } else if (difference.inHours >= 1) {
+                      return '${difference.inHours}h ago';
+                    } else if (difference.inMinutes >= 1) {
+                      return '${difference.inMinutes}m ago';
+                    } else {
+                      return 'Just now';
+                    }
+                  }
+
+                  final isOwnComment = comment.authorId == SupabaseService.userId;
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 2.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF161A1D) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            final target = Duration(milliseconds: comment.timestampMs);
+                            _currentPositionNotifier.value = target;
+                            if (_controller != null && _isPlayerInitialized) {
+                              _seekTo(target);
+                              if (!_controller!.value.isPlaying) {
+                                _controller!.play();
+                              }
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00C7A5).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              comment.formattedTimestamp,
+                              style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF00D7B5)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Comment and Metadata Column
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                comment.comment,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              authorNameAsync.when(
+                                loading: () => const SizedBox.shrink(),
+                                error: (_, __) => const SizedBox.shrink(),
+                                data: (name) => Text(
+                                  '$name • ${timeAgo(comment.createdAt)}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isOwnComment)
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert_rounded, size: 16, color: AppColors.textMuted),
+                            padding: EdgeInsets.zero,
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_rounded, size: 14),
+                                    SizedBox(width: 8),
+                                    Text('Edit', style: TextStyle(fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete_rounded, size: 14, color: Colors.red),
+                                    SizedBox(width: 8),
+                                    Text('Delete', style: TextStyle(fontSize: 12, color: Colors.red)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            onSelected: (val) {
+                              if (val == 'edit') {
+                                _showEditCommentDialog(comment);
+                              } else if (val == 'delete') {
+                                _confirmDeleteComment(comment);
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionFooterWidget(bool isDark, bool isClient, Review review) {
+    if (isClient && review.status != 'approved' && review.status != 'completed') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.card : Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+              width: 0.8,
+            ),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Timestamp badge
+              ValueListenableBuilder<Duration>(
+                valueListenable: _currentPositionNotifier,
+                builder: (context, currentPosition, child) {
+                  return Container(
+                    height: 32,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.12),
+                          AppColors.primary.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        _formatDuration(currentPosition),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              // Comment input with integrated send
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _commentInputController,
+                        focusNode: _commentFocusNode,
+                        maxLines: 2,
+                        minLines: 1,
+                        keyboardType: TextInputType.multiline,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          hintText: 'Add feedback or comment...',
+                          hintStyle: TextStyle(
+                            color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
+                            fontSize: 13,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide(
+                              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                              width: 0.8,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide(
+                              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                              width: 0.8,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: const BorderSide(
+                              color: AppColors.primary,
+                              width: 1.2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: isDark ? const Color(0xFF131320) : const Color(0xFFF8FAFC),
+                        ),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                        ),
+                        onTap: () {
+                          if (_controller?.value.isPlaying ?? false) {
+                            _controller!.pause();
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
+                        onPressed: () => _addCommentFromInput(review),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (review.status == 'approved' || review.status == 'completed') {
+      return Container(
+        padding: const EdgeInsets.all(16.0),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.08),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                review.status == 'approved' ? 'Review Approved' : 'Revisions Completed',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 }
