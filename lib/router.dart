@@ -13,6 +13,7 @@ import 'features/clients/screens/freelancer_detail_screen.dart';
 import 'features/payments/screens/payments_screen.dart';
 import 'features/projects/screens/project_detail_screen.dart';
 import 'features/projects/screens/review_screen.dart';
+import 'features/projects/screens/public_review_screen.dart';
 import 'features/projects/screens/add_project_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/calendar_screen.dart';
@@ -44,10 +45,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/splash';
       }
 
+      final isPublicRoute = loc.startsWith('/share/review/');
+
       final isAuthRoute = loc == '/login' ||
           loc == '/register' ||
           loc == '/forgot-password' ||
-          loc == '/splash';
+          loc == '/splash' ||
+          isPublicRoute;
 
       final authState = ref.read(authProvider);
       final isUnauthenticated = authState.status == AuthStatus.unauthenticated;
@@ -143,6 +147,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             videoId: videoId,
             isClient: isClient,
           ));
+        },
+      ),
+      GoRoute(
+        path: '/share/review/:token',
+        pageBuilder: (context, state) {
+          final token = state.pathParameters['token']!;
+          return slidePushPage(PublicReviewScreen(shareToken: token));
         },
       ),
 

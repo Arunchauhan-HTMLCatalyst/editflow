@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../../../services/supabase_service.dart';
 import '../models/review.dart';
 import '../models/review_video.dart';
 import '../models/review_comment.dart';
+import '../models/review_share.dart';
 
 class ReviewRepository {
   Future<Review?> getLatestReview(String projectId) async {
@@ -256,6 +258,126 @@ class ReviewRepository {
       }).timeout(const Duration(seconds: 10));
     } catch (e) {
       debugPrint('[ReviewRepository.approveReview] Activity log failed: $e');
+    }
+  }
+
+  String _generateToken() {
+    final rand = Random.secure();
+    final bytes = List<int>.generate(16, (i) => rand.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  Future<String> createShareLink(String reviewId, int? expiryHours) async {
+    try {
+      final token = _generateToken();
+      final expiresAt = expiryHours != null
+          ? DateTime.now().toUtc().add(Duration(hours: expiryHours))
+          : null;
+
+      await SupabaseService.instance.from('review_shares').insert({
+        'review_id': reviewId,
+        'token': token,
+        'expires_at': expiresAt?.toIso8601String(),
+        'created_by': SupabaseService.userId,
+      });
+      return token;
+    } catch (e) {
+      debugPrint('[ReviewRepository.createShareLink] Error: $e');
+      rethrow;
+    }
+  }
+
+  Future<ReviewShare?> getReviewShare(String token) async {
+    try {
+      final response = await SupabaseService.instance
+          .from('review_shares')
+          .select('*')
+          .eq('token', token)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
+
+      if (response == null) return null;
+      return ReviewShare.fromJson(response);
+    } catch (e) {
+      debugPrint('[ReviewRepository.getReviewShare] Error: $e');
+      return null;
+    }
+  }
+
+  Future<Review?> getReviewByShareToken(String token, String reviewId) async {
+    final client = SupabaseService.instance;
+    try {
+      client.rest.headers['x-share-token'] = token;
+      final response = await client
+          .from('reviews')
+          .select('*')
+          .eq('id', reviewId)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
+
+      if (response == null) return null;
+      return Review.fromJson(response);
+    } catch (e) {
+      debugPrint('[ReviewRepository.getReviewByShareToken] Error: $e');
+      return null;
+    } finally {
+      client.rest.headers.remove('x-share-token');
+    }
+  }
+
+  Future<List<ReviewVideo>> getReviewVideosByShareToken(String token, String reviewId) async {
+    final client = SupabaseService.instance;
+    try {
+      client.rest.headers['x-share-token'] = token;
+      final response = await client
+          .from('review_videos')
+          .select('*')
+          .eq('review_id', reviewId)
+          .timeout(const Duration(seconds: 10));
+
+      return (response as List)
+          .map((e) => ReviewVideo.fromJson(e))
+          .toList();
+    } catch (e) {
+      debugPrint('[ReviewRepository.getReviewVideosByShareToken] Error: $e');
+      return [];
+    } finally {
+      client.rest.headers.remove('x-share-token');
+    }
+  }
+
+  Future<List<ReviewComment>> getReviewCommentsByShareToken(String token, String videoId) async {
+    final client = SupabaseService.instance;
+    try {
+      client.rest.headers['x-share-token'] = token;
+      final response = await client
+          .from('review_comments')
+          .select('*')
+          .eq('video_id', videoId)
+          .order('timestamp_ms', ascending: true)
+          .timeout(const Duration(seconds: 10));
+
+      return (response as List)
+          .map((e) => ReviewComment.fromJson(e))
+          .toList();
+    } catch (e) {
+      debugPrint('[ReviewRepository.getReviewCommentsByShareToken] Error: $e');
+      return [];
+    } finally {
+      client.rest.headers.remove('x-share-token');
+    }
+  }
+
+  Future<void> addReviewCommentByShareToken(String token, ReviewComment comment) async {
+    final client = SupabaseService.instance;
+    try {
+      client.rest.headers['x-share-token'] = token;
+      await client
+          .from('review_comments')
+          .insert(comment.toJson()..remove('id'))
+          .timeout(const Duration(seconds: 10));
+    } finally {
+      client.rest.headers.remove('x-share-token');
     }
   }
 }

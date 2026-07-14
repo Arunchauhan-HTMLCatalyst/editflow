@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/review_repository.dart';
 import '../models/review.dart';
@@ -85,3 +86,31 @@ final profileNameProvider = FutureProvider.family<String, String>((ref, userId) 
   } catch (_) {}
   return 'User';
 });
+
+typedef PublicCommentsArg = ({String token, String videoId});
+
+final publicReviewCommentsProvider = StreamProvider.family<List<ReviewComment>, PublicCommentsArg>((ref, arg) {
+  final controller = StreamController<List<ReviewComment>>();
+  Timer? timer;
+
+  Future<void> fetch() async {
+    try {
+      final repo = ref.read(reviewRepositoryProvider);
+      final comments = await repo.getReviewCommentsByShareToken(arg.token, arg.videoId);
+      if (!controller.isClosed) {
+        controller.add(comments);
+      }
+    } catch (_) {}
+  }
+
+  fetch();
+  timer = Timer.periodic(const Duration(seconds: 4), (_) => fetch());
+
+  ref.onDispose(() {
+    timer?.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
+});
+

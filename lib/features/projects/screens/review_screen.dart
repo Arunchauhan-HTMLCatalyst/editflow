@@ -18,6 +18,7 @@ import '../models/review_comment.dart';
 import '../providers/project_provider.dart';
 import '../models/project_status.dart';
 import '../providers/review_provider.dart';
+import '../widgets/share_link_dialog.dart';
 import '../../../services/supabase_service.dart';
 
 class ReviewScreen extends ConsumerStatefulWidget {
@@ -498,8 +499,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               
               final isApproved = review.status == 'approved' || review.status == 'completed';
               
+              Widget actionWidget = const SizedBox.shrink();
+              
               if (isApproved) {
-                return Padding(
+                actionWidget = Padding(
                   padding: const EdgeInsets.only(right: 12.0),
                   child: Center(
                     child: Container(
@@ -522,86 +525,104 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                     ),
                   ),
                 );
-              }
-              
-              final videosAsync = ref.watch(reviewVideosProvider(review.id));
-              return videosAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (videos) {
-                  final currentVideo = videos.firstWhere((v) => v.id == widget.videoId, orElse: () => videos.first);
-                  if (currentVideo.isApproved) {
+              } else {
+                final videosAsync = ref.watch(reviewVideosProvider(review.id));
+                actionWidget = videosAsync.when(
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (videos) {
+                    final currentVideo = videos.firstWhere((v) => v.id == widget.videoId, orElse: () => videos.first);
+                    if (currentVideo.isApproved) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12.0),
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle_rounded, size: 14, color: Colors.green),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Approved',
+                                  style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    if (!isClient) return const SizedBox.shrink();
+                    
+                    final commentsAsync = ref.watch(reviewCommentsProvider(widget.videoId));
+                    final comments = commentsAsync.valueOrNull ?? [];
+                    
                     return Padding(
                       padding: const EdgeInsets.only(right: 12.0),
                       child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.check_circle_rounded, size: 14, color: Colors.green),
-                              SizedBox(width: 4),
-                              Text(
-                                'Approved',
-                                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12),
+                        child: comments.isNotEmpty
+                            ? TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.primary,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.send_rounded, size: 12, color: AppColors.primary),
+                                label: const Text(
+                                  'Submit Feedback',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                onPressed: () => _submitFeedback(review),
+                              )
+                            : TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.green,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  backgroundColor: Colors.green.withValues(alpha: 0.08),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide(color: Colors.green.withValues(alpha: 0.2)),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.check_circle_outline_rounded, size: 14, color: Colors.green),
+                                label: const Text(
+                                  'Approve',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                onPressed: () => _approveReview(review),
                               ),
-                            ],
-                          ),
-                        ),
                       ),
                     );
-                  }
-                  
-                  if (!isClient) return const SizedBox.shrink();
-                  
-                  final commentsAsync = ref.watch(reviewCommentsProvider(widget.videoId));
-                  final comments = commentsAsync.valueOrNull ?? [];
-                  
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: Center(
-                      child: comments.isNotEmpty
-                          ? TextButton.icon(
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                backgroundColor: AppColors.primary.withValues(alpha: 0.08),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
-                                ),
-                              ),
-                              icon: const Icon(Icons.send_rounded, size: 12, color: AppColors.primary),
-                              label: const Text(
-                                'Submit Feedback',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                              onPressed: () => _submitFeedback(review),
-                            )
-                          : TextButton.icon(
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.green,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                backgroundColor: Colors.green.withValues(alpha: 0.08),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  side: BorderSide(color: Colors.green.withValues(alpha: 0.2)),
-                                ),
-                              ),
-                              icon: const Icon(Icons.check_circle_outline_rounded, size: 14, color: Colors.green),
-                              label: const Text(
-                                'Approve',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                              onPressed: () => _approveReview(review),
-                            ),
-                    ),
-                  );
-                },
+                  },
+                );
+              }
+
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(CupertinoIcons.share, size: 20),
+                    tooltip: 'Share Review Link',
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => ShareLinkDialog(reviewId: review.id),
+                      );
+                    },
+                  ),
+                  actionWidget,
+                ],
               );
             },
           ),
