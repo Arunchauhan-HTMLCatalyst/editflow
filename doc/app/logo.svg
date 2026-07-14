@@ -1,0 +1,39 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <!-- Definitions for gradients -->
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    
+    <!-- Shimmer Overlay for Glassy Depth -->
+    <radialGradient id="shimmer" cx="50%" cy="45%" r="85%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.13" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background Base Container -->
+  <rect width="100" height="100" rx="28" fill="url(#bg-grad)" />
+
+  <!-- Shimmer Overlay -->
+  <rect width="100" height="100" rx="28" fill="url(#shimmer)" />
+
+  <!-- Flowing "ef" Monogram Ligature -->
+  <g stroke="#ffffff" stroke-width="8.8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- 1. "e" bowl (Center x=34, y=54, Radius=15.5) -->
+    <!-- Sweeps CCW from 0 deg (3 o'clock) up to 56 deg (open gap at bottom-right) -->
+    <!-- Start at (34+15.5, 54) = (49.5, 54), arc sweeps to (34 + 15.5*cos(56°), 54 + 15.5*sin(56°)) = (42.6, 66.8) -->
+    <path d="M 49.5 54 A 15.5 15.5 0 1 0 42.6 66.8" />
+
+    <!-- 2. Shared crossbar (ligature) from e-left to f-right (y=54) -->
+    <line x1="18.5" y1="54" x2="79.34" y2="54" />
+
+    <!-- 3. "f" vertical stem (x=63.5) -->
+    <line x1="63.5" y1="22" x2="63.5" y2="82" />
+
+    <!-- 4. "f" top hook (curves right from x=63.5, y=22 to x=79, y=14) -->
+    <path d="M 63.5 22 Q 63.5 14 79 14" />
+  </g>
+</svg>
