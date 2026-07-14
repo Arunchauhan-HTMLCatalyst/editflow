@@ -1745,28 +1745,6 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
                       if (!isClient && project.status != ProjectStatus.completed) ...[
                         const SizedBox(height: 12),
-                        if (project.status == ProjectStatus.revisionPending) ...[
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () => _markRevisionsCompleted(context, project),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.success,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                              label: const Text(
-                                'Mark Revisions Completed',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(
