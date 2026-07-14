@@ -13,6 +13,9 @@ class ReviewVideo {
     required this.createdAt,
   });
 
+  bool get isApproved => name.startsWith('[Approved] ');
+  String get displayName => isApproved ? name.replaceFirst('[Approved] ', '') : name;
+
   factory ReviewVideo.fromJson(Map<String, dynamic> json) => ReviewVideo(
         id: json['id'] as String,
         reviewId: json['review_id'] as String,

@@ -1735,7 +1735,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                           error: (_, __) => const SizedBox.shrink(),
                           data: (comments) {
                             final count = comments.length;
-                            final isApproved = review.status == 'approved';
+                            final isApproved = review.status == 'approved' || video.isApproved;
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8.0),
                               decoration: BoxDecoration(
@@ -1751,12 +1751,41 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                 leading: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.1),
+                                    color: isApproved
+                                        ? Colors.green.withValues(alpha: 0.1)
+                                        : AppColors.primary.withValues(alpha: 0.1),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(CupertinoIcons.video_camera_solid, size: 14, color: AppColors.primary),
+                                  child: Icon(
+                                    isApproved ? Icons.check_circle_rounded : CupertinoIcons.video_camera_solid,
+                                    size: 14,
+                                    color: isApproved ? Colors.green : AppColors.primary,
+                                  ),
                                 ),
-                                title: Text(video.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        video.displayName,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      ),
+                                    ),
+                                    if (video.isApproved) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: const Text(
+                                          'Approved',
+                                          style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                                 subtitle: Text(
                                   isApproved
                                       ? 'Approved'

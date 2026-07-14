@@ -133,14 +133,36 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   Future<void> _seekTo(Duration position) async {
     if (_controller != null && _isPlayerInitialized) {
       final wasPlaying = _controller!.value.isPlaying;
-      await _controller!.seekTo(position);
-      await Future.delayed(const Duration(milliseconds: 50));
-      if (wasPlaying && !_controller!.value.isPlaying) {
-        await _controller!.play();
+      try {
+        await _controller!.seekTo(position);
+        await Future.delayed(const Duration(milliseconds: 50));
+        if (wasPlaying && !_controller!.value.isPlaying) {
+          await _controller!.play();
+        }
+      } catch (e) {
+        debugPrint('[ReviewScreen] _seekTo failed: $e');
       }
       if (mounted) {
         _currentPositionNotifier.value = position;
       }
+    }
+  }
+
+  Future<void> _togglePlay() async {
+    if (_controller == null || !_isPlayerInitialized) return;
+    try {
+      if (_controller!.value.isPlaying) {
+        await _controller!.pause();
+      } else {
+        await _controller!.play();
+      }
+      if (mounted) {
+        setState(() {
+          _isPlaying = _controller!.value.isPlaying;
+        });
+      }
+    } catch (e) {
+      debugPrint('[ReviewScreen] _togglePlay failed: $e');
     }
   }
 
@@ -322,17 +344,20 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     try {
       final videos = await ref.read(reviewRepositoryProvider).getReviewVideos(review.id);
       final currentVideo = videos.firstWhere((v) => v.id == widget.videoId, orElse: () => videos.first);
-      final isMultiple = videos.length > 1;
+      
+      // Calculate active pending videos (exclude already approved ones)
+      final pendingVideos = videos.where((v) => !v.isApproved).toList();
+      final isLastPending = pendingVideos.length <= 1 && pendingVideos.any((v) => v.id == widget.videoId);
 
       if (!mounted) return;
 
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text(isMultiple ? 'Approve Video?' : 'Approve Review?'),
-          content: Text(isMultiple
-              ? 'Are you sure you want to approve "${currentVideo.name}"? This video will be marked as completed and removed from the active review list.'
-              : 'Approving will mark the project as completed and delete the review video data.'),
+          title: Text(!isLastPending ? 'Approve Video?' : 'Approve Review?'),
+          content: Text(!isLastPending
+              ? 'Are you sure you want to approve "${currentVideo.name}"? This video will be marked as approved.'
+              : 'Approving will mark the review session and project as completed.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
@@ -348,22 +373,19 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       );
 
       if (confirmed == true && mounted) {
-        if (isMultiple) {
-          // 1. Delete comments for ONLY the current video
-          await SupabaseService.instance
-              .from('review_comments')
-              .delete()
-              .eq('video_id', widget.videoId)
-              .timeout(const Duration(seconds: 10));
+        // Prefix the approved video name with [Approved] if not already present
+        final newName = currentVideo.name.startsWith('[Approved] ')
+            ? currentVideo.name
+            : '[Approved] ${currentVideo.name}';
+            
+        await SupabaseService.instance
+            .from('review_videos')
+            .update({'name': newName})
+            .eq('id', widget.videoId)
+            .timeout(const Duration(seconds: 10));
 
-          // 2. Delete ONLY the current review video
-          await SupabaseService.instance
-              .from('review_videos')
-              .delete()
-              .eq('id', widget.videoId)
-              .timeout(const Duration(seconds: 10));
-
-          // 3. Log activity for the freelancer
+        if (!isLastPending) {
+          // Log activity for the freelancer for specific video approval
           try {
             final projectRes = await SupabaseService.instance
                 .from('projects')
@@ -400,26 +422,13 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           // 1. Approve the review (sets status + activity log)
           await ref.read(reviewRepositoryProvider).approveReview(review.id);
 
-          // 2. Delete all comments for the video
-          await SupabaseService.instance
-              .from('review_comments')
-              .delete()
-              .eq('video_id', widget.videoId)
-              .timeout(const Duration(seconds: 10));
-
-          // 3. Delete the review video
-          await SupabaseService.instance
-              .from('review_videos')
-              .delete()
-              .eq('id', widget.videoId)
-              .timeout(const Duration(seconds: 10));
-
-          // 4. Update project status to completed
+          // 2. Update project status to completed
           await ref.read(projectProvider.notifier).updateStatus(
             widget.projectId,
             ProjectStatus.completed,
           );
 
+          ref.invalidate(latestReviewProvider(widget.projectId));
           await ref.read(projectProvider.notifier).refresh();
 
           if (mounted) {
@@ -485,52 +494,115 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
             data: (review) {
-              if (review != null && isClient && review.status != 'approved' && review.status != 'completed') {
-                final commentsAsync = ref.watch(reviewCommentsProvider(widget.videoId));
-                final comments = commentsAsync.valueOrNull ?? [];
-                
+              if (review == null) return const SizedBox.shrink();
+              
+              final isApproved = review.status == 'approved' || review.status == 'completed';
+              
+              if (isApproved) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 12.0),
                   child: Center(
-                    child: comments.isNotEmpty
-                        ? TextButton.icon(
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              backgroundColor: AppColors.primary.withValues(alpha: 0.08),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
-                              ),
-                            ),
-                            icon: const Icon(Icons.send_rounded, size: 12, color: AppColors.primary),
-                            label: const Text(
-                              'Submit Feedback',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                            ),
-                            onPressed: () => _submitFeedback(review),
-                          )
-                        : TextButton.icon(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              backgroundColor: Colors.green.withValues(alpha: 0.08),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(color: Colors.green.withValues(alpha: 0.2)),
-                              ),
-                            ),
-                            icon: const Icon(Icons.check_circle_outline_rounded, size: 14, color: Colors.green),
-                            label: const Text(
-                              'Approve',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                            ),
-                            onPressed: () => _approveReview(review),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded, size: 14, color: Colors.green),
+                          SizedBox(width: 4),
+                          Text(
+                            'Approved',
+                            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12),
                           ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               }
-              return const SizedBox.shrink();
+              
+              final videosAsync = ref.watch(reviewVideosProvider(review.id));
+              return videosAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (videos) {
+                  final currentVideo = videos.firstWhere((v) => v.id == widget.videoId, orElse: () => videos.first);
+                  if (currentVideo.isApproved) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12.0),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle_rounded, size: 14, color: Colors.green),
+                              SizedBox(width: 4),
+                              Text(
+                                'Approved',
+                                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  
+                  if (!isClient) return const SizedBox.shrink();
+                  
+                  final commentsAsync = ref.watch(reviewCommentsProvider(widget.videoId));
+                  final comments = commentsAsync.valueOrNull ?? [];
+                  
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: Center(
+                      child: comments.isNotEmpty
+                          ? TextButton.icon(
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
+                                ),
+                              ),
+                              icon: const Icon(Icons.send_rounded, size: 12, color: AppColors.primary),
+                              label: const Text(
+                                'Submit Feedback',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              onPressed: () => _submitFeedback(review),
+                            )
+                          : TextButton.icon(
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.green,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                backgroundColor: Colors.green.withValues(alpha: 0.08),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(color: Colors.green.withValues(alpha: 0.2)),
+                                ),
+                              ),
+                              icon: const Icon(Icons.check_circle_outline_rounded, size: 14, color: Colors.green),
+                              label: const Text(
+                                'Approve',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              onPressed: () => _approveReview(review),
+                            ),
+                    ),
+                  );
+                },
+              );
             },
           ),
         ],
@@ -573,16 +645,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                                 Positioned.fill(
                                                   child: GestureDetector(
                                                     behavior: HitTestBehavior.opaque,
-                                                    onTap: () async {
-                                                      if (_controller!.value.isPlaying) {
-                                                        await _controller!.pause();
-                                                      } else {
-                                                        await _controller!.play();
-                                                      }
-                                                      setState(() {
-                                                        _isPlaying = _controller!.value.isPlaying;
-                                                      });
-                                                    },
+                                                    onTap: _togglePlay,
                                                     child: Container(color: Colors.transparent),
                                                   ),
                                                 ),
@@ -675,16 +738,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                       Positioned.fill(
                                         child: GestureDetector(
                                           behavior: HitTestBehavior.opaque,
-                                          onTap: () async {
-                                            if (_controller!.value.isPlaying) {
-                                              await _controller!.pause();
-                                            } else {
-                                              await _controller!.play();
-                                            }
-                                            setState(() {
-                                              _isPlaying = _controller!.value.isPlaying;
-                                            });
-                                          },
+                                          onTap: _togglePlay,
                                           child: Container(color: Colors.transparent),
                                         ),
                                       ),
@@ -814,18 +868,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               color: Colors.white,
               size: 20,
             ),
-            onPressed: () async {
-              if (_controller != null) {
-                if (_controller!.value.isPlaying) {
-                  await _controller!.pause();
-                } else {
-                  await _controller!.play();
-                }
-                setState(() {
-                  _isPlaying = _controller!.value.isPlaying;
-                });
-              }
-            },
+            onPressed: _togglePlay,
           ),
           const SizedBox(width: 8),
           // Timeline Slider
@@ -1065,7 +1108,45 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   }
 
   Widget _buildActionFooterWidget(bool isDark, bool isClient, Review review) {
-    if (isClient && review.status != 'approved' && review.status != 'completed') {
+    final isReviewApproved = review.status == 'approved' || review.status == 'completed';
+    
+    final videosAsync = ref.watch(reviewVideosProvider(review.id));
+    final currentVideoApproved = videosAsync.when(
+      data: (videos) {
+        if (videos.isEmpty) return false;
+        final currentVideo = videos.firstWhere((v) => v.id == widget.videoId, orElse: () => videos.first);
+        return currentVideo.isApproved;
+      },
+      loading: () => false,
+      error: (_, __) => false,
+    );
+
+    if (isReviewApproved || currentVideoApproved) {
+      return Container(
+        padding: const EdgeInsets.all(16.0),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.08),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                isReviewApproved && review.status == 'completed' ? 'Revisions Completed' : 'Review Approved',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (isClient) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
         decoration: BoxDecoration(
@@ -1190,29 +1271,6 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      );
-    } else if (review.status == 'approved' || review.status == 'completed') {
-      return Container(
-        padding: const EdgeInsets.all(16.0),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.08),
-          border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                review.status == 'approved' ? 'Review Approved' : 'Revisions Completed',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
               ),
             ],
           ),

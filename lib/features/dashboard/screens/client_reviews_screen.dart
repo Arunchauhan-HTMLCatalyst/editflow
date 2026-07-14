@@ -337,21 +337,43 @@ class _VideoReviewListTile extends ConsumerWidget {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: video.isApproved
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                CupertinoIcons.play_fill,
-                color: AppColors.primary,
+              child: Icon(
+                video.isApproved ? Icons.check_circle_rounded : CupertinoIcons.play_fill,
+                color: video.isApproved ? Colors.green : AppColors.primary,
                 size: 13,
               ),
             ),
-            title: Text(
-              video.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    video.displayName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                if (video.isApproved) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'Approved',
+                      style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ],
             ),
             subtitle: Row(
               children: [
