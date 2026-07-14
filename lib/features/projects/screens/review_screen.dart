@@ -40,6 +40,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   VideoPlayerController? _controller;
   bool _isPlayerInitialized = false;
   bool _hasPlayerError = false;
+  bool _isPlaying = false;
   late final ValueNotifier<Duration> _currentPositionNotifier;
   Duration _totalDuration = Duration.zero;
   Timer? _positionTimer;
@@ -100,6 +101,13 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     if (_controller != null && _controller!.value.isInitialized) {
       if (!_isDragging) {
         _currentPositionNotifier.value = _controller!.value.position;
+      }
+      // Sync play/pause state so UI icons update (critical for web)
+      final playing = _controller!.value.isPlaying;
+      if (playing != _isPlaying) {
+        setState(() {
+          _isPlaying = playing;
+        });
       }
     }
   }
@@ -505,44 +513,48 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                             child: Stack(
                                               alignment: Alignment.center,
                                               children: [
-                                                GestureDetector(
-                                                  onTap: () async {
-                                                    if (_controller!.value.isPlaying) {
-                                                      await _controller!.pause();
-                                                    } else {
-                                                      await _controller!.play();
-                                                    }
-                                                    setState(() {});
-                                                  },
-                                                  child: Stack(
-                                                    alignment: Alignment.center,
-                                                    children: [
-                                                      IgnorePointer(
-                                                        child: VideoPlayer(_controller!),
-                                                      ),
-                                                      if (!_controller!.value.isPlaying)
-                                                        Container(
-                                                          width: 44,
-                                                          height: 44,
-                                                          decoration: const BoxDecoration(
-                                                            color: Colors.black54,
-                                                            shape: BoxShape.circle,
-                                                          ),
-                                                          child: const Icon(
-                                                            CupertinoIcons.play_fill,
-                                                            size: 22,
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                    ],
+                                                VideoPlayer(_controller!),
+                                                // Transparent overlay to capture taps (works on web where platform views swallow gestures)
+                                                Positioned.fill(
+                                                  child: GestureDetector(
+                                                    behavior: HitTestBehavior.opaque,
+                                                    onTap: () async {
+                                                      if (_controller!.value.isPlaying) {
+                                                        await _controller!.pause();
+                                                      } else {
+                                                        await _controller!.play();
+                                                      }
+                                                      setState(() {
+                                                        _isPlaying = _controller!.value.isPlaying;
+                                                      });
+                                                    },
+                                                    child: Container(color: Colors.transparent),
                                                   ),
                                                 ),
+                                                if (!_isPlaying)
+                                                  IgnorePointer(
+                                                    child: Container(
+                                                      width: 44,
+                                                      height: 44,
+                                                      decoration: const BoxDecoration(
+                                                        color: Colors.black54,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: const Icon(
+                                                        CupertinoIcons.play_fill,
+                                                        size: 22,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 if (_controller!.value.isBuffering)
-                                                  Container(
-                                                    color: Colors.black38,
-                                                    child: const Center(
-                                                      child: CircularProgressIndicator(
-                                                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                                  IgnorePointer(
+                                                    child: Container(
+                                                      color: Colors.black38,
+                                                      child: const Center(
+                                                        child: CircularProgressIndicator(
+                                                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
@@ -603,44 +615,48 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                   child: Stack(
                                     alignment: Alignment.center,
                                     children: [
-                                      GestureDetector(
-                                        onTap: () async {
-                                          if (_controller!.value.isPlaying) {
-                                            await _controller!.pause();
-                                          } else {
-                                            await _controller!.play();
-                                          }
-                                          setState(() {});
-                                        },
-                                        child: Stack(
-                                          alignment: Alignment.center,
-                                          children: [
-                                            IgnorePointer(
-                                              child: VideoPlayer(_controller!),
-                                            ),
-                                            if (!_controller!.value.isPlaying)
-                                              Container(
-                                                width: 44,
-                                                height: 44,
-                                                decoration: const BoxDecoration(
-                                                  color: Colors.black54,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: const Icon(
-                                                  CupertinoIcons.play_fill,
-                                                  size: 22,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                          ],
+                                      VideoPlayer(_controller!),
+                                      // Transparent overlay to capture taps (works on web where platform views swallow gestures)
+                                      Positioned.fill(
+                                        child: GestureDetector(
+                                          behavior: HitTestBehavior.opaque,
+                                          onTap: () async {
+                                            if (_controller!.value.isPlaying) {
+                                              await _controller!.pause();
+                                            } else {
+                                              await _controller!.play();
+                                            }
+                                            setState(() {
+                                              _isPlaying = _controller!.value.isPlaying;
+                                            });
+                                          },
+                                          child: Container(color: Colors.transparent),
                                         ),
                                       ),
+                                      if (!_isPlaying)
+                                        IgnorePointer(
+                                          child: Container(
+                                            width: 44,
+                                            height: 44,
+                                            decoration: const BoxDecoration(
+                                              color: Colors.black54,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              CupertinoIcons.play_fill,
+                                              size: 22,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
                                       if (_controller!.value.isBuffering)
-                                        Container(
-                                          color: Colors.black38,
-                                          child: const Center(
-                                            child: CircularProgressIndicator(
-                                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                        IgnorePointer(
+                                          child: Container(
+                                            color: Colors.black38,
+                                            child: const Center(
+                                              child: CircularProgressIndicator(
+                                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -737,7 +753,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             icon: Icon(
-              _controller != null && _controller!.value.isPlaying
+              _isPlaying
                   ? CupertinoIcons.pause_fill
                   : CupertinoIcons.play_fill,
               color: Colors.white,
@@ -750,7 +766,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                 } else {
                   await _controller!.play();
                 }
-                setState(() {});
+                setState(() {
+                  _isPlaying = _controller!.value.isPlaying;
+                });
               }
             },
           ),
