@@ -11,7 +11,6 @@ import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/utils/video_source_provider.dart';
-import '../models/review.dart';
 import '../models/review_video.dart';
 import '../models/review_comment.dart';
 import '../models/review_share.dart';
@@ -39,10 +38,11 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
 
   VideoPlayerController? _controller;
   bool _isPlayerInitialized = false;
-  bool _hasPlayerError = false;
   bool _isPlaying = false;
-  late final ValueNotifier<Duration> _currentPositionNotifier;
+  bool _hasPlayerError = false;
   Duration _totalDuration = Duration.zero;
+
+  final ValueNotifier<Duration> _currentPositionNotifier = ValueNotifier<Duration>(Duration.zero);
   bool _isDragging = false;
 
   final TextEditingController _nameInputController = TextEditingController();
@@ -52,15 +52,16 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
   @override
   void initState() {
     super.initState();
-    _currentPositionNotifier = ValueNotifier<Duration>(Duration.zero);
     _loadInitialData();
   }
 
   @override
   void dispose() {
+    if (_controller != null) {
+      _controller!.removeListener(_videoListener);
+      _controller!.dispose();
+    }
     _currentPositionNotifier.dispose();
-    _controller?.removeListener(_videoListener);
-    _controller?.dispose();
     _nameInputController.dispose();
     _commentInputController.dispose();
     _commentFocusNode.dispose();
@@ -89,7 +90,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
       }
       _shareInfo = share;
 
-      // 2. Fetch Review details
+      // 2. Fetch Review details to verify existence
       final review = await repo.getReviewByShareToken(widget.shareToken, share.reviewId);
       if (review == null) {
         setState(() {
@@ -431,149 +432,294 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 1. Video Player Component
-            _buildVideoPlayerSection(isDark),
-            
-            // 2. Video switcher if multiple videos
-            if (_videos.length > 1) _buildVideoSwitcher(isDark),
+      body: AmbientGlowContainer(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final availableHeight = constraints.maxHeight;
+            final isDesktop = constraints.maxWidth > 800;
+            final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0 || _commentFocusNode.hasFocus;
 
-            // 3. Comments section
-            Expanded(
-              child: _buildCommentsSection(isDark),
-            ),
+            if (isDesktop) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // LEFT SIDE: Video Player & Scrubber
+                  Expanded(
+                    flex: 6, // 60% width
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            color: Colors.black,
+                            child: Center(
+                              child: _isPlayerInitialized && _controller != null
+                                  ? AspectRatio(
+                                      aspectRatio: _controller!.value.aspectRatio,
+                                      child: RepaintBoundary(
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            VideoPlayer(_controller!),
+                                            Positioned.fill(
+                                              child: GestureDetector(
+                                                behavior: HitTestBehavior.opaque,
+                                                onTap: _togglePlay,
+                                                child: Container(color: Colors.transparent),
+                                              ),
+                                            ),
+                                            if (!_isPlaying)
+                                              IgnorePointer(
+                                                child: Container(
+                                                  width: 44,
+                                                  height: 44,
+                                                  decoration: const BoxDecoration(
+                                                    color: Colors.black54,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const Icon(
+                                                    CupertinoIcons.play_fill,
+                                                    size: 22,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            if (_controller!.value.isBuffering)
+                                              IgnorePointer(
+                                                child: Container(
+                                                  color: Colors.black38,
+                                                  child: const Center(
+                                                    child: CircularProgressIndicator(
+                                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : _hasPlayerError
+                                      ? _buildPlayerErrorWidget()
+                                      : const Center(child: CupertinoActivityIndicator(color: Colors.white)),
+                            ),
+                          ),
+                        ),
+                        if (_isPlayerInitialized && _controller != null)
+                          _buildScrubberWidget(context, isDark),
+                      ],
+                    ),
+                  ),
+                  // Vertical Divider
+                  Container(
+                    width: 1,
+                    color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                  ),
+                  // RIGHT SIDE: Revisions Switcher, Comments Timeline, Comment Input
+                  Expanded(
+                    flex: 4, // 40% width
+                    child: Column(
+                      children: [
+                        if (_videos.length > 1) _buildVideoSwitcher(isDark),
+                        Expanded(
+                          child: _buildCommentsSection(isDark, keyboardOpen),
+                        ),
+                        _buildCommentInputBar(isDark),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
 
-            // 4. Input bar
-            _buildCommentInputBar(isDark),
-          ],
+            // Mobile Layout
+            return Column(
+              children: [
+                // 1. Video window
+                if (_isPlayerInitialized && _controller != null)
+                  Column(
+                    children: [
+                      Container(
+                        constraints: BoxConstraints(
+                          maxHeight: keyboardOpen
+                              ? availableHeight * 0.25
+                              : availableHeight * 0.35,
+                        ),
+                        color: Colors.black,
+                        child: Center(
+                          child: AspectRatio(
+                            aspectRatio: _controller!.value.aspectRatio,
+                            child: RepaintBoundary(
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  VideoPlayer(_controller!),
+                                  Positioned.fill(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: _togglePlay,
+                                      child: Container(color: Colors.transparent),
+                                    ),
+                                  ),
+                                  if (!_isPlaying)
+                                    IgnorePointer(
+                                      child: Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          CupertinoIcons.play_fill,
+                                          size: 22,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  if (_controller!.value.isBuffering)
+                                    IgnorePointer(
+                                      child: Container(
+                                        color: Colors.black38,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      _buildScrubberWidget(context, isDark),
+                    ],
+                  )
+                else if (_hasPlayerError)
+                  _buildPlayerErrorWidget()
+                else
+                  const Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CupertinoActivityIndicator(),
+                  ),
+
+                // 2. Video Switcher (Revisions)
+                if (_videos.length > 1) _buildVideoSwitcher(isDark),
+
+                // 3. Comments list
+                Expanded(
+                  child: _buildCommentsSection(isDark, keyboardOpen),
+                ),
+
+                // 4. Action input bar
+                _buildCommentInputBar(isDark),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildVideoPlayerSection(bool isDark) {
-    if (_hasPlayerError) {
-      return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Container(
-          color: Colors.black87,
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, color: Colors.redAccent, size: 40),
-              SizedBox(height: 8),
-              Text('Failed to load video review stream', style: TextStyle(color: Colors.white70)),
-            ],
+  Widget _buildPlayerErrorWidget() {
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+      ),
+      child: const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 40, color: Colors.amber),
+          SizedBox(height: 12),
+          Text(
+            'Direct playback unsupported',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
-        ),
-      );
-    }
+          SizedBox(height: 6),
+          Text(
+            'This cloud link cannot stream directly. Open the review link directly, or type comments sync-linked below.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
 
-    if (!_isPlayerInitialized || _controller == null) {
-      return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Container(
-          color: Colors.black87,
-          child: const Center(child: CupertinoActivityIndicator(color: Colors.white)),
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        AspectRatio(
-          aspectRatio: 16 / 9,
-          child: Container(
-            color: Colors.black,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                VideoPlayer(_controller!),
-                // Overlay play controls on tap
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _togglePlay,
-                    child: Container(color: Colors.transparent),
-                  ),
-                ),
-                // Play Center Icon
-                if (!_isPlaying)
-                  IconButton(
-                    icon: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 50),
-                    onPressed: _togglePlay,
-                  ),
-              ],
+  Widget _buildScrubberWidget(BuildContext context, bool isDark) {
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      child: Row(
+        children: [
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: Icon(
+              _isPlaying ? CupertinoIcons.pause_fill : CupertinoIcons.play_fill,
+              color: Colors.white,
+              size: 20,
             ),
+            onPressed: _togglePlay,
           ),
-        ),
-        // Play controls and timeline slider
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-          child: Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: isDark ? Colors.white : Colors.black,
-                  size: 20,
-                ),
-                onPressed: _togglePlay,
+          const SizedBox(width: 8),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                activeTrackColor: AppColors.primary,
+                inactiveTrackColor: isDark ? Colors.white24 : Colors.black12,
+                thumbColor: AppColors.primary,
               ),
-              const SizedBox(width: 8),
-              // Timeline Slider
-              Expanded(
-                child: ValueListenableBuilder<Duration>(
-                  valueListenable: _currentPositionNotifier,
-                  builder: (context, position, child) {
-                    final double maxMs = _totalDuration.inMilliseconds.toDouble();
-                    final double currentMs = position.inMilliseconds.toDouble().clamp(0.0, maxMs);
-                    
-                    return SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 3.0,
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
-                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 12.0),
-                        activeTrackColor: AppColors.primary,
-                        inactiveTrackColor: isDark ? Colors.white12 : Colors.black12,
-                        thumbColor: AppColors.primary,
-                      ),
-                      child: Slider(
-                        value: currentMs,
-                        min: 0,
-                        max: maxMs > 0 ? maxMs : 1.0,
-                        onChangeStart: (val) {
-                          _isDragging = true;
-                        },
-                        onChanged: (val) {
-                          _currentPositionNotifier.value = Duration(milliseconds: val.toInt());
-                        },
-                        onChangeEnd: (val) async {
-                          _isDragging = false;
-                          await _seekTo(Duration(milliseconds: val.toInt()));
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Time Labels
-              ValueListenableBuilder<Duration>(
+              child: ValueListenableBuilder<Duration>(
                 valueListenable: _currentPositionNotifier,
                 builder: (context, position, child) {
-                  return Text(
-                    '${_formatDuration(position)} / ${_formatDuration(_totalDuration)}',
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, fontFamily: 'monospace'),
+                  return Slider(
+                    value: position.inMilliseconds.toDouble().clamp(
+                      0.0,
+                      _totalDuration.inMilliseconds.toDouble(),
+                    ),
+                    min: 0.0,
+                    max: _totalDuration.inMilliseconds.toDouble() > 0
+                        ? _totalDuration.inMilliseconds.toDouble()
+                        : 100.0,
+                    onChanged: (value) {
+                      _isDragging = true;
+                      _currentPositionNotifier.value = Duration(milliseconds: value.toInt());
+                    },
+                    onChangeEnd: (value) async {
+                      await _seekTo(Duration(milliseconds: value.toInt()));
+                      _isDragging = false;
+                    },
                   );
                 },
               ),
-            ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          ValueListenableBuilder<Duration>(
+            valueListenable: _currentPositionNotifier,
+            builder: (context, position, child) {
+              return Text(
+                '${_formatDuration(position)} / ${_formatDuration(_totalDuration)}',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -630,7 +776,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     );
   }
 
-  Widget _buildCommentsSection(bool isDark) {
+  Widget _buildCommentsSection(bool isDark, bool keyboardOpen) {
     if (_currentVideo == null) return const SizedBox.shrink();
 
     final commentsAsync = ref.watch(publicReviewCommentsProvider((
@@ -638,132 +784,284 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
       videoId: _currentVideo!.id,
     )));
 
-    return commentsAsync.when(
-      loading: () => const Center(child: CupertinoActivityIndicator()),
-      error: (e, __) => Center(child: Text('Failed to load feedback comments: $e')),
-      data: (comments) {
-        if (comments.isEmpty) {
-          return const Center(
-            child: EmptyStateWidget(
-              icon: CupertinoIcons.chat_bubble_2,
-              title: 'No Feedback Yet',
-              subtitle: 'Play the video and write a comment to leave feedback.',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!keyboardOpen)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 6.0),
+            child: Text(
+              'FEEDBACK COMMENTS TIMELINE',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                letterSpacing: 0.5,
+              ),
             ),
-          );
-        }
+          ),
+        Expanded(
+          child: commentsAsync.when(
+            loading: () => const Center(child: CupertinoActivityIndicator()),
+            error: (e, __) => Center(child: Text('Failed to load feedback comments: $e')),
+            data: (comments) {
+              if (comments.isEmpty) {
+                return keyboardOpen
+                    ? const Center(
+                        child: Text(
+                          'No comments yet',
+                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        ),
+                      )
+                    : const EmptyStateWidget(
+                        icon: CupertinoIcons.chat_bubble_2,
+                        title: 'No Feedback Comments Yet',
+                        subtitle: 'Play the video and write a comment to leave feedback.',
+                      );
+              }
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          itemCount: comments.length,
-          itemBuilder: (context, index) {
-            final comment = comments[index];
-            final duration = Duration(milliseconds: comment.timestampMs);
-            
-            // Try to split Guest indicator
-            final parts = comment.comment.split(' (Guest): ');
-            final isGuest = parts.length > 1;
-            final authorName = isGuest ? parts[0] : 'Freelancer';
-            final commentBody = isGuest ? parts[1] : comment.comment;
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
+                itemCount: comments.length,
+                itemBuilder: (context, index) {
+                  final comment = comments[index];
+                  final duration = Duration(milliseconds: comment.timestampMs);
 
-            return ListTile(
-              dense: true,
-              leading: GestureDetector(
-                onTap: () => _seekTo(duration),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    _formatDuration(duration),
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-              ),
-              title: Row(
-                children: [
-                  Text(
-                    authorName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
-                  if (isGuest) ...[
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(2),
+                  // Try to split Guest indicator
+                  final parts = comment.comment.split(' (Guest): ');
+                  final isGuest = parts.length > 1;
+                  final authorName = isGuest ? parts[0] : 'Freelancer';
+                  final commentBody = isGuest ? parts[1] : comment.comment;
+
+                  String timeAgo(DateTime dateTime) {
+                    final difference = DateTime.now().difference(dateTime);
+                    if (difference.inDays >= 7) {
+                      return DateFormat('MMM d').format(dateTime);
+                    } else if (difference.inDays >= 1) {
+                      return '${difference.inDays}d ago';
+                    } else if (difference.inHours >= 1) {
+                      return '${difference.inHours}h ago';
+                    } else if (difference.inMinutes >= 1) {
+                      return '${difference.inMinutes}m ago';
+                    } else {
+                      return 'Just now';
+                    }
+                  }
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 2.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF161A1D) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0),
+                        width: 1.0,
                       ),
-                      child: const Text('GUEST', style: TextStyle(fontSize: 8, color: Colors.grey)),
                     ),
-                  ],
-                ],
-              ),
-              subtitle: Text(
-                commentBody,
-                style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 12),
-              ),
-              trailing: Text(
-                DateFormat('hh:mm a').format(comment.createdAt.toLocal()),
-                style: const TextStyle(fontSize: 9, color: Colors.grey),
-              ),
-            );
-          },
-        );
-      },
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        InkWell(
+                          onTap: () => _seekTo(duration),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00C7A5).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              comment.formattedTimestamp,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF00D7B5),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                commentBody,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Text(
+                                    '$authorName • ${timeAgo(comment.createdAt)}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  if (isGuest) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? Colors.white.withValues(alpha: 0.05)
+                                            : Colors.black.withValues(alpha: 0.05),
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                      child: const Text(
+                                        'GUEST',
+                                        style: TextStyle(fontSize: 8, color: Colors.grey, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildCommentInputBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        color: isDark ? AppColors.card : Colors.white,
         border: Border(
           top: BorderSide(
-            color: isDark ? Colors.white10 : Colors.black12,
+            color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
             width: 0.8,
           ),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _commentInputController,
-              focusNode: _commentFocusNode,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Add comment at ${_formatDuration(_currentPositionNotifier.value)}...',
-                hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(
-                    color: isDark ? Colors.white12 : Colors.black12,
+      child: SafeArea(
+        top: false,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Timestamp badge
+            ValueListenableBuilder<Duration>(
+              valueListenable: _currentPositionNotifier,
+              builder: (context, currentPosition, child) {
+                return Container(
+                  height: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary.withValues(alpha: 0.12),
+                        AppColors.primary.withValues(alpha: 0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                      width: 0.8,
+                    ),
                   ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: const BorderSide(color: AppColors.primary),
-                ),
-              ),
-              textCapitalization: TextCapitalization.sentences,
-              onSubmitted: (_) => _submitComment(),
+                  child: Center(
+                    child: Text(
+                      _formatDuration(currentPosition),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
-          const SizedBox(width: 6),
-          IconButton(
-            icon: const Icon(Icons.send_rounded, color: AppColors.primary, size: 20),
-            onPressed: _submitComment,
-          ),
-        ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _commentInputController,
+                      focusNode: _commentFocusNode,
+                      maxLines: 2,
+                      minLines: 1,
+                      keyboardType: TextInputType.multiline,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: 'Add feedback or comment...',
+                        hintStyle: TextStyle(
+                          color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
+                          fontSize: 13,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                            color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                            width: 0.8,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                            color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                            width: 0.8,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                            width: 1.2,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF131320) : const Color(0xFFF8FAFC),
+                      ),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                      ),
+                      onTap: () {
+                        if (_controller?.value.isPlaying ?? false) {
+                          _controller!.pause();
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
+                      onPressed: _submitComment,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
