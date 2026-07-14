@@ -112,6 +112,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
           });
         }
         
+        _setupRealtimeSubscription(cacheKey, repo);
         return list;
       }
     } catch (e) {
@@ -126,6 +127,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       _hasLoadedOnce = true;
       _saveToCache(cacheKey, fetched);
       unawaited(_syncProjectNotifications(uid, fetched));
+      _setupRealtimeSubscription(cacheKey, repo);
       return fetched;
     } catch (e) {
       debugPrint('[PROJECT BUILD] FETCH FAILED: $e');
@@ -136,14 +138,42 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
     }
   }
 
+  bool _areProjectListsEqual(List<Project> a, List<Project> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      final pA = a[i];
+      final pB = b[i];
+      if (pA.id != pB.id ||
+          pA.name != pB.name ||
+          pA.description != pB.description ||
+          pA.price != pB.price ||
+          pA.receivedAmount != pB.receivedAmount ||
+          pA.deadline != pB.deadline ||
+          pA.status != pB.status ||
+          pA.updatedAt != pB.updatedAt ||
+          pA.clientName != pB.clientName ||
+          pA.freelancerName != pB.freelancerName ||
+          pA.reviewStatus != pB.reviewStatus) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   Future<void> _backgroundRefresh(String cacheKey, ProjectRepository repo) async {
     try {
       final fetched = await repo.getAll();
-      _lastValidData = fetched;
-      _hasLoadedOnce = true;
       _saveToCache(cacheKey, fetched);
-      state = AsyncData(fetched);
-      debugPrint('[PROJECT BG REFRESH] completed: fetched ${fetched.length} projects');
+
+      final currentList = state.valueOrNull ?? [];
+      if (!_areProjectListsEqual(currentList, fetched)) {
+        debugPrint('[PROJECT BG REFRESH] data changed - updating state');
+        _lastValidData = fetched;
+        _hasLoadedOnce = true;
+        state = AsyncData(fetched);
+      } else {
+        debugPrint('[PROJECT BG REFRESH] no changes detected - skipping state update');
+      }
       
       final authState = ref.read(authProvider);
       final uid = authState.user?.id ?? SupabaseService.userId;
@@ -151,6 +181,20 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
     } catch (e) {
       debugPrint('[PROJECT BG REFRESH] failed: $e');
     }
+  }
+
+  void _setupRealtimeSubscription(String cacheKey, ProjectRepository repo) {
+    if (_subscription != null) return;
+    _subscription = SupabaseService.instance
+        .from('projects')
+        .stream(primaryKey: ['id'])
+        .skip(1)
+        .listen((_) {
+          debugPrint('[PROJECT REALTIME] Change detected, refreshing...');
+          _backgroundRefresh(cacheKey, repo);
+        }, onError: (e) {
+          debugPrint('[PROJECT REALTIME] Error: $e');
+        });
   }
 
   Future<void> _syncProjectNotifications(String currentUserId, List<Project> projects) async {
@@ -161,7 +205,8 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         final remaining = p.deadline!.difference(now);
 
         // Determine if we need due date notifications
-        final isPendingOrActive = p.status != ProjectStatus.revisionPending &&
+        final isPendingOrActive = p.status != ProjectStatus.reviewPending &&
+            p.status != ProjectStatus.revisionPending &&
             p.status != ProjectStatus.completed &&
             p.status != ProjectStatus.paid;
 
@@ -231,9 +276,6 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
   Future<void> addProject(Project project) async {
     final repo = ref.read(projectRepositoryProvider);
     final previousState = state.valueOrNull ?? [];
-    final tempProject = project.copyWith(id: '_temp_${DateTime.now().millisecondsSinceEpoch}');
-
-    state = AsyncData([tempProject, ...previousState]);
 
     try {
       final newProject = await repo.create(project);
@@ -262,11 +304,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         }());
       }
 
-      final current = state.valueOrNull ?? [];
-      final updatedList = _sort([
-        newProject,
-        ...current.where((p) => p.id != tempProject.id && p.id != newProject.id),
-      ]);
+      final updatedList = _sort([newProject, ...previousState]);
       state = AsyncData(updatedList);
       _saveToCache(_getCacheKey(), updatedList);
       debugPrint('[ProjectProvider] addProject: created ${newProject.id}');

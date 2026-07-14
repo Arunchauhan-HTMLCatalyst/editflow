@@ -78,23 +78,21 @@ class AuthProvider extends StateNotifier<AuthState> {
           status: AuthStatus.authenticated,
           user: currentUser,
         );
-        SharedPreferences.getInstance().then((prefs) {
-          prefs.setString('auth_user_id', session.user.id);
-          prefs.setString('auth_jwt_token', session.accessToken);
-        });
         _startForegroundServiceIfNeeded();
         if (currentUser != null) {
           unawaited(_syncProfile(currentUser));
         }
       } else {
-        state = const AuthState(status: AuthStatus.unauthenticated);
+        state = const AuthState(status: AuthStatus.loading);
       }
       
       debugPrint('[AUTH PROVIDER] _init: subscribing to onAuthChange');
       _authSubscription = _authRepository.onAuthChange().listen((event) {
         debugPrint('[AUTH PROVIDER] onAuthChange event received: $event');
         if (event == AuthChangeEvent.signedIn ||
-            event == AuthChangeEvent.tokenRefreshed) {
+            event == AuthChangeEvent.tokenRefreshed ||
+            event == AuthChangeEvent.initialSession ||
+            event == AuthChangeEvent.userUpdated) {
           final user = _authRepository.currentUser;
           final session = _authRepository.currentSession;
           debugPrint('[AUTH PROVIDER] user is ${user?.id}');
@@ -103,19 +101,15 @@ class AuthProvider extends StateNotifier<AuthState> {
               status: AuthStatus.authenticated,
               user: user,
             );
-            SharedPreferences.getInstance().then((prefs) {
-              prefs.setString('auth_user_id', session.user.id);
-              prefs.setString('auth_jwt_token', session.accessToken);
-            });
             _startForegroundServiceIfNeeded();
             unawaited(_syncProfile(user));
+          } else {
+            if (event == AuthChangeEvent.initialSession) {
+              state = const AuthState(status: AuthStatus.unauthenticated);
+            }
           }
         } else if (event == AuthChangeEvent.signedOut) {
           state = const AuthState(status: AuthStatus.unauthenticated);
-          SharedPreferences.getInstance().then((prefs) {
-            prefs.remove('auth_user_id');
-            prefs.remove('auth_jwt_token');
-          });
           _stopForegroundServiceIfNeeded();
         }
       }, onError: (e, st) {

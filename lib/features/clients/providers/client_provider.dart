@@ -132,6 +132,7 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
           });
         }
         
+        _setupRealtimeSubscription(cacheKey, repo);
         return list;
       }
     } catch (e) {
@@ -145,6 +146,7 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
       _lastValidData = fetched;
       _hasLoadedOnce = true;
       _saveToCache(cacheKey, fetched);
+      _setupRealtimeSubscription(cacheKey, repo);
       return fetched;
     } catch (e) {
       debugPrint('[CLIENT BUILD] FETCH FAILED: $e');
@@ -155,14 +157,39 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
     }
   }
 
+  bool _areClientListsEqual(List<Client> a, List<Client> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      final cA = a[i];
+      final cB = b[i];
+      if (cA.id != cB.id ||
+          cA.name != cB.name ||
+          cA.phone != cB.phone ||
+          cA.email != cB.email ||
+          cA.company != cB.company ||
+          cA.notes != cB.notes ||
+          cA.clientUserId != cB.clientUserId ||
+          cA.updatedAt != cB.updatedAt) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   Future<void> _backgroundRefresh(String cacheKey, ClientRepository repo) async {
     try {
       final fetched = await repo.getAll();
-      _lastValidData = fetched;
-      _hasLoadedOnce = true;
       _saveToCache(cacheKey, fetched);
-      state = AsyncData(fetched);
-      debugPrint('[CLIENT BG REFRESH] completed: fetched ${fetched.length} clients');
+
+      final currentList = state.valueOrNull ?? [];
+      if (!_areClientListsEqual(currentList, fetched)) {
+        debugPrint('[CLIENT BG REFRESH] data changed - updating state');
+        _lastValidData = fetched;
+        _hasLoadedOnce = true;
+        state = AsyncData(fetched);
+      } else {
+        debugPrint('[CLIENT BG REFRESH] no changes detected - skipping state update');
+      }
     } catch (e) {
       debugPrint('[CLIENT BG REFRESH] failed: $e');
     }
@@ -176,6 +203,20 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
     } catch (e) {
       debugPrint('[CLIENT CACHE] Save failed: $e');
     }
+  }
+
+  void _setupRealtimeSubscription(String cacheKey, ClientRepository repo) {
+    if (_subscription != null) return;
+    _subscription = SupabaseService.instance
+        .from('clients')
+        .stream(primaryKey: ['id'])
+        .skip(1)
+        .listen((_) {
+          debugPrint('[CLIENT REALTIME] Change detected, refreshing...');
+          _backgroundRefresh(cacheKey, repo);
+        }, onError: (e) {
+          debugPrint('[CLIENT REALTIME] Error: $e');
+        });
   }
 
   Future<void> addClient(Client client) async {

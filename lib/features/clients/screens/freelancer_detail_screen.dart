@@ -283,10 +283,12 @@ class FreelancerDetailScreen extends ConsumerWidget {
                 ...List.generate(projects.length, (index) {
                   final project = projects[index];
                   return AnimatedListItem(
+                    key: ValueKey(project.id),
                     index: index,
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 12.0),
                       child: _FreelancerProjectCard(
+                        key: ValueKey(project.id),
                         project: project,
                         currency: currency,
                         onTap: () => context.push('/projects/${project.id}'),
@@ -347,6 +349,7 @@ class _FreelancerProjectCard extends StatefulWidget {
   final VoidCallback onTap;
 
   const _FreelancerProjectCard({
+    super.key,
     required this.project,
     required this.currency,
     required this.onTap,

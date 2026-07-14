@@ -98,10 +98,11 @@ class CommentRepository {
           .from('comments')
           .stream(primaryKey: ['id'])
           .eq('project_id', projectId)
-          .order('created_at', ascending: true)
           .map((rows) {
             debugPrint('[COMMENT STREAM] got ${rows.length} rows');
-            return rows.map((e) => Comment.fromJson(e)).toList();
+            final list = rows.map((e) => Comment.fromJson(e)).toList();
+            list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+            return list;
           });
     } catch (e) {
       debugPrint('[CommentRepository] subscribeComments failed, returning empty stream: $e');

@@ -292,7 +292,13 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
             child: Text('Error: ${e.toString()}'),
           ),
           data: (projects) {
-          return SingleChildScrollView(
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(projectProvider);
+              await Future.delayed(const Duration(milliseconds: 500));
+            },
+            child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,6 +502,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 const SizedBox(height: 24),
               ],
             ),
+          ),
           );
         },
       ),

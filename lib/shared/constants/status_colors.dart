@@ -8,6 +8,8 @@ Color statusColor(ProjectStatus status) {
       return const Color(0xFF71717A);
     case ProjectStatus.inProgress:
       return AppColors.primary;
+    case ProjectStatus.reviewPending:
+      return const Color(0xFF8B5CF6);
     case ProjectStatus.revisionPending:
       return const Color(0xFFF59E0B);
     case ProjectStatus.completed:

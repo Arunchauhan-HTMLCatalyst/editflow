@@ -183,12 +183,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             height: MediaQuery.of(context).size.height * 0.6,
                             child: EmptyStateWidget(
                               icon: Icons.dashboard_customize_outlined,
-                              title: settings.isClientMode ? 'No Projects Assigned' : 'Welcome to EditFlow',
+                              title: settings.isClientMode 
+                                  ? 'No Projects Assigned' 
+                                  : (clients.isEmpty ? 'No Clients Yet' : 'Welcome to EditFlow'),
                               subtitle: settings.isClientMode
                                   ? 'You can assign a project to any freelancer you work with.'
-                                  : 'Add clients and projects to start tracking your freelance metrics.',
-                              actionLabel: settings.isClientMode ? 'Assign Project' : 'Add Project',
-                              onAction: () => context.push('/projects/add'),
+                                  : (clients.isEmpty 
+                                      ? 'Add a client first to start tracking your projects and metrics.' 
+                                      : 'Add clients and projects to start tracking your freelance metrics.'),
+                              actionLabel: settings.isClientMode 
+                                  ? 'Assign Project' 
+                                  : (clients.isEmpty ? 'Add Client' : 'Add Project'),
+                              onAction: () {
+                                if (!settings.isClientMode && clients.isEmpty) {
+                                  context.push('/add-client');
+                                } else {
+                                  context.push('/projects/add');
+                                }
+                              },
                             ),
                           ),
                         ],
@@ -216,7 +228,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-class _DashboardLayout extends StatelessWidget {
+class _DashboardLayout extends ConsumerWidget {
   final DashboardMetrics metrics;
   final List<PeriodMetricItem> periodMetrics;
   final List<Project> projects;
@@ -244,209 +256,213 @@ class _DashboardLayout extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        AppLayout.pagePadding(context),
-        AppLayout.pagePadding(context),
-        AppLayout.pagePadding(context),
-        AppLayout.pagePadding(context) + 24,
-      ),
-      children: [
-        if (hasError)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: _ErrorBanner(onRetry: onRetry, error: error),
-          ),
-        
-        _StaggeredSection(
-          index: 0,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [const Color(0xFF171D1F), const Color(0xFF101517)]
-                    : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20.0),
-              border: Border.all(
-                color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
-                width: 0.8,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? AppColors.primary.withValues(alpha: 0.04)
-                      : AppColors.primary.withValues(alpha: 0.1),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                )
-              ],
+    Widget buildOverviewList() {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          AppLayout.pagePadding(context),
+          AppLayout.pagePadding(context),
+          AppLayout.pagePadding(context),
+          AppLayout.pagePadding(context) + 24,
+        ),
+        children: [
+          if (hasError)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: _ErrorBanner(onRetry: onRetry, error: error),
             ),
+          
+          _StaggeredSection(
+            index: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+                      : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20.0),
+                border: Border.all(
+                  color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+                  width: 0.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? AppColors.primary.withValues(alpha: 0.04)
+                        : AppColors.primary.withValues(alpha: 0.1),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  )
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              settings.isClientMode ? 'CLIENT PORTAL' : 'WORKSPACE',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? AppColors.primaryNeon : Colors.white.withValues(alpha: 0.9),
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppColors.primary.withValues(alpha: 0.15)
+                                    : Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                settings.isClientMode ? 'CLIENT' : 'FREELANCER',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w900,
+                                  color: isDark ? AppColors.primaryNeon : Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _getTimeBasedGreeting(),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Welcome to your EditFlow workspace.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!AppLayout.isTablet(context))
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.notifications_none_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            onPressed: () => context.push('/notifications'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.settings_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            onPressed: () => context.push('/settings'),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          _StaggeredSection(
+            index: 1,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            settings.isClientMode ? 'CLIENT PORTAL' : 'WORKSPACE',
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w900,
-                              color: isDark ? AppColors.primaryNeon : Colors.white.withValues(alpha: 0.9),
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? AppColors.primary.withValues(alpha: 0.15)
-                                  : Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              settings.isClientMode ? 'CLIENT' : 'FREELANCER',
-                              style: TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.w900,
-                                color: isDark ? AppColors.primaryNeon : Colors.white,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        _getTimeBasedGreeting(),
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Welcome to your EditFlow workspace.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.75),
-                        ),
-                      ),
-                    ],
-                  ),
+                _PeriodFilter(
+                  current: currentPeriod,
+                  onChanged: onPeriodChanged,
+                  isDark: isDark,
                 ),
-                if (!AppLayout.isTablet(context))
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.notifications_none_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          onPressed: () => context.push('/notifications'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.settings_outlined,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          onPressed: () => context.push('/settings'),
-                        ),
-                      ),
-                    ],
-                  ),
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-
-        _StaggeredSection(
-          index: 1,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _PeriodFilter(
-                current: currentPeriod,
-                onChanged: onPeriodChanged,
-                isDark: isDark,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        _StaggeredSection(
-          index: 2,
-          child: _MetricRow(metrics: periodMetrics),
-        ),
-        const SizedBox(height: 16),
-        if (!settings.isClientMode) ...[
+          const SizedBox(height: 16),
           _StaggeredSection(
-            index: 3,
-            child: GoalTracker(
-              currentRevenue: metrics.totalReceived,
-              goal: settings.monthlyGoal,
-              formatValue: currency.format,
+            index: 2,
+            child: _MetricRow(metrics: periodMetrics),
+          ),
+          const SizedBox(height: 16),
+          if (!settings.isClientMode) ...[
+            _StaggeredSection(
+              index: 3,
+              child: GoalTracker(
+                currentRevenue: metrics.totalReceived,
+                goal: settings.monthlyGoal,
+                formatValue: currency.format,
+              ),
             ),
+            const SizedBox(height: 16),
+          ],
+          _StaggeredSection(
+            index: 4,
+            child: _buildCompactRow(context, [
+              if (settings.isClientMode)
+                TopFreelancersSection(freelancers: metrics.topFreelancers)
+              else
+                TopClientsSection(
+                  clients: metrics.topClients
+                      .map((e) => TopClientData(client: e.client, revenue: e.revenue, percentage: e.percentage))
+                      .toList(),
+                  formatValue: currency.format,
+                ),
+              ProjectStatusSection(statusData: metrics.pipelineMap, total: projects.length),
+            ]),
           ),
           const SizedBox(height: 16),
         ],
-        _StaggeredSection(
-          index: 4,
-          child: _buildCompactRow(context, [
-            if (settings.isClientMode)
-              TopFreelancersSection(freelancers: metrics.topFreelancers)
-            else
-              TopClientsSection(
-                clients: metrics.topClients
-                    .map((e) => TopClientData(client: e.client, revenue: e.revenue, percentage: e.percentage))
-                    .toList(),
-                formatValue: currency.format,
-              ),
-            ProjectStatusSection(statusData: metrics.pipelineMap, total: projects.length),
-          ]),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
+      );
+    }
+
+    return buildOverviewList();
   }
 
   Widget _buildCompactRow(BuildContext context, List<Widget> items) {
@@ -469,6 +485,7 @@ class _DashboardLayout extends StatelessWidget {
           .toList(),
     );
   }
+
 }
 
 class _StaggeredSection extends StatefulWidget {

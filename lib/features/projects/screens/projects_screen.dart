@@ -11,6 +11,7 @@ import '../../../shared/widgets/loading_widget.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/animated_list_item.dart';
+import '../../../shared/providers/computed_providers.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../models/project_status.dart';
 
@@ -56,6 +57,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     final projectsAsync = ref.watch(projectProvider);
     final currency = ref.watch(currencyProvider);
     final isClient = ref.watch(settingsProvider).isClientMode;
+    final clients = ref.watch(safeClientsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -87,7 +89,13 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                 color: AppColors.primary,
               ),
             ),
-            onPressed: () => context.push('/projects/add'),
+            onPressed: () {
+              if (!isClient && clients.isEmpty) {
+                context.push('/add-client');
+              } else {
+                context.push('/projects/add');
+              }
+            },
           ),
           const SizedBox(width: 16),
         ],
@@ -111,7 +119,12 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
             ),
           ),
           Expanded(
-            child: projectsAsync.when(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(projectProvider);
+                await Future.delayed(const Duration(milliseconds: 500));
+              },
+              child: projectsAsync.when(
               loading: () => LoadingWidget(message: 'Loading projects...'),
               error: (e, _) => ErrorStateWidget(
                 message: e.toString(),
@@ -144,7 +157,19 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                 }).length;
 
                 if (projects.isEmpty) {
+                  if (!isClient && clients.isEmpty) {
+                    return EmptyStateWidget(
+                      key: const ValueKey('empty_no_clients'),
+                      icon: Icons.people_outline,
+                      title: 'No clients yet',
+                      subtitle: 'Add a client first to create a project under them.',
+                      actionLabel: 'Add Client',
+                      onAction: () => context.push('/add-client'),
+                    );
+                  }
+
                   return EmptyStateWidget(
+                    key: const ValueKey('empty_no_projects'),
                     icon: Icons.folder,
                     title: 'No projects yet',
                     subtitle: isClient ? 'Assign your first project' : 'Create your first project',
@@ -154,6 +179,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                 }
 
                 return Column(
+                  key: const ValueKey('projects_list_column'),
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -204,6 +230,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                                   itemBuilder: (context, index) {
                                     final project = filtered[index];
                                     return AnimatedListItem(
+                                      key: ValueKey(project.id),
                                       index: index,
                                       child: ProjectCard(
                                         project: project,
@@ -220,6 +247,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                                 itemBuilder: (context, index) {
                                   final project = filtered[index];
                                   return AnimatedListItem(
+                                    key: ValueKey(project.id),
                                     index: index,
                                     child: Padding(
                                       padding: EdgeInsets.only(bottom: AppSpacing.sm),
@@ -237,6 +265,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                   ],
                 );
               },
+            ),
             ),
           ),
         ],

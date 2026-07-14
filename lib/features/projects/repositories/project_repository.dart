@@ -52,7 +52,8 @@ class ProjectRepository {
     final data = project.toJson()
       ..remove('id')
       ..remove('client_name')
-      ..remove('freelancer_name');
+      ..remove('freelancer_name')
+      ..remove('review_status');
     final response = await SupabaseService.instance
         .from('projects')
         .insert(data)
@@ -72,7 +73,8 @@ class ProjectRepository {
   Future<Project> update(Project project) async {
     final data = project.toJson()
       ..remove('client_name')
-      ..remove('freelancer_name');
+      ..remove('freelancer_name')
+      ..remove('review_status');
     final response = await SupabaseService.instance
         .from('projects')
         .update(data)

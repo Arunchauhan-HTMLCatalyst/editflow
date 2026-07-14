@@ -63,6 +63,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
               ? f.name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
               : '?';
           return AnimatedListItem(
+            key: ValueKey(f.id),
             index: index,
             child: _buildFreelancerItem(f, initials, isDark),
           );
@@ -80,6 +81,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
             : '?';
 
         return AnimatedListItem(
+          key: ValueKey(f.id),
           index: index,
           child: Padding(
             padding: EdgeInsets.only(bottom: AppSpacing.sm),
@@ -297,7 +299,13 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
               ),
             ),
           Expanded(
-            child: isLoading
+            child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(clientProvider);
+                ref.invalidate(projectProvider);
+                await Future.delayed(const Duration(milliseconds: 500));
+              },
+              child: isLoading
                 ? ListView(
                     padding: EdgeInsets.all(padding),
                     children: List.generate(4, (i) => Padding(
@@ -354,6 +362,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                         itemBuilder: (context, index) {
                           final d = filtered[index];
                           return AnimatedListItem(
+                            key: ValueKey(d.client.id),
                             index: index,
                             child: RepaintBoundary(
                               child: ClientCard(
@@ -376,6 +385,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                       itemBuilder: (context, index) {
                         final d = filtered[index];
                         return AnimatedListItem(
+                          key: ValueKey(d.client.id),
                           index: index,
                           child: Padding(
                             padding: EdgeInsets.only(bottom: AppSpacing.sm),
@@ -393,6 +403,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                     );
                   },
                 )),
+            ),
           ),
         ],
       ),

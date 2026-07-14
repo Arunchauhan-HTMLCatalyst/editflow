@@ -12,10 +12,12 @@ import 'features/clients/screens/add_client_screen.dart';
 import 'features/clients/screens/freelancer_detail_screen.dart';
 import 'features/payments/screens/payments_screen.dart';
 import 'features/projects/screens/project_detail_screen.dart';
+import 'features/projects/screens/review_screen.dart';
 import 'features/projects/screens/add_project_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/calendar_screen.dart';
 import 'features/dashboard/screens/notification_center_screen.dart';
+import 'features/dashboard/screens/client_reviews_screen.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'app_shell.dart';
 import 'core/theme/app_transitions.dart';
@@ -129,6 +131,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           projectId: state.pathParameters['id']!,
         )),
       ),
+      GoRoute(
+        path: '/projects/:projectId/reviews/:videoId',
+        pageBuilder: (context, state) {
+          final projectId = state.pathParameters['projectId']!;
+          final videoId = state.pathParameters['videoId']!;
+          final isClientStr = state.uri.queryParameters['isClient'] ?? 'false';
+          final isClient = isClientStr == 'true';
+          return slidePushPage(ReviewScreen(
+            projectId: projectId,
+            videoId: videoId,
+            isClient: isClient,
+          ));
+        },
+      ),
 
       // ── Shell (bottom nav) ──────────────────────────────────────────
       ShellRoute(
@@ -147,6 +163,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/clients',
             pageBuilder: (context, state) => fadeTabPage(const ClientsScreen()),
+          ),
+          GoRoute(
+            path: '/reviews',
+            pageBuilder: (context, state) => fadeTabPage(const ClientReviewsScreen()),
           ),
           GoRoute(
             path: '/calendar',

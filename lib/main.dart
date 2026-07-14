@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:flutter/services.dart';
 import 'services/supabase_service.dart';
 import 'services/local_notification_service.dart';
 import 'services/foreground_service.dart';
@@ -10,6 +11,11 @@ import 'app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   if (!kIsWeb && Platform.isAndroid) {
     try {

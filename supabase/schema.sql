@@ -159,5 +159,8 @@ CREATE POLICY "Users can delete their own comments"
   ON public.comments FOR DELETE TO authenticated
   USING (auth.uid() = user_id);
 
--- Enable Realtime for comments
+-- Enable Realtime for comments & reviews
 ALTER PUBLICATION supabase_realtime ADD TABLE comments;
+ALTER PUBLICATION supabase_realtime ADD TABLE reviews;
+ALTER PUBLICATION supabase_realtime ADD TABLE review_videos;
+ALTER PUBLICATION supabase_realtime ADD TABLE review_comments;

@@ -7,6 +7,8 @@ import 'package:share_plus/share_plus.dart';
 import '../models/project.dart';
 import '../models/project_status.dart';
 import '../providers/project_provider.dart';
+import '../providers/review_provider.dart';
+import '../models/review_video.dart';
 import '../models/comment.dart';
 import '../repositories/comment_repository.dart';
 import '../providers/comment_provider.dart';
@@ -51,6 +53,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     _receivedController = TextEditingController();
     _deadlineController = TextEditingController();
     _commentController = TextEditingController();
+
+
   }
 
   @override
@@ -311,11 +315,19 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             topGlowColor: _getStatusGlowColor(p.status),
             bottomGlowColor: _getStatusGlowColor(p.status),
             child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                child: _isEditing
-                    ? _buildEditForm(isDark, p)
-                    : _buildDetail(isDark, p, currency, isClient),
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(projectProvider);
+                  ref.invalidate(latestReviewProvider(p.id));
+                  await ref.read(projectProvider.notifier).refresh();
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                  child: _isEditing
+                      ? _buildEditForm(isDark, p)
+                      : _buildDetail(isDark, p, currency, isClient),
+                ),
               ),
             ),
           ),
@@ -341,6 +353,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         return const Color(0xFF10B981);
       case ProjectStatus.inProgress:
         return AppColors.primary;
+      case ProjectStatus.reviewPending:
       case ProjectStatus.revisionPending:
         return const Color(0xFFF59E0B);
       case ProjectStatus.yetToStart:
@@ -532,6 +545,47 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           onStatusTap: isClient ? null : (s) => _changeStatus(project, s),
         ),
         const SizedBox(height: 20),
+
+        if (!isClient && project.status == ProjectStatus.revisionPending) ...[
+          Container(
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 0.8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, color: AppColors.primary, size: 16),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Client requested changes. Mark done once fixed.',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _markRevisionsCompleted(context, project),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  ),
+                  child: const Text('Mark Done', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        if (project.status == ProjectStatus.reviewPending ||
+            project.status == ProjectStatus.revisionPending ||
+            project.status == ProjectStatus.completed) ...[
+          _buildReviewSection(isDark, project, isClient),
+          const SizedBox(height: 20),
+        ],
 
         // Details title
         Text(
@@ -1334,7 +1388,21 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       ),
     );
     if (confirmed == true) {
-      ref.read(projectProvider.notifier).updateStatus(project.id, newStatus);
+      await ref.read(projectProvider.notifier).updateStatus(project.id, newStatus);
+      if (newStatus == ProjectStatus.reviewPending) {
+        try {
+          final review = await ref.read(reviewRepositoryProvider).getLatestReview(project.id);
+          if (review != null && (review.status == 'completed' || review.status == 'approved')) {
+            await SupabaseService.instance
+                .from('reviews')
+                .update({'status': 'pending'})
+                .eq('id', review.id);
+            ref.invalidate(latestReviewProvider(project.id));
+          }
+        } catch (e) {
+          debugPrint('Failed to reopen review: $e');
+        }
+      }
     }
   }
 
@@ -1374,6 +1442,675 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       }
     }
   }
+
+  Widget _buildReviewSection(bool isDark, Project project, bool isClient) {
+    final latestReviewAsync = ref.watch(latestReviewProvider(project.id));
+
+    return latestReviewAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Text('Error loading review: $err'),
+      data: (review) {
+        if (review == null) {
+          return Container(
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(
+                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                width: 0.8,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.rate_review_rounded, size: 14, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      isClient ? 'PENDING REVIEWS' : 'REVIEW FEEDBACK',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isClient
+                      ? 'No review submitted yet. Freelancer is preparing the review videos.'
+                      : 'No review submitted yet.',
+                  style: TextStyle(fontSize: 13, color: isDark ? AppColors.textSecondary : const Color(0xFF475569)),
+                ),
+                if (!isClient && project.status != ProjectStatus.completed) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _showUploadReviewDialog(context, project),
+                      child: const Text('Upload Review'),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }
+
+        final videosAsync = ref.watch(reviewVideosProvider(review.id));
+
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(
+              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+              width: 0.8,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.rate_review_rounded, size: 14, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    isClient ? 'PENDING REVIEWS' : 'REVIEW FEEDBACK',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _getReviewStatusColor(review.status).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: _getReviewStatusColor(review.status).withValues(alpha: 0.2), width: 0.5),
+                    ),
+                    child: Text(
+                      review.status.toUpperCase().replaceAll('_', ' '),
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: _getReviewStatusColor(review.status),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              videosAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Text('Error videos: $err'),
+                data: (videos) {
+                  if (videos.isEmpty) {
+                    Widget emptyState;
+                    if (review.status == 'completed' || review.status == 'approved') {
+                      emptyState = Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.withValues(alpha: 0.2), width: 0.8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.check_circle_rounded, color: Colors.green, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    review.status == 'completed'
+                                        ? 'All previous revisions are completed'
+                                        : 'Review Approved',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.green),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (review.status == 'completed' && !isClient) ...[
+                              const SizedBox(height: 6),
+                              const Text(
+                                'If you want to send another version for review, please switch back to In Review status.',
+                                style: TextStyle(fontSize: 11, color: Colors.green),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    } else {
+                      emptyState = const Text('No review videos uploaded.', style: TextStyle(fontSize: 12, color: AppColors.textMuted));
+                    }
+                    
+                    if (isClient || project.status == ProjectStatus.completed) return emptyState;
+                    
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        emptyState,
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => _showUploadReviewDialog(context, project),
+                            child: const Text('Upload Review'),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Column(
+                    children: [
+                      ...videos.map((video) {
+                        final commentsAsync = ref.watch(reviewCommentsProvider(video.id));
+                        return commentsAsync.when(
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
+                          data: (comments) {
+                            final count = comments.length;
+                            final isApproved = review.status == 'approved';
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8.0),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.01),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: ListTile(
+                                dense: true,
+                                leading: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(CupertinoIcons.video_camera_solid, size: 14, color: AppColors.primary),
+                                ),
+                                title: Text(video.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                subtitle: Text(
+                                  isApproved
+                                      ? 'Approved'
+                                      : (count > 0 ? '$count feedback points' : 'Awaiting feedback'),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isApproved 
+                                        ? Colors.green 
+                                        : (count > 0 ? const Color(0xFFF59E0B) : AppColors.textMuted),
+                                  ),
+                                ),
+                                trailing: const Icon(CupertinoIcons.chevron_right, size: 14),
+                                onTap: () => _openReviewScreen(video, project, isClient),
+                              ),
+                            );
+                          },
+                        );
+                      }),
+
+                      if (!isClient && project.status != ProjectStatus.completed) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: () => _confirmReplaceReview(context, project),
+                            child: const Text('Upload New Review'),
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getReviewStatusColor(String status) {
+    switch (status) {
+      case 'approved':
+        return Colors.green;
+      case 'changes_requested':
+        return const Color(0xFFF59E0B);
+      case 'pending':
+        return AppColors.primary;
+      default:
+        return const Color(0xFF71717A);
+    }
+  }
+
+  void _openReviewScreen(ReviewVideo video, Project project, bool isClient) {
+    context.push('/projects/${project.id}/reviews/${video.id}?isClient=$isClient');
+  }
+
+  Future<void> _confirmReplaceReview(BuildContext context, Project project) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Replace Review?'),
+        content: const Text('Uploading a new review will replace all current review videos and permanently delete all existing review comments.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      _showUploadReviewDialog(context, project);
+    }
+  }
+
+  Future<void> _showUploadReviewDialog(BuildContext context, Project project) async {
+    final List<Map<String, TextEditingController>> controllers = [
+      {'name': TextEditingController(), 'url': TextEditingController()}
+    ];
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+          
+          return Dialog(
+            backgroundColor: isDark ? AppColors.card : Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 480),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(CupertinoIcons.video_camera_solid, color: AppColors.primary, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Upload Review',
+                              style: TextStyle(
+                                fontFamily: 'Outfit',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            Text(
+                              'Share video drafts with your client',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        style: IconButton.styleFrom(
+                          backgroundColor: isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF1F5F9),
+                          padding: const EdgeInsets.all(8),
+                        ),
+                        icon: const Icon(CupertinoIcons.xmark, size: 16),
+                        onPressed: () {
+                          for (final ctrl in controllers) {
+                            ctrl['name']!.dispose();
+                            ctrl['url']!.dispose();
+                          }
+                          Navigator.of(dialogContext).pop();
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Info Card
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.1), width: 0.8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Please provide direct MP4/MOV URLs or Dropbox video links. Non-direct hosting links will open in a browser tab.',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              height: 1.4,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? Colors.white70 : const Color(0xFF334155),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Video Form List
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: List.generate(controllers.length, (index) {
+                          final item = controllers[index];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white.withValues(alpha: 0.01) : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'VIDEO DRAFT #${index + 1}',
+                                      style: const TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.primary,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    if (controllers.length > 1)
+                                      GestureDetector(
+                                        onTap: () {
+                                          setDialogState(() {
+                                            controllers[index]['name']!.dispose();
+                                            controllers[index]['url']!.dispose();
+                                            controllers.removeAt(index);
+                                          });
+                                        },
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(CupertinoIcons.trash, color: AppColors.error, size: 12),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Remove',
+                                              style: TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                TextFormField(
+                                  controller: item['name'],
+                                  style: const TextStyle(fontSize: 13),
+                                  decoration: InputDecoration(
+                                    labelText: 'Video Title (e.g. Version 1 Rough Cut)',
+                                    labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                    prefixIcon: const Icon(CupertinoIcons.tag, size: 16),
+                                    filled: true,
+                                    fillColor: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: isDark ? AppColors.border : const Color(0xFFCBD5E1)),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                TextFormField(
+                                  controller: item['url'],
+                                  style: const TextStyle(fontSize: 13),
+                                  decoration: InputDecoration(
+                                    labelText: 'Video URL (Direct link or Dropbox)',
+                                    labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                    prefixIcon: const Icon(CupertinoIcons.link, size: 16),
+                                    filled: true,
+                                    fillColor: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: isDark ? AppColors.border : const Color(0xFFCBD5E1)),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+
+                  // Actions block
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            setDialogState(() {
+                              controllers.add({'name': TextEditingController(), 'url': TextEditingController()});
+                            });
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                          ),
+                          icon: const Icon(CupertinoIcons.add, size: 14, color: AppColors.primary),
+                          label: const Text('Add Video', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          for (final ctrl in controllers) {
+                            ctrl['name']!.dispose();
+                            ctrl['url']!.dispose();
+                          }
+                          Navigator.of(dialogContext).pop();
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          for (final ctrl in controllers) {
+                            final name = ctrl['name']!.text.trim();
+                            final url = ctrl['url']!.text.trim();
+                            if (name.isEmpty || url.isEmpty) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(content: Text('Please enter a Title and URL for all videos.')),
+                              );
+                              return;
+                            }
+                            
+                            final urlLower = url.toLowerCase();
+                            final isDropbox = urlLower.contains('dropbox.com');
+                            final isDirectVideo = urlLower.endsWith('.mp4') ||
+                                urlLower.endsWith('.mov') ||
+                                urlLower.endsWith('.m4v') ||
+                                urlLower.endsWith('.webm') ||
+                                urlLower.contains('/mp4/') ||
+                                urlLower.contains('.mp4?');
+                                
+                            if (!isDropbox && !isDirectVideo) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Strictly Dropbox links or Direct Video URLs (MP4) are supported for reviews.'),
+                                ),
+                              );
+                              return;
+                            }
+                          }
+
+                          final videoData = controllers.map((ctrl) => {
+                            'name': ctrl['name']!.text.trim(),
+                            'url': ctrl['url']!.text.trim(),
+                          }).toList();
+
+                          try {
+                            showDialog(
+                              context: dialogContext,
+                              barrierDismissible: false,
+                              builder: (_) => const Center(child: CircularProgressIndicator()),
+                            );
+
+                            await ref.read(reviewRepositoryProvider).submitNewReview(project.id, videoData);
+
+                            for (final ctrl in controllers) {
+                              ctrl['name']!.dispose();
+                              ctrl['url']!.dispose();
+                            }
+
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop(); // pop loading
+                              Navigator.of(dialogContext).pop(); // pop dialog
+                            }
+
+                            ref.invalidate(latestReviewProvider(project.id));
+                            await ref.read(projectProvider.notifier).refresh();
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Review videos submitted successfully!')),
+                              );
+                            }
+                          } catch (e) {
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop();
+                            }
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(content: Text('Failed to submit review: $e')),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Submit Review', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _markRevisionsCompleted(BuildContext context, Project project) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final review = await ref.read(reviewRepositoryProvider).getLatestReview(project.id);
+      if (review != null) {
+        final videos = await ref.read(reviewRepositoryProvider).getReviewVideos(review.id);
+        final videoIds = videos.map((v) => v.id).toList();
+
+        for (final vid in videoIds) {
+          await SupabaseService.instance
+              .from('review_comments')
+              .delete()
+              .eq('video_id', vid)
+              .timeout(const Duration(seconds: 10));
+        }
+
+        await SupabaseService.instance
+            .from('review_videos')
+            .delete()
+            .eq('review_id', review.id)
+            .timeout(const Duration(seconds: 10));
+
+        await SupabaseService.instance
+            .from('reviews')
+            .update({'status': 'completed'})
+            .eq('id', review.id)
+            .timeout(const Duration(seconds: 10));
+      }
+
+      await ref.read(projectProvider.notifier).updateStatus(project.id, ProjectStatus.completed);
+
+      ref.invalidate(latestReviewProvider(project.id));
+      await ref.read(projectProvider.notifier).refresh();
+
+      if (context.mounted) {
+        Navigator.of(context).pop(); // pop loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Project completed! Review data cleared.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // pop loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to complete revisions: $e')),
+        );
+      }
+    }
+  }
+
 }
 
 class _PaymentProgress extends StatelessWidget {
@@ -1683,7 +2420,8 @@ class _StatusPipeline extends StatelessWidget {
   static const _steps = [
     _StepData('Yet to Start', ProjectStatus.yetToStart, 'Project created, work not begun'),
     _StepData('In Progress', ProjectStatus.inProgress, 'Actively working on the project'),
-    _StepData('Revision Pending', ProjectStatus.revisionPending, 'Awaiting client feedback'),
+    _StepData('In Review', ProjectStatus.reviewPending, 'Client is reviewing the video drafts'),
+    _StepData('Working on feedback', ProjectStatus.revisionPending, 'Freelancer is working on requested changes'),
     _StepData('Completed', ProjectStatus.completed, 'Work done, payment pending'),
     _StepData('Paid', ProjectStatus.paid, 'Fully paid and closed'),
   ];

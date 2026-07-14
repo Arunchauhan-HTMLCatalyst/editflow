@@ -109,6 +109,9 @@ CREATE TRIGGER update_projects_updated_at
 ALTER PUBLICATION supabase_realtime ADD TABLE clients;
 ALTER PUBLICATION supabase_realtime ADD TABLE projects;
 ALTER PUBLICATION supabase_realtime ADD TABLE comments;
+ALTER PUBLICATION supabase_realtime ADD TABLE reviews;
+ALTER PUBLICATION supabase_realtime ADD TABLE review_videos;
+ALTER PUBLICATION supabase_realtime ADD TABLE review_comments;
 
 -- 6. Comments
 CREATE TABLE IF NOT EXISTS public.comments (

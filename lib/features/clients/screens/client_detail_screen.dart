@@ -170,7 +170,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                 color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
               ),
             ),
-            onPressed: () => context.pop(),
+            onPressed: () => WidgetsBinding.instance.addPostFrameCallback((_) => context.pop()),
           ),
         ),
         title: Text(
@@ -264,11 +264,19 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
       ),
       body: AmbientGlowContainer(
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-            child: _isEditing
-                ? _buildEditForm(isDark)
-                : _buildDetail(isDark, cl, metrics, displayProjects, currency),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(clientProvider);
+              ref.invalidate(projectProvider);
+              await Future.delayed(const Duration(milliseconds: 500));
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              child: _isEditing
+                  ? _buildEditForm(isDark)
+                  : _buildDetail(isDark, cl, metrics, displayProjects, currency),
+            ),
           ),
         ),
       ),
@@ -533,6 +541,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         const SizedBox(height: 12),
         if (clientProjects.isEmpty)
           Card(
+            key: const ValueKey('empty_client_projects_card'),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16.0),
@@ -563,8 +572,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           )
         else
           ...clientProjects.map((p) => Padding(
+                key: ValueKey(p.id),
                 padding: const EdgeInsets.only(bottom: 12.0),
                 child: _ClientProjectCard(
+                  key: ValueKey(p.id),
                   project: p,
                   currency: currency,
                   onTap: () => context.push('/projects/${p.id}'),
@@ -637,10 +648,9 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _clientUserIdController,
-            decoration: const InputDecoration(
-              labelText: 'Client User ID (for portal access)',
-              hintText: 'Paste client\'s Supabase auth ID',
-            ),
+                decoration: const InputDecoration(
+                  labelText: 'Client User ID (for portal access)',
+                ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) return null;
               final trimmed = v.trim();
@@ -672,347 +682,30 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
   }
 
   void _showCreateProjectSheet() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currency = ref.read(currencyProvider);
-    final nameController = TextEditingController();
-    final descController = TextEditingController();
-    final priceController = TextEditingController();
-    final receivedController = TextEditingController();
-    final deadlineController = TextEditingController();
     final userId = SupabaseService.userId;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        bool isSaving = false;
-
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20.0,
-                right: 20.0,
-                top: 16.0,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24.0,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Create Project',
-                    style: AppTextStyles.title3(isDark).copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Project Name *',
-                      hintText: 'Enter project name',
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: descController,
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
-                      hintText: 'Project brief or requirements',
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: priceController,
-                          decoration: InputDecoration(
-                            labelText: 'Price',
-                            hintText: '0.00',
-                            prefixText: '${currency.symbol} ',
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: receivedController,
-                          decoration: InputDecoration(
-                            labelText: 'Advance Payment',
-                            hintText: '0.00',
-                            prefixText: '${currency.symbol} ',
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: deadlineController,
-                    decoration: InputDecoration(
-                      labelText: 'Deadline (YYYY-MM-DD)',
-                      hintText: 'YYYY-MM-DD',
-                      suffixIcon: IconButton(
-                        icon: const Icon(CupertinoIcons.calendar, size: 18),
-                        onPressed: () async {
-                          final now = DateTime.now();
-                          final parsedDate = DateTime.tryParse(deadlineController.text.trim());
-                          final firstDate = now.subtract(const Duration(days: 365 * 10));
-                          final lastDate = now.add(const Duration(days: 365 * 10));
-                          final initialDate = (parsedDate != null && parsedDate.isAfter(firstDate) && parsedDate.isBefore(lastDate))
-                              ? parsedDate
-                              : now;
-                          final date = await showDatePicker(
-                            context: ctx,
-                            initialDate: initialDate,
-                            firstDate: firstDate,
-                            lastDate: lastDate,
-                            initialDatePickerMode: DatePickerMode.day,
-                          );
-                          if (date != null) {
-                            deadlineController.text = DateFormat('yyyy-MM-dd').format(date);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: isSaving
-                        ? null
-                        : () async {
-                            if (nameController.text.trim().isEmpty) return;
-                            setSheetState(() => isSaving = true);
-                            final project = Project(
-                              id: '',
-                              userId: userId,
-                              clientId: widget.clientId,
-                              name: nameController.text.trim(),
-                              description: descController.text.trim().isEmpty
-                                  ? null : descController.text.trim(),
-                              price: double.tryParse(priceController.text.trim()) ?? 0,
-                              receivedAmount: double.tryParse(receivedController.text.trim()) ?? 0,
-                              deadline: deadlineController.text.trim().isNotEmpty
-                                  ? DateTime.tryParse(deadlineController.text.trim()) : null,
-                              status: ProjectStatus.yetToStart,
-                              createdAt: DateTime.now(),
-                              updatedAt: DateTime.now(),
-                            );
-                            final messenger = ScaffoldMessenger.of(context);
-                            try {
-                              await ref.read(projectProvider.notifier).addProject(project);
-                              if (ctx.mounted) {
-                                Navigator.of(ctx).pop();
-                                messenger.showSnackBar(
-                                  const SnackBar(content: Text('Project created')),
-                                );
-                              }
-                            } catch (e) {
-                              setSheetState(() => isSaving = false);
-                              if (ctx.mounted) {
-                                messenger.showSnackBar(
-                                  SnackBar(content: Text('Failed: $e')),
-                                );
-                              }
-                            }
-                          },
-                    child: isSaving
-                        ? const SizedBox(
-                            height: 20, width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Create Project'),
-                  ),
-                ],
-              ),
-            );
-          },
+        return _CreateProjectSheet(
+          clientId: widget.clientId,
+          userId: userId,
+          currency: currency,
         );
       },
-    ).then((_) {
-      nameController.dispose();
-      descController.dispose();
-      priceController.dispose();
-      receivedController.dispose();
-      deadlineController.dispose();
-    });
+    );
   }
 
   void _showRecordPaymentSheet(List<Project> clientProjects, CurrencyConfig currency) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    Project? selectedProject;
-    final amountController = TextEditingController();
-    bool isSaving = false;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20.0,
-                right: 20.0,
-                top: 16.0,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24.0,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Record Payment',
-                    style: AppTextStyles.title3(isDark).copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Select Project',
-                    style: AppTextStyles.caption(isDark).copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        value: selectedProject?.id,
-                        dropdownColor: isDark ? AppColors.surface : Colors.white,
-                        hint: const Text('Choose a project', style: TextStyle(color: AppColors.textMuted)),
-                        items: clientProjects.map((p) {
-                          return DropdownMenuItem(
-                            value: p.id,
-                            child: Text(p.name, overflow: TextOverflow.ellipsis),
-                          );
-                        }).toList(),
-                        onChanged: (id) {
-                          setSheetState(() {
-                            selectedProject = clientProjects.firstWhere((p) => p.id == id);
-                            amountController.text =
-                                selectedProject!.receivedAmount.toStringAsFixed(0);
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  if (selectedProject != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12.0),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text('Price: ${currency.format(selectedProject!.price)}',
-                                style: AppTextStyles.caption(isDark).copyWith(fontWeight: FontWeight.w600)),
-                          ),
-                          Text('Advance: ${currency.format(selectedProject!.receivedAmount)}',
-                              style: AppTextStyles.label(isDark).copyWith(fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: amountController,
-                      decoration: InputDecoration(
-                        labelText: 'New Advance Payment',
-                        hintText: 'Enter payment amount',
-                        prefixText: '${currency.symbol} ',
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              final newAmount = double.tryParse(amountController.text.trim());
-                              if (newAmount == null || newAmount < 0) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Enter a valid amount')),
-                                );
-                                return;
-                              }
-                              setSheetState(() => isSaving = true);
-                              final updated = selectedProject!.copyWith(receivedAmount: newAmount);
-                              final messenger = ScaffoldMessenger.of(context);
-                              try {
-                                await ref.read(projectProvider.notifier).updateProject(updated);
-                                if (ctx.mounted) {
-                                  Navigator.of(ctx).pop();
-                                  messenger.showSnackBar(
-                                    const SnackBar(content: Text('Payment recorded')),
-                                  );
-                                }
-                              } catch (e) {
-                                setSheetState(() => isSaving = false);
-                                if (ctx.mounted) {
-                                  messenger.showSnackBar(
-                                    SnackBar(content: Text('Failed: $e')),
-                                  );
-                                }
-                              }
-                            },
-                      child: isSaving
-                          ? const SizedBox(
-                              height: 20, width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Text('Save Payment'),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          },
+        return _RecordPaymentSheet(
+          clientProjects: clientProjects,
+          currency: currency,
         );
       },
     );
@@ -1179,6 +872,7 @@ class _ClientProjectCard extends StatefulWidget {
   final VoidCallback onTap;
 
   const _ClientProjectCard({
+    super.key,
     required this.project,
     required this.currency,
     required this.onTap,
@@ -1326,6 +1020,386 @@ class _ClientProjectCardState extends State<_ClientProjectCard> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CreateProjectSheet extends ConsumerStatefulWidget {
+  final String clientId;
+  final String userId;
+  final CurrencyConfig currency;
+
+  const _CreateProjectSheet({
+    required this.clientId,
+    required this.userId,
+    required this.currency,
+  });
+
+  @override
+  ConsumerState<_CreateProjectSheet> createState() => _CreateProjectSheetState();
+}
+
+class _CreateProjectSheetState extends ConsumerState<_CreateProjectSheet> {
+  late final TextEditingController nameController;
+  late final TextEditingController descController;
+  late final TextEditingController priceController;
+  late final TextEditingController receivedController;
+  late final TextEditingController deadlineController;
+  bool isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController();
+    descController = TextEditingController();
+    priceController = TextEditingController();
+    receivedController = TextEditingController();
+    deadlineController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    descController.dispose();
+    priceController.dispose();
+    receivedController.dispose();
+    deadlineController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20.0,
+        right: 20.0,
+        top: 16.0,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24.0,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Create Project',
+            style: AppTextStyles.title3(isDark).copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextFormField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'Project Name *',
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextFormField(
+            controller: descController,
+            decoration: const InputDecoration(
+              labelText: 'Description',
+            ),
+            maxLines: 3,
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: priceController,
+                  decoration: InputDecoration(
+                    labelText: 'Price',
+                    prefixText: '${widget.currency.symbol} ',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: receivedController,
+                  decoration: InputDecoration(
+                    labelText: 'Advance Payment',
+                    prefixText: '${widget.currency.symbol} ',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          TextFormField(
+            controller: deadlineController,
+            decoration: InputDecoration(
+              labelText: 'Deadline (YYYY-MM-DD)',
+              suffixIcon: IconButton(
+                icon: const Icon(CupertinoIcons.calendar, size: 18),
+                onPressed: () async {
+                  final now = DateTime.now();
+                  final parsedDate = DateTime.tryParse(deadlineController.text.trim());
+                  final firstDate = now.subtract(const Duration(days: 365 * 10));
+                  final lastDate = now.add(const Duration(days: 365 * 10));
+                  final initialDate = (parsedDate != null && parsedDate.isAfter(firstDate) && parsedDate.isBefore(lastDate))
+                      ? parsedDate
+                      : now;
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: initialDate,
+                    firstDate: firstDate,
+                    lastDate: lastDate,
+                    initialDatePickerMode: DatePickerMode.day,
+                  );
+                  if (date != null) {
+                    deadlineController.text = DateFormat('yyyy-MM-dd').format(date);
+                  }
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: isSaving
+                ? null
+                : () async {
+                    if (nameController.text.trim().isEmpty) return;
+                    setState(() => isSaving = true);
+                    final project = Project(
+                      id: '',
+                      userId: widget.userId,
+                      clientId: widget.clientId,
+                      name: nameController.text.trim(),
+                      description: descController.text.trim().isEmpty
+                          ? null : descController.text.trim(),
+                      price: double.tryParse(priceController.text.trim()) ?? 0,
+                      receivedAmount: double.tryParse(receivedController.text.trim()) ?? 0,
+                      deadline: deadlineController.text.trim().isNotEmpty
+                          ? DateTime.tryParse(deadlineController.text.trim()) : null,
+                      status: ProjectStatus.yetToStart,
+                      createdAt: DateTime.now(),
+                      updatedAt: DateTime.now(),
+                    );
+                    final messenger = ScaffoldMessenger.of(context);
+                    final notifier = ref.read(projectProvider.notifier);
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                    Future.delayed(const Duration(milliseconds: 500), () async {
+                      try {
+                        await notifier.addProject(project);
+                        messenger.showSnackBar(
+                          const SnackBar(content: Text('Project created')),
+                        );
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text('Failed to create project: $e')),
+                        );
+                      }
+                    });
+                  },
+            child: isSaving
+                ? const SizedBox(
+                    height: 20, width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Text('Create Project'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecordPaymentSheet extends ConsumerStatefulWidget {
+  final List<Project> clientProjects;
+  final CurrencyConfig currency;
+
+  const _RecordPaymentSheet({
+    required this.clientProjects,
+    required this.currency,
+  });
+
+  @override
+  ConsumerState<_RecordPaymentSheet> createState() => _RecordPaymentSheetState();
+}
+
+class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
+  Project? selectedProject;
+  late final TextEditingController amountController;
+  bool isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    amountController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    amountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20.0,
+        right: 20.0,
+        top: 16.0,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24.0,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Record Payment',
+            style: AppTextStyles.title3(isDark).copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Select Project',
+            style: AppTextStyles.caption(isDark).copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                width: 0.8,
+              ),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: selectedProject?.id,
+                dropdownColor: isDark ? AppColors.surface : Colors.white,
+                hint: const Text('Choose a project', style: TextStyle(color: AppColors.textMuted)),
+                items: widget.clientProjects.map((p) {
+                  return DropdownMenuItem(
+                    value: p.id,
+                    child: Text(p.name, overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
+                onChanged: (id) {
+                  setState(() {
+                    selectedProject = widget.clientProjects.firstWhere((p) => p.id == id);
+                    amountController.text =
+                        selectedProject!.receivedAmount.toStringAsFixed(0);
+                  });
+                },
+              ),
+            ),
+          ),
+          if (selectedProject != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text('Price: ${widget.currency.format(selectedProject!.price)}',
+                        style: AppTextStyles.caption(isDark).copyWith(fontWeight: FontWeight.w600)),
+                  ),
+                  Text('Advance: ${widget.currency.format(selectedProject!.receivedAmount)}',
+                      style: AppTextStyles.label(isDark).copyWith(fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: amountController,
+              decoration: InputDecoration(
+                labelText: 'New Advance Payment',
+                prefixText: '${widget.currency.symbol} ',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final newAmount = double.tryParse(amountController.text.trim());
+                      if (newAmount == null || newAmount < 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Enter a valid amount')),
+                        );
+                        return;
+                      }
+                      setState(() => isSaving = true);
+                      final updated = selectedProject!.copyWith(receivedAmount: newAmount);
+                      final messenger = ScaffoldMessenger.of(context);
+                      final notifier = ref.read(projectProvider.notifier);
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                      Future.delayed(const Duration(milliseconds: 500), () async {
+                        try {
+                          await notifier.updateProject(updated);
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Payment recorded')),
+                          );
+                        } catch (e) {
+                          messenger.showSnackBar(
+                            SnackBar(content: Text('Failed: $e')),
+                          );
+                        }
+                      });
+                    },
+              child: isSaving
+                  ? const SizedBox(
+                      height: 20, width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Save Payment'),
+            ),
+          ],
+        ],
       ),
     );
   }

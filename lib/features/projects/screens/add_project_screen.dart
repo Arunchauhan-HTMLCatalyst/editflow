@@ -144,7 +144,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
         const SnackBar(content: Text('Project created successfully')),
       );
 
-      context.pop();
+      WidgetsBinding.instance.addPostFrameCallback((_) => context.pop());
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -207,7 +207,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                 color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
               ),
             ),
-            onPressed: () => context.pop(),
+            onPressed: () => WidgetsBinding.instance.addPostFrameCallback((_) => context.pop()),
           ),
         ),
         title: Text(
@@ -379,7 +379,6 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                         controller: _nameController,
                         decoration: const InputDecoration(
                           labelText: 'Project Name *',
-                          hintText: 'Enter project name',
                         ),
                         validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
                         textInputAction: TextInputAction.next,
@@ -390,7 +389,6 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                           controller: _priceController,
                           decoration: InputDecoration(
                             labelText: 'Budget',
-                            hintText: '0.00',
                             prefixText: '${currency.symbol} ',
                           ),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -404,7 +402,6 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                                 controller: _priceController,
                                 decoration: InputDecoration(
                                   labelText: 'Budget',
-                                  hintText: '0.00',
                                   prefixText: '${currency.symbol} ',
                                 ),
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -417,7 +414,6 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                                 controller: _receivedController,
                                 decoration: InputDecoration(
                                   labelText: 'Advance Paid',
-                                  hintText: '0.00',
                                   prefixText: '${currency.symbol} ',
                                 ),
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -431,7 +427,6 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                         controller: _deadlineController,
                         decoration: const InputDecoration(
                           labelText: 'Deadline',
-                          hintText: 'YYYY-MM-DD',
                           suffixIcon: Icon(Icons.calendar_month_rounded, size: 20),
                         ),
                         readOnly: true,
@@ -458,7 +453,6 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                         controller: _descController,
                         decoration: const InputDecoration(
                           labelText: 'Description',
-                          hintText: 'Enter project description or details',
                         ),
                         maxLines: 4,
                         textInputAction: TextInputAction.newline,

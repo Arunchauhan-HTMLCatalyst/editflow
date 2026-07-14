@@ -15,6 +15,7 @@ class Project {
   final DateTime updatedAt;
   final String? clientName;
   final String? freelancerName;
+  final String? reviewStatus;
 
   const Project({
     required this.id,
@@ -30,6 +31,7 @@ class Project {
     required this.updatedAt,
     this.clientName,
     this.freelancerName,
+    this.reviewStatus,
   });
 
   double get remainingAmount => price - receivedAmount;
@@ -48,6 +50,7 @@ class Project {
         updatedAt: DateTime.parse(json['updated_at'] as String),
         clientName: json['client_name'] as String?,
         freelancerName: json['freelancer_name'] as String?,
+        reviewStatus: json['review_status'] as String?,
       );
 
   static Project? tryFromJson(Map<String, dynamic> json) {
@@ -56,6 +59,17 @@ class Project {
       if (clientName != null) json['client_name'] = clientName;
       final freelancerName = json['profiles'] is Map ? json['profiles']['full_name'] as String? : null;
       if (freelancerName != null) json['freelancer_name'] = freelancerName;
+      
+      // If reviews is joined in the response (e.g. for the latest review status)
+      if (json['reviews'] is List && (json['reviews'] as List).isNotEmpty) {
+        final latestReview = (json['reviews'] as List).first;
+        if (latestReview is Map && latestReview['status'] != null) {
+          json['review_status'] = latestReview['status'] as String;
+        }
+      } else if (json['reviews'] is Map && json['reviews']['status'] != null) {
+        json['review_status'] = json['reviews']['status'] as String;
+      }
+      
       return Project.fromJson(json);
     } catch (e) {
       debugPrint('[Project.tryFromJson] Failed to parse row: $e');
@@ -77,6 +91,7 @@ class Project {
         'updated_at': updatedAt.toIso8601String(),
         'client_name': clientName,
         'freelancer_name': freelancerName,
+        'review_status': reviewStatus,
       };
 
   Project copyWith({
@@ -93,6 +108,7 @@ class Project {
     DateTime? updatedAt,
     String? clientName,
     String? freelancerName,
+    String? reviewStatus,
   }) =>
       Project(
         id: id ?? this.id,
@@ -108,5 +124,6 @@ class Project {
         updatedAt: updatedAt ?? this.updatedAt,
         clientName: clientName ?? this.clientName,
         freelancerName: freelancerName ?? this.freelancerName,
+        reviewStatus: reviewStatus ?? this.reviewStatus,
       );
 }

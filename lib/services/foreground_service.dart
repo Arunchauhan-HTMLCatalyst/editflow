@@ -119,6 +119,71 @@ class NotificationTaskHandler extends TaskHandler {
     await _streamSubscription?.cancel();
   }
 
+  Future<bool> _handleAuthRefresh() async {
+    final client = _client;
+    if (client == null) return false;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final refreshToken = prefs.getString('auth_refresh_token') ?? '';
+      if (refreshToken.isEmpty) {
+        debugPrint('[FOREGROUND TASK] Refresh token is empty. Cannot refresh.');
+        return false;
+      }
+
+      debugPrint('[FOREGROUND TASK] Refreshing Supabase session in isolate...');
+      final response = await client.auth.refreshSession(refreshToken);
+      final newSession = response.session;
+      if (newSession != null) {
+        await prefs.setString('auth_jwt_token', newSession.accessToken);
+        if (newSession.refreshToken != null) {
+          await prefs.setString('auth_refresh_token', newSession.refreshToken!);
+        }
+
+        // Re-establish realtime stream subscription with new token session
+        await _streamSubscription?.cancel();
+        _streamSubscription = client
+            .from('activities')
+            .stream(primaryKey: ['id'])
+            .eq('user_id', _userId!)
+            .listen(
+          (rows) {
+            try {
+              final activities = rows.map((e) => Activity.fromJson(e)).toList();
+              debugPrint('[FOREGROUND TASK STREAM] Received ${activities.length} rows.');
+              
+              if (_isFirstLoad) {
+                for (final act in activities) {
+                  _seenActivityIds.add(act.id);
+                }
+                _isFirstLoad = false;
+                debugPrint('[FOREGROUND TASK STREAM] Initialized seen activities cache.');
+              } else {
+                for (final act in activities) {
+                  if (!_seenActivityIds.contains(act.id)) {
+                    _seenActivityIds.add(act.id);
+                    _triggerActivityAlert(act);
+                  }
+                }
+              }
+            } catch (e) {
+              debugPrint('[FOREGROUND TASK STREAM PARSE ERROR] $e');
+            }
+          },
+          onError: (err) {
+            debugPrint('[FOREGROUND TASK STREAM ERROR] $err');
+          },
+        );
+
+        debugPrint('[FOREGROUND TASK] Session refreshed and stream re-established successfully.');
+        return true;
+      }
+    } catch (e) {
+      debugPrint('[FOREGROUND TASK REFRESH ERROR] Failed to refresh token: $e');
+    }
+    return false;
+  }
+
   Future<void> _updateWorkspaceStats(SupabaseClient client, String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -167,6 +232,13 @@ class NotificationTaskHandler extends TaskHandler {
         debugPrint('[FOREGROUND TASK STATS] Freelancer Mode. Active projects: $activeCount');
       }
     } catch (e) {
+      if (e is PostgrestException && e.message.contains('JWT expired')) {
+        debugPrint('[FOREGROUND TASK STATS] JWT expired. Attempting token refresh...');
+        final refreshed = await _handleAuthRefresh();
+        if (refreshed) {
+          return _updateWorkspaceStats(client, userId);
+        }
+      }
       debugPrint('[FOREGROUND TASK STATS ERROR] $e');
     }
   }
@@ -198,6 +270,13 @@ class NotificationTaskHandler extends TaskHandler {
         }
       }
     } catch (e) {
+      if (e is PostgrestException && e.message.contains('JWT expired')) {
+        debugPrint('[FOREGROUND TASK POLL] JWT expired. Attempting token refresh...');
+        final refreshed = await _handleAuthRefresh();
+        if (refreshed) {
+          return _pollNewActivities(client, userId);
+        }
+      }
       debugPrint('[FOREGROUND TASK POLL ERROR] $e');
     }
   }

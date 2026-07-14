@@ -29,7 +29,8 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   int _currentTab(String location, bool isClientMode) {
     if (isClientMode) {
-      if (location.startsWith('/clients')) return 1;
+      if (location.startsWith('/reviews')) return 1;
+      if (location.startsWith('/clients')) return 2;
       return 0;
     }
     if (location.startsWith('/clients')) return 1;
@@ -87,6 +88,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     final navItems = isClientMode
         ? const [
             _NavItem('Dashboard', Icons.grid_view_rounded),
+            _NavItem('Reviews', Icons.rate_review_rounded),
             _NavItem('Freelancers', Icons.people_rounded),
           ]
         : const [
@@ -111,8 +113,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                       switch (index) {
                         case 0:
                           context.go('/dashboard');
+                          break;
                         case 1:
+                          context.go('/reviews');
+                          break;
+                        case 2:
                           context.go('/clients');
+                          break;
                       }
                     } else {
                       switch (index) {
@@ -148,8 +155,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                   switch (index) {
                     case 0:
                       context.go('/dashboard');
+                      break;
                     case 1:
+                      context.go('/reviews');
+                      break;
+                    case 2:
                       context.go('/clients');
+                      break;
                   }
                 } else {
                   switch (index) {
