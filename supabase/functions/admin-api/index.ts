@@ -280,26 +280,154 @@ serve(async (req) => {
               : 'EditFlow Support Ticket Update';
 
             const htmlContent = `
-              <div style="font-family: sans-serif; padding: 24px; color: #1f2937; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff;">
-                <div style="margin-bottom: 24px;">
-                  <h2 style="margin: 0; color: #7c3aed; font-size: 20px; font-weight: 800;">EditFlow Support</h2>
-                </div>
-                <p style="font-size: 14px; line-height: 1.5; color: #4b5563;">Hello ${userProfile?.full_name || 'User'},</p>
-                <p style="font-size: 14px; line-height: 1.5; color: #4b5563;">Your support request ticket has been reviewed and resolved by our administration team.</p>
-                
-                <div style="background: #f9fafb; border-left: 4px solid #7c3aed; padding: 16px; margin: 24px 0; border-radius: 4px;">
-                  <strong style="display: block; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; color: #374151; letter-spacing: 0.5px;">
-                    Resolution Action: <span style="color: ${action === 'accept' ? '#059669' : '#dc2626'};">${action.toUpperCase()}</span>
-                  </strong>
-                  <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #4b5563;">
-                    ${feedback || (action === 'accept' ? 'Your support request has been accepted. We are working on your issue.' : 'Your support request has been rejected.')}
-                  </p>
-                </div>
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <style>
+                  body {
+                    margin: 0;
+                    padding: 0;
+                    background-color: #0b0f19;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    -webkit-font-smoothing: antialiased;
+                  }
+                  .wrapper {
+                    width: 100%;
+                    table-layout: fixed;
+                    background-color: #0b0f19;
+                    padding: 40px 0;
+                  }
+                  .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #111827;
+                    border-radius: 16px;
+                    border: 1px solid #1f2937;
+                    border-top: 4px solid #7c3aed;
+                    overflow: hidden;
+                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+                  }
+                  .header {
+                    padding: 32px 32px 16px 32px;
+                    text-align: center;
+                  }
+                  .logo {
+                    width: 56px;
+                    height: 56px;
+                    margin-bottom: 12px;
+                    border-radius: 12px;
+                  }
+                  .title {
+                    font-size: 20px;
+                    font-weight: 800;
+                    color: #ffffff;
+                    margin: 0;
+                    letter-spacing: -0.5px;
+                  }
+                  .content {
+                    padding: 0 32px 32px 32px;
+                  }
+                  .greeting {
+                    font-size: 14px;
+                    color: #e5e7eb;
+                    line-height: 1.5;
+                    margin-top: 0;
+                  }
+                  .message {
+                    font-size: 14px;
+                    color: #9ca3af;
+                    line-height: 1.6;
+                  }
+                  .resolution-box {
+                    background-color: #1f2937;
+                    border-left: 4px solid ${action === 'accept' ? '#10b981' : '#ef4444'};
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 28px 0;
+                  }
+                  .resolution-status {
+                    font-size: 12px;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.8px;
+                    color: ${action === 'accept' ? '#34d399' : '#f87171'};
+                    margin-bottom: 8px;
+                    display: block;
+                  }
+                  .resolution-text {
+                    font-size: 13.5px;
+                    line-height: 1.5;
+                    color: #f3f4f6;
+                    margin: 0;
+                  }
+                  .btn-container {
+                    text-align: center;
+                    margin: 32px 0 16px 0;
+                  }
+                  .btn {
+                    background-color: #7c3aed;
+                    color: #ffffff !important;
+                    text-decoration: none;
+                    font-weight: 700;
+                    font-size: 13px;
+                    padding: 12px 28px;
+                    border-radius: 8px;
+                    display: inline-block;
+                    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+                  }
+                  .footer {
+                    padding: 24px 32px;
+                    background-color: #0d121f;
+                    border-top: 1px solid #1f2937;
+                    text-align: center;
+                  }
+                  .footer-text {
+                    font-size: 12px;
+                    color: #6b7280;
+                    line-height: 1.6;
+                    margin: 0;
+                  }
+                  .footer-link {
+                    color: #9f7aea;
+                    text-decoration: none;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="wrapper">
+                  <div class="container">
+                    <div class="header">
+                      <img src="https://editflow.acsoft.online/app/assets/assets/images/app_logo.png" alt="EditFlow Logo" class="logo">
+                      <h1 class="title">EditFlow Support Update</h1>
+                    </div>
+                    <div class="content">
+                      <p class="greeting">Hello ${userProfile?.full_name || 'there'},</p>
+                      <p class="message">Your support ticket has been reviewed and resolved by our administration team. Please find the details of the resolution below.</p>
+                      
+                      <div class="resolution-box">
+                        <span class="resolution-status">${action === 'accept' ? 'ACCEPTED' : 'REJECTED'}</span>
+                        <p class="resolution-text">
+                          ${feedback || (action === 'accept' ? 'Your support request has been accepted. We are working on your issue.' : 'Your support request has been rejected.')}
+                        </p>
+                      </div>
 
-                <p style="font-size: 12px; line-height: 1.5; color: #9ca3af; margin-top: 32px; border-top: 1px solid #f3f4f6; padding-top: 16px;">
-                  This is an automated system response. You can also view this resolution inside the EditFlow app notification center.
-                </p>
-              </div>
+                      <div class="btn-container">
+                        <a href="https://editflow.acsoft.online/app/" class="btn" target="_blank">Open EditFlow Dashboard</a>
+                      </div>
+                    </div>
+                    <div class="footer">
+                      <p class="footer-text">
+                        Need additional help? Reach out to us at <a href="mailto:editflow@acsoft.online" class="footer-link">editflow@acsoft.online</a>.
+                      </p>
+                      <p class="footer-text" style="margin-top: 8px; font-size: 11px;">
+                        © ${new Date().getFullYear()} EditFlow. All rights reserved.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </body>
+              </html>
             `;
 
             const res = await fetch('https://api.resend.com/emails', {
