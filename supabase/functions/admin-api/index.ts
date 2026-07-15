@@ -1282,8 +1282,8 @@ serve(async (req) => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                from: fromEmail,
-                to: userEmail,
+                from: `EditFlow <${fromEmail}>`,
+                to: [userEmail],
                 subject: subjectText,
                 html: htmlContent,
               }),
