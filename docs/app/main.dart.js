@@ -65439,7 +65439,7 @@ i=m.r
 l="["+m.e+"] Subject: "+j.a.a+"\nDescription: "+i.a.a+"\nDevice: Web/Mobile\nApp Version: v2.0"
 h=t.N
 s=7
-return A.j($.aK.a2().aU("activities").dC(0,A.ab(["user_id",A.fu(),"type","support_ticket","description",l],h,h)),$async$G9)
+return A.j($.aK.a2().aU("support_tickets").dC(0,A.ab(["user_id",A.fu(),"description",l],h,h)),$async$G9)
 case 7:h=m.c
 if(h!=null){h.S(t.q).f.br(B.adz)
 j.fY(0,B.eP)

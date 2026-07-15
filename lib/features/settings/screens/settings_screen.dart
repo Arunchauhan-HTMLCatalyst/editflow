@@ -2214,9 +2214,8 @@ class _SupportRequestFormState extends State<_SupportRequestForm> {
     setState(() => _isSubmitting = true);
     try {
       final desc = '[$_category] Subject: ${_subjectController.text}\nDescription: ${_messageController.text}\nDevice: Web/Mobile\nApp Version: v2.0';
-      await SupabaseService.instance.from('activities').insert({
+      await SupabaseService.instance.from('support_tickets').insert({
         'user_id': SupabaseService.userId,
-        'type': 'support_ticket',
         'description': desc,
       });
       if (mounted) {

@@ -135,9 +135,8 @@ serve(async (req) => {
 
         // Support tickets/requests
         const { data: supportRequests } = await adminClient
-          .from('activities')
+          .from('support_tickets')
           .select('*, profiles:user_id(full_name, email)')
-          .eq('type', 'support_ticket')
           .order('created_at', { ascending: false })
 
         return new Response(JSON.stringify({
@@ -259,9 +258,9 @@ serve(async (req) => {
         })
         if (userNotifError) throw userNotifError
 
-        // Delete the ticket activity row
+        // Delete the ticket row
         const { error: deleteError } = await adminClient
-          .from('activities')
+          .from('support_tickets')
           .delete()
           .eq('id', ticketId)
         if (deleteError) throw deleteError
