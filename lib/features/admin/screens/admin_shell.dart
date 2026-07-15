@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/ef_logo.dart';
 import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../providers/admin_provider.dart';
 
 class AdminShell extends ConsumerWidget {
   final GoRouterState state;
@@ -67,6 +68,20 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/support')) return 'Support Tickets';
     if (location.startsWith('/admin/settings')) return 'Global App Settings';
     return 'Super Admin Panel';
+  }
+
+  void _triggerRefresh(WidgetRef ref, BuildContext context) {
+    ref.invalidate(adminStatsProvider);
+    ref.invalidate(adminUsersProvider(''));
+    ref.invalidate(adminStorageProvider);
+    ref.invalidate(adminSettingsProvider);
+    ref.invalidate(adminAnalyticsProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Refreshing admin data...', style: TextStyle(fontWeight: FontWeight.bold)),
+        duration: Duration(milliseconds: 800),
+      ),
+    );
   }
 
   @override
@@ -271,6 +286,13 @@ class AdminShell extends ConsumerWidget {
                 _getRouteTitle(location),
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
               ),
+              actions: [
+                IconButton(
+                  tooltip: 'Refresh Data',
+                  icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryNeon, size: 20),
+                  onPressed: () => _triggerRefresh(ref, context),
+                ),
+              ],
             )
           : null,
       drawer: !isDesktop
@@ -310,6 +332,13 @@ class AdminShell extends ConsumerWidget {
                           ),
                         ),
                         const Spacer(),
+                        // Global Refresh Button
+                        IconButton(
+                          tooltip: 'Refresh All Data',
+                          icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryNeon, size: 20),
+                          onPressed: () => _triggerRefresh(ref, context),
+                        ),
+                        const SizedBox(width: 16),
                         // Status indicator
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

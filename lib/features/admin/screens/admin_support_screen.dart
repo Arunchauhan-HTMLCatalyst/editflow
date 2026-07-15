@@ -412,9 +412,8 @@ class AdminSupportScreen extends ConsumerWidget {
                     'feedback': responseController.text.trim(),
                   });
 
-                  // Invalidate the provider and await the refetch to complete
+                  // Invalidate the provider to trigger reactive UI reload
                   ref.invalidate(adminStatsProvider);
-                  await ref.read(adminStatsProvider.future);
 
                   if (context.mounted) {
                     Navigator.pop(context); // Pop loading spinner
