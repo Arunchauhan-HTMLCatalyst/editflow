@@ -363,7 +363,42 @@ class AdminShell extends ConsumerWidget {
             if (isDesktop)
               const VerticalDivider(color: AppColors.border, width: 1),
             Expanded(
-              child: child,
+              child: Column(
+                children: [
+                  if (isDesktop)
+                    Container(
+                      height: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: AppColors.border, width: 0.8),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _getRouteTitle(location),
+                            style: const TextStyle(
+                              fontFamily: 'Outfit',
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary, size: 20),
+                            tooltip: 'Refresh Page',
+                            onPressed: () => _triggerRefresh(ref, context),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Expanded(
+                    child: child,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
