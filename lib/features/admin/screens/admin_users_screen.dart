@@ -15,6 +15,7 @@ class AdminUsersScreen extends ConsumerStatefulWidget {
 class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isLoading = false;
 
   Future<void> _triggerUserAction(String userId, String actionName, [String? targetRole]) async {
     final confirmed = await showDialog<bool>(
@@ -39,13 +40,11 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     );
 
     if (confirmed == true && mounted) {
-      try {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => const Center(child: CircularProgressIndicator()),
-        );
+      setState(() {
+        _isLoading = true;
+      });
 
+      try {
         await AdminService.invokeAdminAction('user_action', {
           'targetUserId': userId,
           'userAction': actionName,
@@ -53,7 +52,6 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
         });
 
         if (mounted) {
-          Navigator.of(context).pop(); // pop progress indicator
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('User action $actionName executed successfully!')),
           );
@@ -62,10 +60,15 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
         }
       } catch (e) {
         if (mounted) {
-          Navigator.of(context).pop(); // pop progress
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed to execute action: $e')),
           );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
         }
       }
     }
@@ -82,37 +85,39 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     final usersAsync = ref.watch(adminUsersProvider(_searchQuery));
     final isDesktop = MediaQuery.of(context).size.width > 900;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: [
-        // Search bar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 0.8),
-          ),
-          child: TextField(
-            controller: _searchController,
-            onChanged: (val) {
-              setState(() {
-                _searchQuery = val.trim();
-              });
-            },
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-            decoration: const InputDecoration(
-              icon: Icon(Icons.search, color: AppColors.textMuted, size: 20),
-              hintText: 'Search users by name or email...',
-              hintStyle: TextStyle(color: AppColors.textMuted),
-              border: InputBorder.none,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border, width: 0.8),
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val.trim();
+                  });
+                },
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: const InputDecoration(
+                  icon: Icon(Icons.search, color: AppColors.textMuted, size: 20),
+                  hintText: 'Search users by name or email...',
+                  hintStyle: TextStyle(color: AppColors.textMuted),
+                  border: InputBorder.none,
+                ),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-        // Users List
-        Expanded(
+            // Users List
+            Expanded(
           child: usersAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('Error: $err', style: const TextStyle(color: AppColors.textSecondary))),
@@ -304,6 +309,17 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           ),
         ),
       ],
-    );
-  }
+    ),
+    if (_isLoading)
+      Positioned.fill(
+        child: Container(
+          color: Colors.black45,
+          child: const Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      ),
+    ],
+  );
+}
 }
