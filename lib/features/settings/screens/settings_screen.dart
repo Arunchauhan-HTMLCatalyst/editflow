@@ -558,72 +558,125 @@ class SettingsScreen extends ConsumerWidget {
                         const SizedBox(height: 20),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: AppColors.primaryNeon.withValues(alpha: 0.45),
-                              width: 1.5,
+                              color: AppColors.primaryNeon.withValues(alpha: 0.3),
+                              width: 1,
                             ),
-                            gradient: LinearGradient(
+                            gradient: const LinearGradient(
                               colors: [
-                                AppColors.primary.withValues(alpha: 0.18),
-                                AppColors.primaryNeon.withValues(alpha: 0.18),
+                                Color(0xFF0F172A),
+                                Color(0xFF020617),
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primaryNeon.withValues(alpha: 0.15),
+                                color: AppColors.primaryNeon.withValues(alpha: 0.08),
                                 blurRadius: 16,
-                                spreadRadius: 1,
+                                spreadRadius: 2,
                               ),
                             ],
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryNeon.withValues(alpha: 0.25),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primaryNeon.withValues(alpha: 0.3),
-                                      blurRadius: 8,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15),
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                  right: -20,
+                                  top: -20,
+                                  child: Opacity(
+                                    opacity: 0.08,
+                                    child: Icon(
+                                      CupertinoIcons.sparkles,
+                                      size: 140,
+                                      color: AppColors.primaryNeon,
                                     ),
-                                  ],
+                                  ),
                                 ),
-                                child: const Icon(
-                                  CupertinoIcons.sparkles,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'EDITFLOW PRO ACTIVE',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w900, 
-                                        fontSize: 13.5, 
-                                        color: Colors.white,
-                                        letterSpacing: 0.5,
+                                Padding(
+                                  padding: const EdgeInsets.all(18.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(6),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primaryNeon.withValues(alpha: 0.15),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: const Icon(
+                                                  CupertinoIcons.sparkles,
+                                                  color: AppColors.primaryNeon,
+                                                  size: 16,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              const Text(
+                                                'EditFlow Pro Plan',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [AppColors.primary, AppColors.primaryNeon],
+                                              ),
+                                              borderRadius: BorderRadius.circular(12),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: AppColors.primaryNeon.withValues(alpha: 0.3),
+                                                  blurRadius: 8,
+                                                )
+                                              ]
+                                            ),
+                                            child: const Text(
+                                              'ACTIVE',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w900,
+                                                letterSpacing: 0.8,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      'Active benefits until ${DateFormat('MMMM dd, yyyy').format(authState.premiumUntil!.toLocal())}',
-                                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 18),
+                                      const Text(
+                                        'Unlimited Workspace Active',
+                                        style: TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Valid until ${DateFormat('MMMM dd, yyyy').format(authState.premiumUntil!.toLocal())}',
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],
