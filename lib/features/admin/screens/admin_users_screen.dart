@@ -216,10 +216,6 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                               Row(
                                 children: [
                                   Text('Joined: $joinedDate', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                                  const SizedBox(width: 12),
-                                  Text('Clients: $clientsCount', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                                  const SizedBox(width: 12),
-                                  Text('Projects: $projectsCount', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
                                 ],
                               ),
                             ],

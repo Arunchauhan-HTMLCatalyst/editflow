@@ -19,12 +19,11 @@ class AdminShell extends ConsumerWidget {
   int _getSelectedIndex(String location) {
     if (location.startsWith('/admin/dashboard')) return 0;
     if (location.startsWith('/admin/users')) return 1;
-    if (location.startsWith('/admin/projects')) return 2;
-    if (location.startsWith('/admin/storage')) return 3;
-    if (location.startsWith('/admin/notifications')) return 4;
-    if (location.startsWith('/admin/analytics')) return 5;
-    if (location.startsWith('/admin/logs')) return 6;
-    if (location.startsWith('/admin/settings')) return 7;
+    if (location.startsWith('/admin/storage')) return 2;
+    if (location.startsWith('/admin/notifications')) return 3;
+    if (location.startsWith('/admin/analytics')) return 4;
+    if (location.startsWith('/admin/logs')) return 5;
+    if (location.startsWith('/admin/settings')) return 6;
     return 0;
   }
 
@@ -37,21 +36,18 @@ class AdminShell extends ConsumerWidget {
         context.go('/admin/users');
         break;
       case 2:
-        context.go('/admin/projects');
-        break;
-      case 3:
         context.go('/admin/storage');
         break;
-      case 4:
+      case 3:
         context.go('/admin/notifications');
         break;
-      case 5:
+      case 4:
         context.go('/admin/analytics');
         break;
-      case 6:
+      case 5:
         context.go('/admin/logs');
         break;
-      case 7:
+      case 6:
         context.go('/admin/settings');
         break;
     }
@@ -60,7 +56,6 @@ class AdminShell extends ConsumerWidget {
   String _getRouteTitle(String location) {
     if (location.startsWith('/admin/dashboard')) return 'Dashboard Overview';
     if (location.startsWith('/admin/users')) return 'User Directory';
-    if (location.startsWith('/admin/projects')) return 'Platform Projects';
     if (location.startsWith('/admin/storage')) return 'Storage & Analytics';
     if (location.startsWith('/admin/notifications')) return 'Targeted Announcements';
     if (location.startsWith('/admin/analytics')) return 'System Metrics';
@@ -71,7 +66,6 @@ class AdminShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final location = state.uri.toString();
     final selectedIndex = _getSelectedIndex(location);
     final isDesktop = MediaQuery.of(context).size.width > 900;
@@ -84,12 +78,11 @@ class AdminShell extends ConsumerWidget {
     final menuItems = [
       _AdminMenuItem('Dashboard', Icons.dashboard_rounded, 0),
       _AdminMenuItem('Users', Icons.people_alt_rounded, 1),
-      _AdminMenuItem('Projects', Icons.folder_copy_rounded, 2),
-      _AdminMenuItem('Storage', Icons.storage_rounded, 3),
-      _AdminMenuItem('Notifications', Icons.campaign_rounded, 4),
-      _AdminMenuItem('Analytics', Icons.analytics_rounded, 5),
-      _AdminMenuItem('Audit Logs', Icons.receipt_long_rounded, 6),
-      _AdminMenuItem('App Settings', Icons.settings_rounded, 7),
+      _AdminMenuItem('Storage', Icons.storage_rounded, 2),
+      _AdminMenuItem('Notifications', Icons.campaign_rounded, 3),
+      _AdminMenuItem('Analytics', Icons.analytics_rounded, 4),
+      _AdminMenuItem('Audit Logs', Icons.receipt_long_rounded, 5),
+      _AdminMenuItem('App Settings', Icons.settings_rounded, 6),
     ];
 
     Widget sidebarContent(BuildContext ctx) {

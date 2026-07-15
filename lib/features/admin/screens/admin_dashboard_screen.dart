@@ -43,11 +43,13 @@ class AdminDashboardScreen extends ConsumerWidget {
 
         final totalUsers = stats['totalUsers'] ?? 0;
         final activeUsers = stats['activeUsers'] ?? 0;
+        final newUsers = stats['newUsers'] ?? 0;
         final totalProjects = stats['totalProjects'] ?? 0;
         final totalClients = stats['totalClients'] ?? 0;
         final totalReviews = stats['totalReviews'] ?? 0;
-        final totalComments = stats['totalComments'] ?? 0;
         final totalStorage = stats['totalStorageUsed'] ?? 0;
+        final dau = stats['dau'] ?? 0;
+        final mau = stats['mau'] ?? 0;
 
         return RefreshIndicator(
           onRefresh: () async {
@@ -80,9 +82,9 @@ class AdminDashboardScreen extends ConsumerWidget {
                       AppColors.success,
                     ),
                     _buildStatCard(
-                      'TOTAL PROJECTS',
-                      totalProjects.toString(),
-                      Icons.folder_copy_rounded,
+                      'NEW USERS (30D)',
+                      newUsers.toString(),
+                      Icons.person_add_rounded,
                       AppColors.info,
                     ),
                     _buildStatCard(
@@ -97,29 +99,35 @@ class AdminDashboardScreen extends ConsumerWidget {
                 
                 // Second Row Metrics
                 GridView.count(
-                  crossAxisCount: isDesktop ? 3 : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
+                  crossAxisCount: isDesktop ? 4 : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: isDesktop ? 1.8 : 2.0,
+                  childAspectRatio: isDesktop ? 1.4 : 1.6,
                   children: [
                     _buildStatCard(
-                      'CLIENT CONNECTIONS',
+                      'TOTAL PROJECTS',
+                      totalProjects.toString(),
+                      Icons.folder_copy_rounded,
+                      Colors.cyan,
+                    ),
+                    _buildStatCard(
+                      'TOTAL CLIENTS',
                       totalClients.toString(),
                       Icons.handshake_rounded,
                       Colors.purple,
                     ),
                     _buildStatCard(
-                      'REVIEWS GENERATED',
+                      'TOTAL REVIEWS',
                       totalReviews.toString(),
                       Icons.rate_review_rounded,
-                      Colors.cyan,
+                      Colors.pinkAccent,
                     ),
                     _buildStatCard(
-                      'TIMELINE COMMENTS',
-                      totalComments.toString(),
-                      Icons.comment_rounded,
+                      'ACTIVE USERS (DAU/MAU)',
+                      '$dau / $mau',
+                      Icons.insights_rounded,
                       AppColors.primaryNeon,
                     ),
                   ],

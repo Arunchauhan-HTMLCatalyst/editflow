@@ -27,7 +27,6 @@ import 'core/theme/app_transitions.dart';
 import 'features/admin/screens/admin_shell.dart';
 import 'features/admin/screens/admin_dashboard_screen.dart';
 import 'features/admin/screens/admin_users_screen.dart';
-import 'features/admin/screens/admin_projects_screen.dart';
 import 'features/admin/screens/admin_storage_screen.dart';
 import 'features/admin/screens/admin_notifications_screen.dart';
 import 'features/admin/screens/admin_analytics_screen.dart';
@@ -224,10 +223,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/users',
             pageBuilder: (context, state) => fadeTabPage(const AdminUsersScreen()),
-          ),
-          GoRoute(
-            path: '/admin/projects',
-            pageBuilder: (context, state) => fadeTabPage(const AdminProjectsScreen()),
           ),
           GoRoute(
             path: '/admin/storage',

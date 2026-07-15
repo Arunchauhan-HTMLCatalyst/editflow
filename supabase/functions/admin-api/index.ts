@@ -64,14 +64,36 @@ serve(async (req) => {
     // 5. Route based on action
     switch (action) {
       case 'get_stats': {
-        const [{ count: userCount }, { count: activeUsersCount }, { count: projectCount }, { count: clientCount }, { count: reviewCount }, { count: commentCount }] = await Promise.all([
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+        const oneDayAgo = new Date()
+        oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+
+        const [
+          { count: userCount },
+          { count: activeUsersCount },
+          { count: projectCount },
+          { count: clientCount },
+          { count: reviewCount },
+          { count: commentCount },
+          { count: newUsersCount },
+          { data: recentActivitiesForDAU },
+          { data: recentActivitiesForMAU },
+        ] = await Promise.all([
           adminClient.from('profiles').select('*', { count: 'exact', head: true }),
           adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('is_suspended', false),
           adminClient.from('projects').select('*', { count: 'exact', head: true }),
           adminClient.from('clients').select('*', { count: 'exact', head: true }),
           adminClient.from('reviews').select('*', { count: 'exact', head: true }),
           adminClient.from('comments').select('*', { count: 'exact', head: true }),
+          adminClient.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo.toISOString()),
+          adminClient.from('activities').select('user_id').gte('created_at', oneDayAgo.toISOString()),
+          adminClient.from('activities').select('user_id').gte('created_at', thirtyDaysAgo.toISOString()),
         ])
+
+        const uniqueDAU = new Set((recentActivitiesForDAU || []).map((a: any) => a.user_id)).size
+        const uniqueMAU = new Set((recentActivitiesForMAU || []).map((a: any) => a.user_id)).size
 
         // Calculate Storage Used
         let totalStorageBytes = 0
@@ -96,11 +118,14 @@ serve(async (req) => {
           stats: {
             totalUsers: userCount || 0,
             activeUsers: activeUsersCount || 0,
+            newUsers: newUsersCount || 0,
             totalProjects: projectCount || 0,
             totalClients: clientCount || 0,
             totalReviews: reviewCount || 0,
             totalComments: commentCount || 0,
             totalStorageUsed: totalStorageBytes,
+            dau: uniqueDAU,
+            mau: uniqueMAU,
           },
           recentActivity: recentActivity || []
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
