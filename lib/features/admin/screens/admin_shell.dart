@@ -20,12 +20,13 @@ class AdminShell extends ConsumerWidget {
   int _getSelectedIndex(String location) {
     if (location.startsWith('/admin/dashboard')) return 0;
     if (location.startsWith('/admin/users')) return 1;
-    if (location.startsWith('/admin/storage')) return 2;
-    if (location.startsWith('/admin/notifications')) return 3;
-    if (location.startsWith('/admin/analytics')) return 4;
-    if (location.startsWith('/admin/logs')) return 5;
-    if (location.startsWith('/admin/support')) return 6;
-    if (location.startsWith('/admin/settings')) return 7;
+    if (location.startsWith('/admin/upgrades')) return 2;
+    if (location.startsWith('/admin/support')) return 3;
+    if (location.startsWith('/admin/storage')) return 4;
+    if (location.startsWith('/admin/notifications')) return 5;
+    if (location.startsWith('/admin/analytics')) return 6;
+    if (location.startsWith('/admin/logs')) return 7;
+    if (location.startsWith('/admin/settings')) return 8;
     return 0;
   }
 
@@ -38,21 +39,24 @@ class AdminShell extends ConsumerWidget {
         context.go('/admin/users');
         break;
       case 2:
-        context.go('/admin/storage');
+        context.go('/admin/upgrades');
         break;
       case 3:
-        context.go('/admin/notifications');
-        break;
-      case 4:
-        context.go('/admin/analytics');
-        break;
-      case 5:
-        context.go('/admin/logs');
-        break;
-      case 6:
         context.go('/admin/support');
         break;
+      case 4:
+        context.go('/admin/storage');
+        break;
+      case 5:
+        context.go('/admin/notifications');
+        break;
+      case 6:
+        context.go('/admin/analytics');
+        break;
       case 7:
+        context.go('/admin/logs');
+        break;
+      case 8:
         context.go('/admin/settings');
         break;
     }
@@ -61,11 +65,12 @@ class AdminShell extends ConsumerWidget {
   String _getRouteTitle(String location) {
     if (location.startsWith('/admin/dashboard')) return 'Dashboard Overview';
     if (location.startsWith('/admin/users')) return 'User Directory';
+    if (location.startsWith('/admin/upgrades')) return 'Upgrade Requests';
+    if (location.startsWith('/admin/support')) return 'Support Tickets';
     if (location.startsWith('/admin/storage')) return 'Storage & Analytics';
     if (location.startsWith('/admin/notifications')) return 'Targeted Announcements';
     if (location.startsWith('/admin/analytics')) return 'System Metrics';
     if (location.startsWith('/admin/logs')) return 'System Audit Logs';
-    if (location.startsWith('/admin/support')) return 'Support Tickets';
     if (location.startsWith('/admin/settings')) return 'Global App Settings';
     return 'Super Admin Panel';
   }
@@ -73,6 +78,7 @@ class AdminShell extends ConsumerWidget {
   void _triggerRefresh(WidgetRef ref, BuildContext context) {
     ref.invalidate(adminStatsProvider);
     ref.invalidate(adminUsersProvider(''));
+    ref.invalidate(adminUpgradeRequestsProvider);
     ref.invalidate(adminStorageProvider);
     ref.invalidate(adminSettingsProvider);
     ref.invalidate(adminAnalyticsProvider);
@@ -104,15 +110,24 @@ class AdminShell extends ConsumerWidget {
       orElse: () => 0,
     );
 
+    final int pendingUpgradeCount = statsAsync.maybeWhen(
+      data: (data) {
+        final upgradeRequests = data['upgradeRequests'] as List? ?? [];
+        return upgradeRequests.length;
+      },
+      orElse: () => 0,
+    );
+
     final menuItems = [
       _AdminMenuItem('Dashboard', Icons.dashboard_rounded, 0),
       _AdminMenuItem('Users', Icons.people_alt_rounded, 1),
-      _AdminMenuItem('Storage', Icons.storage_rounded, 2),
-      _AdminMenuItem('Notifications', Icons.campaign_rounded, 3),
-      _AdminMenuItem('Analytics', Icons.analytics_rounded, 4),
-      _AdminMenuItem('Audit Logs', Icons.receipt_long_rounded, 5),
-      _AdminMenuItem('Support Tickets', Icons.support_agent_rounded, 6),
-      _AdminMenuItem('App Settings', Icons.settings_rounded, 7),
+      _AdminMenuItem('Upgrade Requests', Icons.star_rounded, 2),
+      _AdminMenuItem('Support Tickets', Icons.support_agent_rounded, 3),
+      _AdminMenuItem('Storage', Icons.storage_rounded, 4),
+      _AdminMenuItem('Notifications', Icons.campaign_rounded, 5),
+      _AdminMenuItem('Analytics', Icons.analytics_rounded, 6),
+      _AdminMenuItem('Audit Logs', Icons.receipt_long_rounded, 7),
+      _AdminMenuItem('App Settings', Icons.settings_rounded, 8),
     ];
 
     Widget sidebarContent(BuildContext ctx) {
@@ -209,7 +224,23 @@ class AdminShell extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                              if (item.index == 6 && pendingSupportCount > 0)
+                              if (item.index == 2 && pendingUpgradeCount > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.redAccent,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '$pendingUpgradeCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9.0,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              if (item.index == 3 && pendingSupportCount > 0)
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
@@ -249,13 +280,13 @@ class AdminShell extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                         child: Text(
                           fullName.isNotEmpty ? fullName[0].toUpperCase() : 'A',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryNeon),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,7 +301,7 @@ class AdminShell extends ConsumerWidget {
                               email,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted),
+                              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
                             ),
                           ],
                         ),
@@ -281,16 +312,16 @@ class AdminShell extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => context.go('/dashboard'),
-                      icon: const Icon(Icons.exit_to_app_rounded, size: 13),
-                      label: const Text('Return to App', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
                         side: const BorderSide(color: AppColors.border, width: 0.8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                      ),
+                      onPressed: () => context.go('/dashboard'),
+                      icon: const Icon(Icons.exit_to_app_rounded, size: 13, color: Colors.redAccent),
+                      label: const Text(
+                        'Exit Admin Panel',
+                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -302,21 +333,19 @@ class AdminShell extends ConsumerWidget {
       );
     }
 
-    final scaffold = Scaffold(
-      backgroundColor: AppColors.background,
+    return Scaffold(
+      backgroundColor: AppColors.surface,
       appBar: !isDesktop
           ? AppBar(
               backgroundColor: AppColors.surface,
               elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.white),
               title: Text(
                 _getRouteTitle(location),
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(fontFamily: 'Outfit', fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
               ),
               actions: [
                 IconButton(
-                  tooltip: 'Refresh Data',
-                  icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryNeon, size: 20),
+                  icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
                   onPressed: () => _triggerRefresh(ref, context),
                 ),
               ],
@@ -324,100 +353,26 @@ class AdminShell extends ConsumerWidget {
           : null,
       drawer: !isDesktop
           ? Drawer(
-              child: sidebarContent(context),
+              child: SafeArea(child: sidebarContent(context)),
             )
           : null,
-      body: Row(
-        children: [
-          if (isDesktop)
-            SizedBox(
-              width: 240,
-              child: sidebarContent(context),
+      body: AmbientGlowContainer(
+        child: Row(
+          children: [
+            if (isDesktop)
+              SizedBox(
+                width: 240,
+                child: sidebarContent(context),
+              ),
+            if (isDesktop)
+              const VerticalDivider(color: AppColors.border, width: 1),
+            Expanded(
+              child: child,
             ),
-          Expanded(
-            child: Column(
-              children: [
-                if (isDesktop) ...[
-                  // Top navigation / header bar
-                  Container(
-                    height: 56,
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    decoration: const BoxDecoration(
-                      color: AppColors.surface,
-                      border: Border(
-                        bottom: BorderSide(color: AppColors.border, width: 0.8),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          _getRouteTitle(location),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const Spacer(),
-                        // Global Refresh Button
-                        IconButton(
-                          tooltip: 'Refresh All Data',
-                          icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryNeon, size: 20),
-                          onPressed: () => _triggerRefresh(ref, context),
-                        ),
-                        const SizedBox(width: 16),
-                        // Status indicator
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green.withValues(alpha: 0.2), width: 0.5),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: Colors.green,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const Text(
-                                'System: Healthy',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                // Embedded page
-                Expanded(
-                  child: AmbientGlowContainer(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: child,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
-
-    return scaffold;
   }
 }
 
@@ -425,5 +380,6 @@ class _AdminMenuItem {
   final String title;
   final IconData icon;
   final int index;
+
   _AdminMenuItem(this.title, this.icon, this.index);
 }

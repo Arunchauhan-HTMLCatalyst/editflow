@@ -184,14 +184,14 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) throw Exception('User not logged in');
 
-      final planLabel = _selectedPlan == 'monthly' ? 'Monthly' : 'Yearly';
-      final amountLabel = _selectedPlan == 'monthly' ? '₹99' : '₹999';
 
-      // Insert into support_tickets table using only available table columns
-      // subject, category, and status are extracted by parsing the description prefix [Category] Subject: Subject
-      await Supabase.instance.client.from('support_tickets').insert({
+
+      // Insert directly into the new premium_upgrade_requests table!
+      await Supabase.instance.client.from('premium_upgrade_requests').insert({
         'user_id': user.id,
-        'description': '[Premium Upgrade Request]\nSubject: Premium Upgrade\nDescription: Plan: $planLabel\nAmount: $amountLabel\nUTR: ${_utrController.text.trim()}',
+        'plan_type': _selectedPlan,
+        'utr': _utrController.text.trim(),
+        'status': 'pending',
       });
 
       if (mounted) {

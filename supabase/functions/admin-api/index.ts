@@ -143,6 +143,17 @@ serve(async (req) => {
           throw new Error('Support query error: ' + supportError.message);
         }
 
+        // Fetch pending premium upgrade requests
+        const { data: upgradeRequests, error: upgradeError } = await adminClient
+          .from('premium_upgrade_requests')
+          .select('*, profiles(full_name, email)')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        if (upgradeError) {
+          throw new Error('Upgrade requests query error: ' + upgradeError.message);
+        }
+
         return new Response(JSON.stringify({
           stats: {
             totalUsers: userCount || 0,
@@ -158,7 +169,8 @@ serve(async (req) => {
             dailyNewUsers: recentNewUsersList,
           },
           recentActivity: recentActivity || [],
-          supportRequests: supportRequests || []
+          supportRequests: supportRequests || [],
+          upgradeRequests: upgradeRequests || []
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
@@ -342,6 +354,260 @@ serve(async (req) => {
         }
 
         return new Response(JSON.stringify({ success: true, expiredCount: expiredUsers?.length || 0 }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'get_upgrade_requests': {
+        const { data: upgradeRequests, error } = await adminClient
+          .from('premium_upgrade_requests')
+          .select('*, profiles(full_name, email)')
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        return new Response(JSON.stringify({ upgradeRequests }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      case 'approve_premium_upgrade': {
+        const { requestId, duration } = payload;
+        if (!requestId || !duration) {
+          throw new Error('Missing requestId or duration parameter.');
+        }
+
+        // Fetch request details
+        const { data: request, error: reqErr } = await adminClient
+          .from('premium_upgrade_requests')
+          .select('*, profiles(email, full_name)')
+          .eq('id', requestId)
+          .single();
+
+        if (reqErr) throw reqErr;
+        if (request.status !== 'pending') {
+          throw new Error('Upgrade request is already processed.');
+        }
+
+        // Calculate expiration date
+        let expiryDate: Date;
+        let planLabel = '';
+        if (duration === 'monthly') {
+          expiryDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+          planLabel = 'Monthly (₹99)';
+        } else if (duration === 'yearly') {
+          expiryDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365);
+          planLabel = 'Yearly (₹999)';
+        } else {
+          expiryDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 100);
+          planLabel = 'Lifetime / Custom';
+        }
+
+        const premiumUntil = expiryDate.toISOString();
+
+        // 1. Update database user profile
+        const { error: updateError } = await adminClient
+          .from('profiles')
+          .update({
+            is_premium: true,
+            premium_until: premiumUntil,
+            premium_started_at: new Date().toISOString(),
+            premium_plan_type: duration,
+          })
+          .eq('id', request.user_id);
+
+        if (updateError) throw updateError;
+
+        // 2. Mark request as approved
+        const { error: markApprovedError } = await adminClient
+          .from('premium_upgrade_requests')
+          .update({
+            status: 'approved',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', requestId);
+
+        if (markApprovedError) throw markApprovedError;
+
+        // 3. Log the upgrade for the user (Notification Activity)
+        await adminClient.from('activities').insert({
+          user_id: request.user_id,
+          type: 'support_response',
+          description: `Congratulations! Your Premium subscription upgrade has been approved. Plan: ${planLabel}. Expiration: ${premiumUntil.split('T')[0]}.`,
+        });
+
+        // 4. Send Welcome email
+        const resendApiKey = Deno.env.get('RESEND_API_KEY');
+        const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
+
+        if (resendApiKey && request.profiles?.email) {
+          try {
+            const htmlContent = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <title>EditFlow Premium Active</title>
+                <style>
+                  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
+                  .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+                  .header { text-align: center; margin-bottom: 30px; }
+                  .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
+                  .badge { display: inline-block; background-color: #10B981; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
+                  .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
+                  .highlight { color: #ffffff; font-weight: 600; }
+                  .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="header">
+                    <span class="badge">PRO UPGRADE SUCCESS</span>
+                    <div class="title">Your Premium Access is Active!</div>
+                  </div>
+                  <div class="content">
+                    Hi <span class="highlight">${request.profiles.full_name || 'there'}</span>,<br><br>
+                    Great news! Your manual payment verification has been completed by our admin team, and your <strong>EditFlow Premium (${duration === 'yearly' ? 'Yearly' : 'Monthly'})</strong> subscription is now active!
+                  </div>
+                  <div class="footer">
+                    Sent automatically by EditFlow Core • supportbyeditflow@acsoft.online
+                  </div>
+                </div>
+              </body>
+              </html>
+            `;
+
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: `EditFlow <${fromEmail}>`,
+                to: [request.profiles.email],
+                subject: `🎉 Your EditFlow ${duration === 'yearly' ? 'Yearly' : 'Monthly'} Upgrade Approved!`,
+                html: htmlContent,
+              }),
+            });
+          } catch (emailErr) {
+            console.error('Failed to send Welcome email:', emailErr);
+          }
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'reject_premium_upgrade': {
+        const { requestId, feedback } = payload;
+        if (!requestId) {
+          throw new Error('Missing requestId parameter.');
+        }
+
+        // Fetch request details
+        const { data: request, error: reqErr } = await adminClient
+          .from('premium_upgrade_requests')
+          .select('*, profiles(email, full_name)')
+          .eq('id', requestId)
+          .single();
+
+        if (reqErr) throw reqErr;
+        if (request.status !== 'pending') {
+          throw new Error('Upgrade request is already processed.');
+        }
+
+        // 1. Mark request as rejected
+        const { error: markRejectedError } = await adminClient
+          .from('premium_upgrade_requests')
+          .update({
+            status: 'rejected',
+            feedback: feedback || 'Invalid UTR reference number or payment not received.',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', requestId);
+
+        if (markRejectedError) throw markRejectedError;
+
+        // 2. Log activity
+        await adminClient.from('activities').insert({
+          user_id: request.user_id,
+          type: 'support_response',
+          description: `Your ${request.plan_type === 'yearly' ? 'Yearly' : 'Monthly'} Premium Upgrade request has been rejected. Details: ${feedback || 'Invalid transaction UTR reference number or payment not received.'}`,
+        });
+
+        // 3. Send email
+        const resendApiKey = Deno.env.get('RESEND_API_KEY');
+        const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
+
+        if (resendApiKey && request.profiles?.email) {
+          try {
+            const htmlContent = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <title>EditFlow Premium Upgrade Rejected</title>
+                <style>
+                  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
+                  .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+                  .header { text-align: center; margin-bottom: 30px; }
+                  .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
+                  .badge { display: inline-block; background-color: #EF4444; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
+                  .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
+                  .highlight { color: #ffffff; font-weight: 600; }
+                  .feedback-box { background-color: #1F2937; border-left: 4px solid #EF4444; border-radius: 4px; padding: 16px; margin: 24px 0; color: #E2E8F0; font-size: 14px; }
+                  .btn { display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-align: center; margin: 10px 0; }
+                  .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="header">
+                    <span class="badge">UPGRADE REJECTED</span>
+                    <div class="title">Premium Upgrade Request Status</div>
+                  </div>
+                  <div class="content">
+                    Hi <span class="highlight">${request.profiles.full_name || 'there'}</span>,<br><br>
+                    We reviewed your manual payment verification request for the <strong>EditFlow Pro ${request.plan_type === 'yearly' ? 'Yearly' : 'Monthly'} Plan</strong>, but we were unable to approve it at this time.<br>
+                    This is usually due to an incorrect UTR/Reference number or matching payment not being found in our accounts.
+                  </div>
+                  <div class="feedback-box">
+                    <strong>Reason/Feedback:</strong><br>
+                    ${feedback || 'Invalid transaction UTR reference number or payment not received. Please verify and submit request again.'}
+                  </div>
+                  <div style="text-align: center;">
+                    <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Try Upgrade Again</a>
+                  </div>
+                  <br>
+                  <div class="footer">
+                    Sent automatically by EditFlow Billing Core • supportbyeditflow@acsoft.online
+                  </div>
+                </div>
+              </body>
+              </html>
+            `;
+
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: `EditFlow <${fromEmail}>`,
+                to: [request.profiles.email],
+                subject: `🚨 EditFlow Premium Upgrade Rejected`,
+                html: htmlContent,
+              }),
+            });
+          } catch (emailErr) {
+            console.error('Failed to send rejection email:', emailErr);
+          }
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }

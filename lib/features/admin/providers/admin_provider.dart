@@ -47,3 +47,13 @@ final adminSettingsProvider = FutureProvider.autoDispose<List<Map<String, dynami
 final adminAnalyticsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   return AdminService.invokeAdminAction('get_analytics');
 });
+
+final adminUpgradeRequestsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final res = await AdminService.invokeAdminAction('get_upgrade_requests');
+  if (res['upgradeRequests'] is List) {
+    return List<Map<String, dynamic>>.from(
+      (res['upgradeRequests'] as List).map((e) => Map<String, dynamic>.from(e as Map)),
+    );
+  }
+  return [];
+});
