@@ -262,6 +262,71 @@ serve(async (req) => {
         })
         if (userNotifError) throw userNotifError
 
+        // Email Notification via Resend
+        try {
+          const { data: userProfile } = await adminClient
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', targetUserId)
+            .maybeSingle()
+
+          const userEmail = userProfile?.email
+          const resendApiKey = Deno.env.get('RESEND_API_KEY')
+
+          if (resendApiKey && userEmail) {
+            const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'EditFlow Support <support@editflow.acsoft.online>'
+            const subjectText = action === 'accept' 
+              ? 'EditFlow Support Ticket: Accepted & Resolving'
+              : 'EditFlow Support Ticket Update';
+
+            const htmlContent = `
+              <div style="font-family: sans-serif; padding: 24px; color: #1f2937; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff;">
+                <div style="margin-bottom: 24px;">
+                  <h2 style="margin: 0; color: #7c3aed; font-size: 20px; font-weight: 800;">EditFlow Support</h2>
+                </div>
+                <p style="font-size: 14px; line-height: 1.5; color: #4b5563;">Hello ${userProfile?.full_name || 'User'},</p>
+                <p style="font-size: 14px; line-height: 1.5; color: #4b5563;">Your support request ticket has been reviewed and resolved by our administration team.</p>
+                
+                <div style="background: #f9fafb; border-left: 4px solid #7c3aed; padding: 16px; margin: 24px 0; border-radius: 4px;">
+                  <strong style="display: block; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; color: #374151; letter-spacing: 0.5px;">
+                    Resolution Action: <span style="color: ${action === 'accept' ? '#059669' : '#dc2626'};">${action.toUpperCase()}</span>
+                  </strong>
+                  <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #4b5563;">
+                    ${feedback || (action === 'accept' ? 'Your support request has been accepted. We are working on your issue.' : 'Your support request has been rejected.')}
+                  </p>
+                </div>
+
+                <p style="font-size: 12px; line-height: 1.5; color: #9ca3af; margin-top: 32px; border-top: 1px solid #f3f4f6; padding-top: 16px;">
+                  This is an automated system response. You can also view this resolution inside the EditFlow app notification center.
+                </p>
+              </div>
+            `;
+
+            const res = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: fromEmail,
+                to: userEmail,
+                subject: subjectText,
+                html: htmlContent,
+              }),
+            });
+
+            if (!res.ok) {
+              const errBody = await res.text();
+              console.error('Resend API returned error status:', res.status, errBody);
+            } else {
+              console.log(`Resend email sent successfully to ${userEmail}`);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to send Resend email:', err);
+        }
+
         // Delete the ticket row
         const { error: deleteError } = await adminClient
           .from('support_tickets')
