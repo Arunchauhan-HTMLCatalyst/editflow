@@ -84,6 +84,10 @@ serve(async (req) => {
           { data: recentActivitiesForDAU },
           { data: recentActivitiesForMAU },
           { data: recentProfiles },
+          { count: paidCount },
+          { count: monthlyCount },
+          { count: yearlyCount },
+          { data: approvedUpgrades },
         ] = await Promise.all([
           adminClient.from('profiles').select('*', { count: 'exact', head: true }),
           adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('is_suspended', false),
@@ -95,7 +99,22 @@ serve(async (req) => {
           adminClient.from('activities').select('user_id').gte('created_at', oneDayAgo.toISOString()),
           adminClient.from('activities').select('user_id').gte('created_at', thirtyDaysAgo.toISOString()),
           adminClient.from('profiles').select('id, full_name, email, created_at').order('created_at', { ascending: false }).limit(20),
+          adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('is_premium', true),
+          adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('premium_plan_type', 'monthly'),
+          adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('premium_plan_type', 'yearly'),
+          adminClient.from('premium_upgrade_requests').select('plan_type').eq('status', 'approved'),
         ])
+
+        let calculatedEarnings = 0
+        if (approvedUpgrades) {
+          for (const u of approvedUpgrades) {
+            if (u.plan_type === 'monthly') {
+              calculatedEarnings += 99
+            } else if (u.plan_type === 'yearly') {
+              calculatedEarnings += 999
+            }
+          }
+        }
 
         const uniqueDAU = new Set((recentActivitiesForDAU || []).map((a: any) => a.user_id)).size
         const uniqueMAU = new Set((recentActivitiesForMAU || []).map((a: any) => a.user_id)).size
@@ -167,6 +186,11 @@ serve(async (req) => {
             dau: uniqueDAU,
             mau: uniqueMAU,
             dailyNewUsers: recentNewUsersList,
+            paidUsersCount: paidCount || 0,
+            unpaidUsersCount: (userCount || 0) - (paidCount || 0),
+            monthlySubscribersCount: monthlyCount || 0,
+            yearlySubscribersCount: yearlyCount || 0,
+            totalEarnings: calculatedEarnings,
           },
           recentActivity: recentActivity || [],
           supportRequests: supportRequests || [],

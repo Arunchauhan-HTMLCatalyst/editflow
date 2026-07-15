@@ -43,6 +43,11 @@ class AdminDashboardScreen extends ConsumerWidget {
         final dau = stats['dau'] ?? 0;
         final mau = stats['mau'] ?? 0;
         final dailyNewUsers = stats['dailyNewUsers'] as List? ?? [];
+        final paidUsersCount = stats['paidUsersCount'] ?? 0;
+        final unpaidUsersCount = stats['unpaidUsersCount'] ?? 0;
+        final monthlySubscribersCount = stats['monthlySubscribersCount'] ?? 0;
+        final yearlySubscribersCount = stats['yearlySubscribersCount'] ?? 0;
+        final totalEarnings = stats['totalEarnings'] ?? 0;
 
         return RefreshIndicator(
           onRefresh: () async {
@@ -90,6 +95,36 @@ class AdminDashboardScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 32),
+
+                // SUBSCRIPTION & REVENUE OVERVIEW
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'SUBSCRIPTION & REVENUE OVERVIEW',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 12),
+                    if (isDesktop)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _buildEarningsCard(totalEarnings)),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildSubscribersBreakdownCard(paidUsersCount, unpaidUsersCount, monthlySubscribersCount, yearlySubscribersCount)),
+                        ],
+                      )
+                    else
+                      Column(
+                        children: [
+                          _buildEarningsCard(totalEarnings),
+                          const SizedBox(height: 16),
+                          _buildSubscribersBreakdownCard(paidUsersCount, unpaidUsersCount, monthlySubscribersCount, yearlySubscribersCount),
+                        ],
+                      ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
 
                 // USER REGISTRATION GROWTH BY MONTH
                 analyticsAsync.when(
@@ -463,6 +498,79 @@ class AdminDashboardScreen extends ConsumerWidget {
               color: Colors.white,
               letterSpacing: -0.5,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEarningsCard(num totalEarnings) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 0.8),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withValues(alpha: 0.08),
+            AppColors.primaryNeon.withValues(alpha: 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'TOTAL SUBSCRIPTION REVENUE',
+            style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '₹${NumberFormat('#,##,###').format(totalEarnings)}',
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Outfit'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubscribersBreakdownCard(int paid, int unpaid, int monthly, int yearly) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 0.8),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Paid / Premium Users', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text('$paid', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+            ],
+          ),
+          const Divider(color: AppColors.border, height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Unpaid / Free Users', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text('$unpaid', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+            ],
+          ),
+          const Divider(color: AppColors.border, height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Plan Split (Monthly / Yearly)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text('$monthly / $yearly', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryNeon)),
+            ],
           ),
         ],
       ),

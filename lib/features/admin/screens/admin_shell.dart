@@ -395,7 +395,10 @@ class AdminShell extends ConsumerWidget {
                       ),
                     ),
                   Expanded(
-                    child: child,
+                    child: Padding(
+                      padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
+                      child: child,
+                    ),
                   ),
                 ],
               ),
