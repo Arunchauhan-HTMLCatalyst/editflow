@@ -743,11 +743,15 @@ img {
 .section-tag {
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 13px;
-    color: var(--secondary);
+    font-size: 11px;
+    color: var(--primary-neon);
     letter-spacing: 0.1em;
-    display: block;
-    margin-bottom: 12px;
+    display: inline-block;
+    margin-bottom: 16px;
+    background-color: rgba(13, 148, 136, 0.1);
+    padding: 6px 14px;
+    border-radius: 999px;
+    text-transform: uppercase;
 }
 
 .section-header h2 {
