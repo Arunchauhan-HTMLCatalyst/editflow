@@ -32,6 +32,7 @@ import 'features/admin/screens/admin_notifications_screen.dart';
 import 'features/admin/screens/admin_analytics_screen.dart';
 import 'features/admin/screens/admin_logs_screen.dart';
 import 'features/admin/screens/admin_settings_screen.dart';
+import 'features/admin/screens/admin_support_screen.dart';
 
 class GoRouterRefreshListenable extends ChangeNotifier {
   GoRouterRefreshListenable(Ref ref) {
@@ -239,6 +240,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/logs',
             pageBuilder: (context, state) => fadeTabPage(const AdminLogsScreen()),
+          ),
+          GoRoute(
+            path: '/admin/support',
+            pageBuilder: (context, state) => fadeTabPage(const AdminSupportScreen()),
           ),
           GoRoute(
             path: '/admin/settings',
