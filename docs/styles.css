@@ -1836,3 +1836,120 @@ img {
     gap: 8px;
     color: var(--primary-neon);
 }
+
+/* Pricing Section Styles */
+.pricing-section {
+    padding: 100px 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.pricing-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 40px 30px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all var(--transition-speed) ease;
+}
+
+.pricing-card:hover {
+    border-color: var(--border-color-hover);
+    transform: translateY(-8px);
+}
+
+.pricing-card.featured {
+    border-color: var(--primary-neon);
+    background-color: rgba(13, 148, 136, 0.02);
+    box-shadow: 0 10px 30px rgba(13, 148, 136, 0.05);
+}
+
+.featured-badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: var(--primary-neon);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.8px;
+}
+
+.pricing-header h3 {
+    font-size: 20px;
+    font-family: 'Outfit', sans-serif;
+    color: #ffffff;
+    margin-bottom: 12px;
+}
+
+.pricing-header .price {
+    font-size: 38px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.pricing-header .price span {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.price-desc {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 30px;
+}
+
+.pricing-body {
+    flex: 1;
+    margin-bottom: 30px;
+}
+
+.pricing-body ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.pricing-body li {
+    font-size: 13px;
+    color: #d1d5db;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bullet {
+    color: var(--secondary);
+    font-weight: bold;
+}
+
+.bullet-check {
+    color: var(--primary);
+    font-weight: bold;
+}
+
+.bullet-neon {
+    color: var(--primary-neon);
+    font-weight: bold;
+}
+
+.btn-full {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+}
