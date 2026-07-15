@@ -419,7 +419,7 @@ serve(async (req) => {
         // Fetch request details
         const { data: request, error: reqErr } = await adminClient
           .from('premium_upgrade_requests')
-          .select('*, profiles(email, full_name)')
+          .select('*')
           .eq('id', requestId)
           .single();
 
@@ -478,20 +478,16 @@ serve(async (req) => {
         // 4. Send Welcome email
         const { key: resendApiKey, from: fromEmail } = getResendCredentials();
 
-        // Extract profile metadata safely (handles both object and single-element array responses)
-        let profileEmail = '';
-        let profileName = 'there';
-        if (request.profiles) {
-          if (Array.isArray(request.profiles)) {
-            if (request.profiles.length > 0) {
-              profileEmail = request.profiles[0].email || '';
-              profileName = request.profiles[0].full_name || 'Valued User';
-            }
-          } else {
-            profileEmail = request.profiles.email || '';
-            profileName = request.profiles.full_name || 'Valued User';
-          }
-        }
+        // Fetch User Profile details separately to guarantee profile email resolution
+        const { data: userProfile, error: profileErr } = await adminClient
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', request.user_id)
+          .single();
+
+        if (profileErr) throw profileErr;
+        const profileEmail = userProfile?.email || '';
+        const profileName = userProfile?.full_name || 'Valued User';
 
         console.log(`[Resend Email Core] resendApiKey exists: ${!!resendApiKey}, fromEmail: ${fromEmail}, targetEmail: ${profileEmail}`);
 
@@ -636,7 +632,7 @@ serve(async (req) => {
         // Fetch request details
         const { data: request, error: reqErr } = await adminClient
           .from('premium_upgrade_requests')
-          .select('*, profiles(email, full_name)')
+          .select('*')
           .eq('id', requestId)
           .single();
 
@@ -667,20 +663,16 @@ serve(async (req) => {
         // 3. Send email
         const { key: resendApiKey, from: fromEmail } = getResendCredentials();
 
-        // Extract profile metadata safely (handles both object and single-element array responses)
-        let profileEmail = '';
-        let profileName = 'there';
-        if (request.profiles) {
-          if (Array.isArray(request.profiles)) {
-            if (request.profiles.length > 0) {
-              profileEmail = request.profiles[0].email || '';
-              profileName = request.profiles[0].full_name || 'Valued User';
-            }
-          } else {
-            profileEmail = request.profiles.email || '';
-            profileName = request.profiles.full_name || 'Valued User';
-          }
-        }
+        // Fetch User Profile details separately to guarantee profile email resolution
+        const { data: userProfile, error: profileErr } = await adminClient
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', request.user_id)
+          .single();
+
+        if (profileErr) throw profileErr;
+        const profileEmail = userProfile?.email || '';
+        const profileName = userProfile?.full_name || 'Valued User';
 
         console.log(`[Resend Email Core] Rejection email - resendApiKey exists: ${!!resendApiKey}, fromEmail: ${fromEmail}, targetEmail: ${profileEmail}`);
 
