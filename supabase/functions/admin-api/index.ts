@@ -15,6 +15,171 @@ function getResendCredentials() {
   return { key, from };
 }
 
+function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, innerHtml: string) {
+  const badgeBg = isSuccess ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+  const badgeTextColor = isSuccess ? '#10B981' : '#EF4444';
+  const headerBorderColor = isSuccess ? '#10B981' : '#EF4444';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>\${title}</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          background-color: #F8FAFC;
+          color: #334155;
+          margin: 0;
+          padding: 40px 16px;
+          -webkit-font-smoothing: antialiased;
+        }
+        .wrapper {
+          max-width: 580px;
+          margin: 0 auto;
+          background-color: #ffffff;
+          border: 1px solid #E2E8F0;
+          border-top: 6px solid \${headerBorderColor};
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+          padding: 32px 32px 20px 32px;
+          text-align: center;
+          border-bottom: 1px solid #F1F5F9;
+        }
+        .badge {
+          display: inline-block;
+          background-color: \${badgeBg};
+          color: \${badgeTextColor};
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.8px;
+          padding: 6px 14px;
+          border-radius: 99px;
+          text-transform: uppercase;
+          margin-bottom: 16px;
+        }
+        .title {
+          color: #0F172A;
+          font-size: 22px;
+          font-weight: 800;
+          margin: 0;
+          line-height: 1.3;
+        }
+        .body {
+          padding: 32px;
+          font-size: 15px;
+          line-height: 1.6;
+          color: #475569;
+        }
+        .footer {
+          background-color: #F8FAFC;
+          padding: 24px 32px;
+          text-align: center;
+          font-size: 12px;
+          color: #64748B;
+          border-top: 1px solid #F1F5F9;
+        }
+        .footer-link {
+          color: #0D9488;
+          text-decoration: none;
+          font-weight: 500;
+        }
+        .highlight {
+          color: #0F172A;
+          font-weight: 600;
+        }
+        .btn {
+          display: inline-block;
+          background-color: #0D9488;
+          color: #ffffff !important;
+          font-size: 14px;
+          font-weight: 600;
+          text-decoration: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          margin: 20px 0;
+          text-align: center;
+          box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.2), 0 2px 4px -2px rgba(13, 148, 136, 0.2);
+        }
+        .info-card {
+          background-color: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 8px;
+          padding: 20px;
+          margin: 24px 0;
+        }
+        .info-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .info-table td {
+          padding: 8px 0;
+          font-size: 13.5px;
+        }
+        .info-table tr:not(:last-child) td {
+          border-bottom: 1px solid #F1F5F9;
+        }
+        .label {
+          color: #64748B;
+          font-weight: 500;
+        }
+        .value {
+          color: #0F172A;
+          font-weight: 600;
+          text-align: right;
+        }
+        .feedback-box {
+          background-color: #FEF2F2;
+          border: 1px dashed #FCA5A5;
+          border-radius: 8px;
+          padding: 16px;
+          color: #991B1B;
+          font-size: 14px;
+          margin: 24px 0;
+          line-height: 1.5;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="wrapper">
+        <div class="header">
+          <div style="margin-bottom: 16px;">
+            <svg width="56" height="56" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto;">
+              <rect width="100" height="100" rx="28" fill="url(#logo-grad-mail)" />
+              <defs>
+                <linearGradient id="logo-grad-mail" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#0D9488" />
+                  <stop offset="100%" stop-color="#10B981" />
+                </linearGradient>
+              </defs>
+              <path d="M 49.5 54 A 15.5 15.5 0 1 0 46.5 64" stroke="#ffffff" stroke-width="8.8" stroke-linecap="round" fill="none" />
+              <path d="M 18.5 54 L 79.34 54" stroke="#ffffff" stroke-width="8.8" stroke-linecap="round" />
+              <path d="M 63.5 22 L 63.5 82" stroke="#ffffff" stroke-width="8.8" stroke-linecap="round" />
+              <path d="M 63.5 22 Q 63.5 14 79 14" stroke="#ffffff" stroke-width="8.8" stroke-linecap="round" fill="none" />
+            </svg>
+          </div>
+          <span class="badge">\${badgeText}</span>
+          <h1 class="title">\${title}</h1>
+        </div>
+        <div class="body">
+          \${innerHtml}
+        </div>
+        <div class="footer">
+          <p style="margin: 0 0 8px 0; font-weight: 500; color: #1E293B;">EditFlow Support Team</p>
+          <p style="margin: 0 0 16px 0; font-size: 11px;">If you have any questions, reach out to us at <a href="mailto:supportbyeditflow@acsoft.online" class="footer-link">supportbyeditflow@acsoft.online</a></p>
+          <p style="margin: 0; font-size: 10.5px; color: #94A3B8;">&copy; \${new Date().getFullYear()} EditFlow. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 serve(async (req) => {
   // Handle CORS preflight options request
   if (req.method === 'OPTIONS') {
@@ -494,110 +659,50 @@ serve(async (req) => {
 
         if (resendApiKey && profileEmail) {
           try {
-            const htmlContent = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="utf-8">
-                <title>EditFlow Premium Active</title>
-                <style>
-                  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
-                  .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
-                  .header { text-align: center; margin-bottom: 30px; }
-                  .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
-                  .badge { display: inline-block; background-color: #10B981; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
-                  .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
-                  .highlight { color: #ffffff; font-weight: 600; }
-                  .invoice-box { background-color: #1F2937; border: 1px solid #374151; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: left; }
-                  .invoice-header { display: flex; justify-content: space-between; border-bottom: 1px solid #374151; padding-bottom: 12px; margin-bottom: 16px; }
-                  .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                      <svg width="60" height="60" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
-                        <rect width="120" height="120" rx="30" fill="url(#grad)" />
-                        <defs>
-                          <linearGradient id="grad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#0D9488" />
-                            <stop offset="1" stop-color="#10B981" />
-                          </linearGradient>
-                        </defs>
-                        <text x="30" y="82" fill="white" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="64" letter-spacing="-4">ef</text>
-                      </svg>
-                    </div>
-                    <span class="badge">PRO UPGRADE APPROVED</span>
-                    <div class="title">Your Premium Access is Active!</div>
-                  </div>
-                  <div class="content">
-                    Hi <span class="highlight">${profileName}</span>,<br><br>
-                    Great news! Your manual payment verification has been completed by our admin team, and your <strong>EditFlow Premium (${duration === 'yearly' ? 'Yearly' : 'Monthly'})</strong> subscription is now active!
-                    
-                    <div class="invoice-box">
-                      <div style="border-bottom: 1px solid #374151; padding-bottom: 12px; margin-bottom: 16px;">
-                        <table style="width: 100%;">
-                          <tr>
-                            <td>
-                              <span style="font-size: 10px; color: #9CA3AF; text-transform: uppercase;">Invoice To</span>
-                              <div style="font-size: 13px; font-weight: bold; color: #ffffff;">${profileName}</div>
-                              <div style="font-size: 11px; color: #9CA3AF;">${profileEmail}</div>
-                            </td>
-                            <td style="text-align: right;">
-                              <span style="font-size: 10px; color: #9CA3AF; text-transform: uppercase;">Invoice Details</span>
-                              <div style="font-size: 12px; font-weight: bold; color: #ffffff;">INV-${new Date().getFullYear()}-${requestId.substring(0, 6).toUpperCase()}</div>
-                              <div style="font-size: 11px; color: #9CA3AF;">Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
-                            </td>
-                          </tr>
-                        </table>
-                      </div>
-                      
-                      <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
-                        <thead>
-                          <tr style="border-bottom: 1px solid #374151; text-align: left;">
-                            <th style="padding: 8px 0; font-size: 10px; color: #9CA3AF; text-transform: uppercase;">Description</th>
-                            <th style="padding: 8px 0; font-size: 10px; color: #9CA3AF; text-transform: uppercase; text-align: right;">Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td style="padding: 12px 0 6px 0; font-size: 13px; color: #E2E8F0; font-weight: bold;">
-                              EditFlow Pro Subscription (${duration === 'yearly' ? 'Yearly' : 'Monthly'})
-                            </td>
-                            <td style="padding: 12px 0 6px 0; font-size: 13px; color: #E2E8F0; font-weight: bold; text-align: right;">
-                              ${duration === 'yearly' ? '₹999' : '₹99'}
-                            </td>
-                          </tr>
-                          <tr style="border-bottom: 1px solid #374151;">
-                            <td style="padding: 4px 0 12px 0; font-size: 11px; color: #9CA3AF;">
-                              UTR Reference: <span style="font-family: monospace; color: #10B981; font-weight: bold;">${request.utr}</span>
-                            </td>
-                            <td style="padding: 4px 0 12px 0; font-size: 11px; color: #9CA3AF; text-align: right;">
-                              Paid
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 12px 0 0 0; font-size: 13px; color: #ffffff; font-weight: bold;">Total Amount Paid</td>
-                            <td style="padding: 12px 0 0 0; font-size: 15px; color: #10B981; font-weight: bold; text-align: right;">
-                              ${duration === 'yearly' ? '₹999' : '₹99'}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      
-                      <div style="background-color: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px; text-align: center; font-size: 11px; color: #10B981; font-weight: bold;">
-                        Verification Status: APPROVED & ACTIVATED
-                      </div>
-                    </div>
-                  </div>
-                  <div class="footer">
-                    Sent automatically by EditFlow Billing Core • supportbyeditflow@acsoft.online
-                  </div>
-                </div>
-              </body>
-              </html>
+            const innerHtml = `
+              <p>Hi <span class="highlight">${profileName}</span>,</p>
+              <p>Great news! Our finance verification team has verified your manual payment UTR reference, and your account has been upgraded to <strong class="highlight">EditFlow Premium</strong>.</p>
+              
+              <div class="info-card">
+                <table class="info-table">
+                  <tr>
+                    <td class="label">Invoice Recipient</td>
+                    <td class="value">${profileName} (${profileEmail})</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Invoice Number</td>
+                    <td class="value">INV-${new Date().getFullYear()}-${requestId.substring(0, 6).toUpperCase()}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Premium Plan Type</td>
+                    <td class="value" style="color: #10B981; font-weight: 700;">${duration === 'yearly' ? 'Yearly Premium' : 'Monthly Premium'}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">UTR Reference Number</td>
+                    <td class="value" style="font-family: monospace;">${request.utr}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Total Amount Verified</td>
+                    <td class="value" style="color: #10B981; font-size: 16px; font-weight: 800;">${duration === 'yearly' ? '₹999' : '₹99'}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Subscription Active Until</td>
+                    <td class="value">${premiumUntil.split('T')[0]}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <p>All active limits on creating projects and adding client profiles have been unlocked on your account. Log back into the app to start using your premium tools!</p>
+              <div style="text-align: center;">
+                <a href="https://editflow.acsoft.online/app/" class="btn" style="color: #ffffff;">Access Premium Dashboard</a>
+              </div>
             `;
+            const htmlContent = getEmailWrapper(
+              "Your Premium Access is Active!",
+              "Upgrade Approved",
+              true,
+              innerHtml
+            );
 
             const res = await fetch('https://api.resend.com/emails', {
               method: 'POST',
@@ -682,51 +787,27 @@ serve(async (req) => {
 
         if (resendApiKey && profileEmail) {
           try {
-            const htmlContent = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="utf-8">
-                <title>EditFlow Premium Upgrade Rejected</title>
-                <style>
-                  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
-                  .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
-                  .header { text-align: center; margin-bottom: 30px; }
-                  .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
-                  .badge { display: inline-block; background-color: #EF4444; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
-                  .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
-                  .highlight { color: #ffffff; font-weight: 600; }
-                  .feedback-box { background-color: #1F2937; border-left: 4px solid #EF4444; border-radius: 4px; padding: 16px; margin: 24px 0; color: #E2E8F0; font-size: 14px; }
-                  .btn { display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-align: center; margin: 10px 0; }
-                  .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <span class="badge">UPGRADE REJECTED</span>
-                    <div class="title">Premium Upgrade Request Status</div>
-                  </div>
-                  <div class="content">
-                    Hi <span class="highlight">${profileName}</span>,<br><br>
-                    We reviewed your manual payment verification request for the <strong>EditFlow Pro ${request.plan_type === 'yearly' ? 'Yearly' : 'Monthly'} Plan</strong>, but we were unable to approve it at this time.<br>
-                    This is usually due to an incorrect UTR/Reference number or matching payment not being found in our accounts.
-                  </div>
-                  <div class="feedback-box">
-                    <strong>Reason/Feedback:</strong><br>
-                    ${feedback || 'Invalid transaction UTR reference number or payment not received. Please verify and submit request again.'}
-                  </div>
-                  <div style="text-align: center;">
-                    <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Try Upgrade Again</a>
-                  </div>
-                  <br>
-                  <div class="footer">
-                    Sent automatically by EditFlow Billing Core • supportbyeditflow@acsoft.online
-                  </div>
-                </div>
-              </body>
-              </html>
+            const innerHtml = `
+              <p>Hi <span class="highlight">${profileName}</span>,</p>
+              <p>We reviewed your manual payment verification request for the <strong>EditFlow Premium ${request.plan_type === 'yearly' ? 'Yearly' : 'Monthly'} Plan</strong>, but we were unable to approve it at this time.</p>
+              
+              <div class="feedback-box">
+                <strong style="display: block; margin-bottom: 6px; font-weight: 700;">Rejection Reason & Feedback:</strong>
+                ${feedback || 'Invalid transaction UTR reference number or payment not received. Please verify and submit request again.'}
+              </div>
+
+              <p>Please check the transaction UTR number in your payment receipt and try submitting the upgrade request again through the Settings dashboard.</p>
+              
+              <div style="text-align: center;">
+                <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Submit Upgrade Again</a>
+              </div>
             `;
+            const htmlContent = getEmailWrapper(
+              "Premium Upgrade Request Status",
+              "Upgrade Rejected",
+              false,
+              innerHtml
+            );
 
             const res = await fetch('https://api.resend.com/emails', {
               method: 'POST',
@@ -819,61 +900,39 @@ serve(async (req) => {
 
         if (resendApiKey && userProfile?.email) {
           try {
-            const htmlContent = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="utf-8">
-                <title>EditFlow Premium Active</title>
-                <style>
-                  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
-                  .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
-                  .header { text-align: center; margin-bottom: 30px; }
-                  .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
-                  .badge { display: inline-block; background-color: #10B981; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
-                  .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
-                  .highlight { color: #ffffff; font-weight: 600; }
-                  .info-table { width: 100%; border-collapse: collapse; margin: 24px 0; background-color: #1F2937; border-radius: 8px; overflow: hidden; }
-                  .info-table td { padding: 14px 16px; border-bottom: 1px solid #374151; font-size: 13.5px; }
-                  .info-table td:first-child { color: #9CA3AF; font-weight: 500; width: 40%; }
-                  .info-table td:last-child { color: #FFFFFF; font-weight: 600; text-align: right; }
-                  .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <span class="badge">PRO UPGRADE SUCCESS</span>
-                    <div class="title">Your Premium Access is Active!</div>
-                  </div>
-                  <div class="content">
-                    Hi <span class="highlight">${userProfile.full_name || 'there'}</span>,<br><br>
-                    Great news! Your manual payment verification has been completed by our admin team, and your <strong>EditFlow Premium</strong> subscription is now active!
-                  </div>
-                  <table class="info-table">
-                    <tr>
-                      <td>Subscription Plan</td>
-                      <td>${planLabel}</td>
-                    </tr>
-                    <tr>
-                      <td>Status</td>
-                      <td style="color: #10B981;">Active / Unlocked</td>
-                    </tr>
-                    <tr>
-                      <td>Expiration Date</td>
-                      <td>${premiumUntil.split('T')[0]}</td>
-                    </tr>
-                  </table>
-                  <div class="content">
-                    All limits on adding clients and projects have been completely removed. Log back into your app to enjoy unlimited access!
-                  </div>
-                  <div class="footer">
-                    Sent automatically by EditFlow Core • supportbyeditflow@acsoft.online
-                  </div>
-                </div>
-              </body>
-              </html>
+            const innerHtml = `
+              <p>Hi <span class="highlight">${userProfile.full_name || 'there'}</span>,</p>
+              <p>Great news! Your manual payment verification has been completed by our support team, and your subscription is now active!</p>
+              
+              <div class="info-card">
+                <table class="info-table">
+                  <tr>
+                    <td class="label">Premium Plan Type</td>
+                    <td class="value" style="color: #10B981; font-weight: 700;">${planLabel}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Account Status</td>
+                    <td class="value" style="color: #10B981; font-weight: 700;">Active / Unlocked</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Subscription Active Until</td>
+                    <td class="value">${premiumUntil.split('T')[0]}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <p>All active limits on creating projects and adding client profiles have been unlocked on your account. Log back into the app to start using your premium tools!</p>
+              
+              <div style="text-align: center;">
+                <a href="https://editflow.acsoft.online/app/" class="btn" style="color: #ffffff;">Access Premium Dashboard</a>
+              </div>
             `;
+            const htmlContent = getEmailWrapper(
+              "Your Premium Access is Active!",
+              "Upgrade Approved",
+              true,
+              innerHtml
+            );
 
             await fetch('https://api.resend.com/emails', {
               method: 'POST',
@@ -1031,254 +1090,97 @@ serve(async (req) => {
             if (isUpgradeRequest) {
               if (action === 'accept') {
                 subjectText = `🎉 Your EditFlow ${requestedPlan} Upgrade Approved!`;
-                htmlContent = `
-                  <!DOCTYPE html>
-                  <html>
-                  <head>
-                    <meta charset="utf-8">
-                    <title>EditFlow Premium Active</title>
-                    <style>
-                      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
-                      .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
-                      .header { text-align: center; margin-bottom: 30px; }
-                      .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
-                      .badge { display: inline-block; background-color: #10B981; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
-                      .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
-                      .highlight { color: #ffffff; font-weight: 600; }
-                      .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
-                    </style>
-                  </head>
-                  <body>
-                    <div class="container">
-                      <div class="header">
-                        <span class="badge">PRO UPGRADE SUCCESS</span>
-                        <div class="title">Your Premium Access is Active!</div>
-                      </div>
-                      <div class="content">
-                        Hi <span class="highlight">${userProfile.full_name || 'there'}</span>,<br><br>
-                        Great news! Your manual payment verification has been completed by our admin team, and your <strong>EditFlow Premium (${requestedPlan})</strong> subscription is now active!
-                      </div>
-                      <div class="footer">
-                        Sent automatically by EditFlow Core • supportbyeditflow@acsoft.online
-                      </div>
-                    </div>
-                  </body>
-                  </html>
+                const innerHtml = `
+                  <p>Hi <span class="highlight">${userProfile?.full_name || 'there'}</span>,</p>
+                  <p>Great news! Your manual payment verification request for the <strong>EditFlow Premium ${requestedPlan} Plan</strong> has been approved by our support team, and your subscription is active!</p>
+                  
+                  <div class="info-card">
+                    <table class="info-table">
+                      <tr>
+                        <td class="label">Premium Plan Type</td>
+                        <td class="value" style="color: #10B981; font-weight: 700;">${requestedPlan} Premium</td>
+                      </tr>
+                      <tr>
+                        <td class="label">Account Status</td>
+                        <td class="value" style="color: #10B981; font-weight: 700;">Active / Unlocked</td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <p>All active limits on creating projects and adding client profiles have been unlocked on your account. Log back into the app to start using your premium tools!</p>
+                  
+                  <div style="text-align: center;">
+                    <a href="https://editflow.acsoft.online/app/" class="btn" style="color: #ffffff;">Access Premium Dashboard</a>
+                  </div>
                 `;
+                htmlContent = getEmailWrapper(
+                  "Your Premium Access is Active!",
+                  "Upgrade Approved",
+                  true,
+                  innerHtml
+                );
               } else {
                 subjectText = `🚨 EditFlow Premium Upgrade Rejected`;
-                htmlContent = `
-                  <!DOCTYPE html>
-                  <html>
-                  <head>
-                    <meta charset="utf-8">
-                    <title>EditFlow Premium Upgrade Rejected</title>
-                    <style>
-                      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
-                      .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
-                      .header { text-align: center; margin-bottom: 30px; }
-                      .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
-                      .badge { display: inline-block; background-color: #EF4444; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
-                      .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
-                      .highlight { color: #ffffff; font-weight: 600; }
-                      .feedback-box { background-color: #1F2937; border-left: 4px solid #EF4444; border-radius: 4px; padding: 16px; margin: 24px 0; color: #E2E8F0; font-size: 14px; }
-                      .btn { display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-align: center; margin: 10px 0; }
-                      .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
-                    </style>
-                  </head>
-                  <body>
-                    <div class="container">
-                      <div class="header">
-                        <span class="badge">UPGRADE REJECTED</span>
-                        <div class="title">Premium Upgrade Request Status</div>
-                      </div>
-                      <div class="content">
-                        Hi <span class="highlight">${userProfile.full_name || 'there'}</span>,<br><br>
-                        We reviewed your manual payment verification request for the <strong>EditFlow Pro ${requestedPlan} Plan</strong>, but we were unable to approve it at this time.<br>
-                        This is usually due to an incorrect UTR/Reference number or matching payment not being found in our accounts.
-                      </div>
-                      <div class="feedback-box">
-                        <strong>Reason/Feedback:</strong><br>
-                        ${feedback || 'Invalid transaction UTR reference number or payment not received. Please verify and submit request again.'}
-                      </div>
-                      <div style="text-align: center;">
-                        <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Try Upgrade Again</a>
-                      </div>
-                      <br>
-                      <div class="footer">
-                        Sent automatically by EditFlow Billing Core • supportbyeditflow@acsoft.online
-                      </div>
-                    </div>
-                  </body>
-                  </html>
+                const innerHtml = `
+                  <p>Hi <span class="highlight">${userProfile?.full_name || 'there'}</span>,</p>
+                  <p>We reviewed your manual payment verification request for the <strong>EditFlow Premium ${requestedPlan} Plan</strong>, but we were unable to approve it at this time.</p>
+                  
+                  <div class="feedback-box">
+                    <strong style="display: block; margin-bottom: 6px; font-weight: 700;">Rejection Reason & Feedback:</strong>
+                    ${feedback || 'Invalid transaction UTR reference number or payment not received. Please verify and submit request again.'}
+                  </div>
+
+                  <p>Please check the transaction UTR number in your payment receipt and try submitting the upgrade request again through the Settings dashboard.</p>
+                  
+                  <div style="text-align: center;">
+                    <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Submit Upgrade Again</a>
+                  </div>
                 `;
+                htmlContent = getEmailWrapper(
+                  "Premium Upgrade Request Status",
+                  "Upgrade Rejected",
+                  false,
+                  innerHtml
+                );
               }
             } else {
-              subjectText = action === 'accept' 
+              const isSupportSuccess = action === 'accept';
+              subjectText = isSupportSuccess 
                 ? 'EditFlow Support Ticket: Accepted & Resolving'
                 : 'EditFlow Support Ticket Update';
-            }
-
-            if (!htmlContent) {
-              htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <meta charset="utf-8">
-                <style>
-                  body {
-                    margin: 0;
-                    padding: 0;
-                    background-color: #080c0d;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                    -webkit-font-smoothing: antialiased;
-                  }
-                  .wrapper {
-                    width: 100%;
-                    table-layout: fixed;
-                    background-color: #080c0d;
-                    padding: 48px 0;
-                  }
-                  .container {
-                    max-width: 560px;
-                    margin: 0 auto;
-                    background-color: #101517;
-                    border-radius: 12px;
-                    border: 1px solid #1f2629;
-                    border-top: 4px solid #0d9488;
-                    overflow: hidden;
-                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-                  }
-                  .header {
-                    padding: 36px 36px 20px 36px;
-                    text-align: center;
-                    border-bottom: 1px solid #1f2629;
-                  }
-                  .logo {
-                    width: 48px;
-                    height: 48px;
-                    margin-bottom: 14px;
-                    border-radius: 12px;
-                  }
-                  .title {
-                    font-size: 18px;
-                    font-weight: 700;
-                    color: #f8fafc;
-                    margin: 0;
-                    letter-spacing: -0.2px;
-                  }
-                  .content {
-                    padding: 32px 36px 36px 36px;
-                  }
-                  .greeting {
-                    font-size: 14px;
-                    color: #f8fafc;
-                    font-weight: 600;
-                    margin-top: 0;
-                    margin-bottom: 12px;
-                  }
-                  .message {
-                    font-size: 13.5px;
-                    color: #94a3b8;
-                    line-height: 1.6;
-                    margin: 0 0 24px 0;
-                  }
-                  .resolution-card {
-                    background-color: #171d1f;
-                    border-radius: 8px;
-                    border: 1px solid #273135;
-                    padding: 20px;
-                    margin-bottom: 28px;
-                  }
-                  .status-row {
-                    margin-bottom: 12px;
-                  }
-                  .status-badge {
-                    font-size: 11px;
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    padding: 4px 10px;
-                    border-radius: 4px;
-                    display: inline-block;
-                    background-color: ${action === 'accept' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)'};
-                    color: ${action === 'accept' ? '#10b981' : '#f43f5e'};
-                  }
-                  .resolution-text {
-                    font-size: 13.5px;
-                    line-height: 1.6;
-                    color: #f8fafc;
-                    margin: 0;
-                  }
-                  .btn-container {
-                    text-align: center;
-                    margin-top: 16px;
-                  }
-                  .btn {
-                    background-color: #0d9488;
-                    color: #ffffff !important;
-                    text-decoration: none;
-                    font-weight: 600;
-                    font-size: 13px;
-                    padding: 10px 24px;
-                    border-radius: 6px;
-                    display: inline-block;
-                  }
-                  .footer {
-                    padding: 24px 36px;
-                    background-color: #0c0f11;
-                    border-top: 1px solid #1f2629;
-                    text-align: center;
-                  }
-                  .footer-text {
-                    font-size: 11.5px;
-                    color: #64748b;
-                    line-height: 1.5;
-                    margin: 0;
-                  }
-                  .footer-link {
-                    color: #10b981;
-                    text-decoration: none;
-                  }
-                </style>
-              </head>
-              <body>
-                <div class="wrapper">
-                  <div class="container">
-                    <div class="header">
-                      <img src="https://editflow.acsoft.online/logo.svg" alt="EditFlow Logo" class="logo">
-                      <h1 class="title">Support Ticket Update</h1>
-                    </div>
-                    <div class="content">
-                      <p class="greeting">Hello ${userProfile?.full_name || 'User'},</p>
-                      <p class="message">The administration team has processed your support request ticket. The resolution details can be found below.</p>
-                      
-                      <div class="resolution-card">
-                        <div class="status-row">
-                          <span class="status-badge">${action === 'accept' ? 'Accepted' : 'Rejected'}</span>
-                        </div>
-                        <p class="resolution-text">
-                          ${feedback || (action === 'accept' ? 'Your support request has been accepted. We are working on your issue.' : 'Your support request has been rejected.')}
-                        </p>
-                      </div>
-
-                      <div class="btn-container">
-                        <a href="https://editflow.acsoft.online/app/" class="btn" target="_blank">Access Dashboard</a>
-                      </div>
-                    </div>
-                    <div class="footer">
-                      <p class="footer-text">
-                        If you have further inquiries, contact us at <a href="mailto:editflow@acsoft.online" class="footer-link">editflow@acsoft.online</a>.
-                      </p>
-                      <p class="footer-text" style="margin-top: 6px; font-size: 10.5px;">
-                        © ${new Date().getFullYear()} EditFlow. All rights reserved.
-                      </p>
-                    </div>
-                  </div>
+                
+              const innerHtml = `
+                <p>Hi <span class="highlight">${userProfile?.full_name || 'there'}</span>,</p>
+                <p>The administration team has processed your support request ticket. The resolution details can be found below.</p>
+                
+                <div class="info-card">
+                  <table class="info-table">
+                    <tr>
+                      <td class="label">Support Resolution Status</td>
+                      <td class="value" style="color: ${isSupportSuccess ? '#10B981' : '#EF4444'}; font-weight: 700;">
+                        ${isSupportSuccess ? 'Accepted / Active' : 'Rejected / Closed'}
+                      </td>
+                    </tr>
+                  </table>
                 </div>
-              </body>
-              </html>
-            `;
+
+                <div class="feedback-box" style="background-color: ${isSupportSuccess ? '#F0FDF4' : '#FEF2F2'}; border-color: ${isSupportSuccess ? '#86EFAC' : '#FCA5A5'}; color: ${isSupportSuccess ? '#166534' : '#991B1B'}; border-style: dashed; border-width: 1px; border-radius: 8px; padding: 16px; margin: 24px 0;">
+                  <strong style="display: block; margin-bottom: 6px; font-weight: 700;">Support Team Message:</strong>
+                  ${feedback || (isSupportSuccess ? 'Your support request has been accepted. We are working on your issue.' : 'Your support request has been rejected.')}
+                </div>
+
+                <p>If you need to view your ticket or submit further follow-up information, log back into the app dashboard.</p>
+                
+                <div style="text-align: center;">
+                  <a href="https://editflow.acsoft.online/app/" class="btn" style="color: #ffffff;">Access App Dashboard</a>
+                </div>
+              `;
+              htmlContent = getEmailWrapper(
+                isSupportSuccess ? "Support Ticket Resolved" : "Support Ticket Closed",
+                isSupportSuccess ? "Support Active" : "Ticket Closed",
+                isSupportSuccess,
+                innerHtml
+              );
             }
 
             const res = await fetch('https://api.resend.com/emails', {
