@@ -57,149 +57,75 @@ class AdminAnalyticsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Left Column: Project Pipeline Distribution
-                    Expanded(
-                      flex: 5,
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.card,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border, width: 0.8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'PROJECT STATUS DISTRIBUTION',
-                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary),
-                            ),
-                            const SizedBox(height: 20),
-                            ...statusCounts.entries.map((e) {
-                              final status = e.key;
-                              final count = e.value;
-                              final ratio = totalProjects > 0 ? (count / totalProjects).clamp(0.0, 1.0) : 0.0;
-                              final percentage = (ratio * 100).toStringAsFixed(1);
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border, width: 0.8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'USER REGISTRATION GROWTH BY MONTH',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 20),
+                      if (sortedMonths.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40.0),
+                            child: Text('No registration records found.', style: TextStyle(color: AppColors.textMuted)),
+                          ),
+                        )
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: sortedMonths.length,
+                          separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
+                          itemBuilder: (context, idx) {
+                            final item = sortedMonths[idx];
+                            final month = item.key;
+                            final count = item.value;
+                            final maxMonthCount = sortedMonths.map((m) => m.value).reduce((a, b) => a > b ? a : b);
+                            final ratio = maxMonthCount > 0 ? (count / maxMonthCount).clamp(0.0, 1.0) : 0.0;
 
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          status.toUpperCase().replaceAll('_', ' '),
-                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
-                                        ),
-                                        Text(
-                                          '$count projects ($percentage%)',
-                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryNeon),
-                                        ),
-                                      ],
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12.0),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 80,
+                                    child: Text(
+                                      month,
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                                     ),
-                                    const SizedBox(height: 8),
-                                    ClipRRect(
+                                  ),
+                                  Expanded(
+                                    child: ClipRRect(
                                       borderRadius: BorderRadius.circular(4),
                                       child: LinearProgressIndicator(
                                         value: ratio,
-                                        minHeight: 8,
+                                        minHeight: 12,
                                         backgroundColor: AppColors.border,
-                                        valueColor: AlwaysStoppedAnimation(
-                                          status == 'paid' ? AppColors.primaryNeon : (status == 'completed' ? AppColors.success : AppColors.primary),
-                                        ),
+                                        valueColor: const AlwaysStoppedAnimation(AppColors.info),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    if (isDesktop) const SizedBox(width: 24),
-
-                    // Right Column: User Growth Analytics
-                    Expanded(
-                      flex: 5,
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.card,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border, width: 0.8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'USER REGISTRATION GROWTH BY MONTH',
-                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary),
-                            ),
-                            const SizedBox(height: 20),
-                            if (sortedMonths.isEmpty)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 40.0),
-                                  child: Text('No registration records found.', style: TextStyle(color: AppColors.textMuted)),
-                                ),
-                              )
-                            else
-                              ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: sortedMonths.length,
-                                separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
-                                itemBuilder: (context, idx) {
-                                  final item = sortedMonths[idx];
-                                  final month = item.key;
-                                  final count = item.value;
-                                  final maxMonthCount = sortedMonths.map((m) => m.value).reduce((a, b) => a > b ? a : b);
-                                  final ratio = maxMonthCount > 0 ? (count / maxMonthCount).clamp(0.0, 1.0) : 0.0;
-
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 12.0),
-                                    child: Row(
-                                      children: [
-                                        SizedBox(
-                                          width: 80,
-                                          child: Text(
-                                            month,
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(4),
-                                            child: LinearProgressIndicator(
-                                              value: ratio,
-                                              minHeight: 12,
-                                              backgroundColor: AppColors.border,
-                                              valueColor: const AlwaysStoppedAnimation(AppColors.info),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Text(
-                                          '+$count users',
-                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Colors.white),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Text(
+                                    '+$count users',
+                                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Colors.white),
+                                  ),
+                                ],
                               ),
-                          ],
+                            );
+                          },
                         ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

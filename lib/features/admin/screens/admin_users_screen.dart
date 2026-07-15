@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
@@ -217,6 +218,22 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(email, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Text('ID: $userId', style: const TextStyle(fontSize: 10, color: AppColors.textMuted, fontFamily: 'Courier')),
+                                  const SizedBox(width: 6),
+                                  InkWell(
+                                    onTap: () {
+                                      Clipboard.setData(ClipboardData(text: userId));
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('User ID copied to clipboard!')),
+                                      );
+                                    },
+                                    child: const Icon(Icons.copy_rounded, size: 10, color: AppColors.primaryNeon),
+                                  ),
+                                ],
+                              ),
                               const SizedBox(height: 6),
                               Row(
                                 children: [

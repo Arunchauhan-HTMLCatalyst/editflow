@@ -19,6 +19,7 @@ class _AdminNotificationsScreenState extends ConsumerState<AdminNotificationsScr
   String _messageType = 'announcement'; // 'announcement', 'update', 'custom'
   String _targetType = 'all'; // 'all', 'selected', 'admins', 'non_admins'
   final List<String> _selectedUserIds = [];
+  String _recipientSearchQuery = '';
 
   bool _isSending = false;
 
@@ -234,15 +235,55 @@ class _AdminNotificationsScreenState extends ConsumerState<AdminNotificationsScr
                             style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary),
                           ),
                           const SizedBox(height: 12),
+                          // Search bar inside recipients list
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.border, width: 0.8),
+                            ),
+                            child: TextField(
+                              onChanged: (val) {
+                                setState(() {
+                                  _recipientSearchQuery = val.trim().toLowerCase();
+                                });
+                              },
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                              decoration: const InputDecoration(
+                                icon: Icon(Icons.search, color: AppColors.textMuted, size: 14),
+                                hintText: 'Search by name or ID...',
+                                hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                            ),
+                          ),
                           Expanded(
                             child: usersAsync.when(
                               loading: () => const Center(child: CircularProgressIndicator()),
                               error: (e, _) => Text('Error: $e'),
                               data: (users) {
+                                final filteredUsers = users.where((u) {
+                                  final name = (u['full_name'] as String? ?? '').toLowerCase();
+                                  final email = (u['email'] as String? ?? '').toLowerCase();
+                                  final uid = (u['id'] as String? ?? '').toLowerCase();
+                                  
+                                  return _recipientSearchQuery.isEmpty || 
+                                         name.contains(_recipientSearchQuery) || 
+                                         email.contains(_recipientSearchQuery) || 
+                                         uid.contains(_recipientSearchQuery);
+                                }).toList();
+
+                                if (filteredUsers.isEmpty) {
+                                  return const Center(child: Text('No users match search query.', style: TextStyle(color: AppColors.textMuted, fontSize: 12)));
+                                }
+
                                 return ListView.builder(
-                                  itemCount: users.length,
+                                  itemCount: filteredUsers.length,
                                   itemBuilder: (context, idx) {
-                                    final u = users[idx];
+                                    final u = filteredUsers[idx];
                                     final uid = u['id'] as String;
                                     final name = u['full_name'] as String? ?? 'User';
                                     final email = u['email'] as String? ?? '';

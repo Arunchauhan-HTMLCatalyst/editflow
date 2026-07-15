@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
@@ -13,6 +14,7 @@ class AdminLogsScreen extends ConsumerStatefulWidget {
 
 class _AdminLogsScreenState extends ConsumerState<AdminLogsScreen> {
   String _selectedFilter = 'all';
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +24,31 @@ class _AdminLogsScreenState extends ConsumerState<AdminLogsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Search bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border, width: 0.8),
+          ),
+          child: TextField(
+            onChanged: (val) {
+              setState(() {
+                _searchQuery = val.trim().toLowerCase();
+              });
+            },
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            decoration: const InputDecoration(
+              icon: Icon(Icons.search, color: AppColors.textMuted, size: 18),
+              hintText: 'Search audit logs by keyword...',
+              hintStyle: TextStyle(color: AppColors.textMuted),
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
         // Filter Chips Row
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -29,13 +56,11 @@ class _AdminLogsScreenState extends ConsumerState<AdminLogsScreen> {
             children: [
               _buildFilterChip('All Logs', 'all'),
               const SizedBox(width: 8),
-              _buildFilterChip('Projects', 'project'),
+              _buildFilterChip('User Management', 'user'),
               const SizedBox(width: 8),
-              _buildFilterChip('Comments', 'comment'),
+              _buildFilterChip('Broadcasts', 'broadcast'),
               const SizedBox(width: 8),
-              _buildFilterChip('Status Updates', 'status'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Reviews', 'review'),
+              _buildFilterChip('Settings', 'settings'),
             ],
           ),
         ),
@@ -49,24 +74,24 @@ class _AdminLogsScreenState extends ConsumerState<AdminLogsScreen> {
             data: (data) {
               final activities = data['recentActivity'] as List? ?? [];
               
-              // Apply local filters based on description or type keys
+              // Apply local filters based on description keywords
               final filteredLogs = activities.where((act) {
+                final desc = (act['description'] as String? ?? '').toLowerCase();
+
+                if (_searchQuery.isNotEmpty && !desc.contains(_searchQuery)) {
+                  return false;
+                }
+
                 if (_selectedFilter == 'all') return true;
                 
-                final type = (act['type'] as String? ?? '').toLowerCase();
-                final desc = (act['description'] as String? ?? '').toLowerCase();
-                
-                if (_selectedFilter == 'project') {
-                  return type.contains('project') || desc.contains('project');
+                if (_selectedFilter == 'user') {
+                  return desc.contains('user') || desc.contains('suspended') || desc.contains('activated') || desc.contains('role') || desc.contains('deleted');
                 }
-                if (_selectedFilter == 'comment') {
-                  return type.contains('comment') || desc.contains('comment');
+                if (_selectedFilter == 'broadcast') {
+                  return desc.contains('broadcasted') || desc.contains('notification');
                 }
-                if (_selectedFilter == 'status') {
-                  return type.contains('status') || desc.contains('status') || desc.contains('changed');
-                }
-                if (_selectedFilter == 'review') {
-                  return type.contains('review') || desc.contains('review');
+                if (_selectedFilter == 'settings') {
+                  return desc.contains('settings') || desc.contains('configuration');
                 }
                 return true;
               }).toList();
@@ -147,15 +172,32 @@ class _AdminLogsScreenState extends ConsumerState<AdminLogsScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
-                                      child: Text(
-                                        'User: $userId',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 8.5,
-                                          fontFamily: 'Courier',
-                                          color: AppColors.textMuted,
-                                        ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              'User: $userId',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 8.5,
+                                                fontFamily: 'Courier',
+                                                color: AppColors.textMuted,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          InkWell(
+                                            onTap: () {
+                                              Clipboard.setData(ClipboardData(text: userId));
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('User ID copied to clipboard!')),
+                                              );
+                                            },
+                                            child: const Icon(Icons.copy_rounded, size: 8, color: AppColors.primaryNeon),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],

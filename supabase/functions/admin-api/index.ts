@@ -70,6 +70,9 @@ serve(async (req) => {
         const oneDayAgo = new Date()
         oneDayAgo.setDate(oneDayAgo.getDate() - 1)
 
+        const fourteenDaysAgo = new Date()
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
+
         const [
           { count: userCount },
           { count: activeUsersCount },
@@ -80,6 +83,7 @@ serve(async (req) => {
           { count: newUsersCount },
           { data: recentActivitiesForDAU },
           { data: recentActivitiesForMAU },
+          { data: recentProfiles },
         ] = await Promise.all([
           adminClient.from('profiles').select('*', { count: 'exact', head: true }),
           adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('is_suspended', false),
@@ -90,10 +94,34 @@ serve(async (req) => {
           adminClient.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo.toISOString()),
           adminClient.from('activities').select('user_id').gte('created_at', oneDayAgo.toISOString()),
           adminClient.from('activities').select('user_id').gte('created_at', thirtyDaysAgo.toISOString()),
+          adminClient.from('profiles').select('created_at').gte('created_at', fourteenDaysAgo.toISOString()),
         ])
 
         const uniqueDAU = new Set((recentActivitiesForDAU || []).map((a: any) => a.user_id)).size
         const uniqueMAU = new Set((recentActivitiesForMAU || []).map((a: any) => a.user_id)).size
+
+        // Calculate daily registrations
+        const dailyRegistrations: Record<string, number> = {}
+        for (let i = 0; i < 14; i++) {
+          const d = new Date()
+          d.setDate(d.getDate() - i)
+          const dateKey = d.toISOString().split('T')[0]
+          dailyRegistrations[dateKey] = 0
+        }
+
+        for (const u of (recentProfiles || [])) {
+          if (u.created_at) {
+            const dateKey = u.created_at.split('T')[0]
+            if (dailyRegistrations[dateKey] !== undefined) {
+              dailyRegistrations[dateKey]++
+            }
+          }
+        }
+
+        const dailyList = Object.entries(dailyRegistrations).map(([date, count]) => ({
+          date,
+          count,
+        })).sort((a, b) => b.date.localeCompare(a.date))
 
         // Calculate Storage Used
         let totalStorageBytes = 0
@@ -122,6 +150,7 @@ serve(async (req) => {
         const { data: recentActivity } = await adminClient
           .from('activities')
           .select('*')
+          .eq('type', 'admin_log')
           .order('created_at', { ascending: false })
           .limit(15)
 
@@ -137,6 +166,7 @@ serve(async (req) => {
             totalStorageUsed: totalStorageBytes + dbSize,
             dau: uniqueDAU,
             mau: uniqueMAU,
+            dailyNewUsers: dailyList,
           },
           recentActivity: recentActivity || []
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -149,7 +179,13 @@ serve(async (req) => {
           .select('*')
 
         if (searchStr) {
-          query = query.or(`full_name.ilike.%${searchStr}%,email.ilike.%${searchStr}%`)
+          const trimmed = searchStr.trim()
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)
+          if (isUuid) {
+            query = query.eq('id', trimmed)
+          } else {
+            query = query.or(`full_name.ilike.%${trimmed}%,email.ilike.%${trimmed}%`)
+          }
         }
 
         const { data: users, error: fetchErr } = await query.order('created_at', { ascending: false })
@@ -185,18 +221,32 @@ serve(async (req) => {
       case 'user_action': {
         const { targetUserId, userAction, targetRole } = payload
         
+        let desc = ''
         if (userAction === 'suspend') {
           const { error } = await adminClient.from('profiles').update({ is_suspended: true }).eq('id', targetUserId)
           if (error) throw error
+          desc = `Suspended user account (ID: ${targetUserId})`
         } else if (userAction === 'activate') {
           const { error } = await adminClient.from('profiles').update({ is_suspended: false }).eq('id', targetUserId)
           if (error) throw error
+          desc = `Activated user account (ID: ${targetUserId})`
         } else if (userAction === 'change_role') {
           const { error } = await adminClient.from('profiles').update({ role: targetRole }).eq('id', targetUserId)
           if (error) throw error
+          desc = `Changed role of user (ID: ${targetUserId}) to ${targetRole}`
         } else if (userAction === 'delete') {
           const { error } = await adminClient.auth.admin.deleteUser(targetUserId)
           if (error) throw error
+          desc = `Deleted user account (ID: ${targetUserId})`
+        }
+
+        // Insert audit log
+        if (desc) {
+          await adminClient.from('activities').insert({
+            user_id: user?.id,
+            type: 'admin_log',
+            description: desc,
+          })
         }
 
         return new Response(JSON.stringify({ success: true }), {
@@ -321,6 +371,13 @@ serve(async (req) => {
           if (error) throw error
         }
 
+        // Insert admin audit log
+        await adminClient.from('activities').insert({
+          user_id: user?.id,
+          type: 'admin_log',
+          description: `Broadcasted targeted ${messageType} notification: "${title}" to target "${targetType}"`,
+        })
+
         return new Response(JSON.stringify({ success: true, count: targetUserIds.length }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
@@ -352,6 +409,13 @@ serve(async (req) => {
             .upsert({ key: item.key, value: item.value, updated_at: new Date().toISOString() })
           if (error) throw error
         }
+
+        // Insert admin audit log
+        await adminClient.from('activities').insert({
+          user_id: user?.id,
+          type: 'admin_log',
+          description: `Updated global app settings configuration`,
+        })
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
