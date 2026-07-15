@@ -133,6 +133,13 @@ serve(async (req) => {
           .order('created_at', { ascending: false })
           .limit(15)
 
+        // Support tickets/requests
+        const { data: supportRequests } = await adminClient
+          .from('activities')
+          .select('*, profiles:user_id(full_name, email)')
+          .eq('type', 'support_ticket')
+          .order('created_at', { ascending: false })
+
         return new Response(JSON.stringify({
           stats: {
             totalUsers: userCount || 0,
@@ -147,7 +154,8 @@ serve(async (req) => {
             mau: uniqueMAU,
             dailyNewUsers: recentNewUsersList,
           },
-          recentActivity: recentActivity || []
+          recentActivity: recentActivity || [],
+          supportRequests: supportRequests || []
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
@@ -227,6 +235,43 @@ serve(async (req) => {
             description: desc,
           })
         }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      case 'handle_support_ticket': {
+        const { ticketId, action, targetUserId, feedback } = payload
+        
+        let desc = ''
+        if (action === 'accept') {
+          desc = `Your support request has been accepted. Team response: ${feedback || 'We are working on your issue.'}`
+        } else {
+          desc = `Your support request has been rejected. Details: ${feedback || 'Does not match categories.'}`
+        }
+
+        // Inform user: Insert notification activity for user
+        const { error: userNotifError } = await adminClient.from('activities').insert({
+          user_id: targetUserId,
+          type: 'support_response',
+          description: desc,
+        })
+        if (userNotifError) throw userNotifError
+
+        // Delete the ticket activity row
+        const { error: deleteError } = await adminClient
+          .from('activities')
+          .delete()
+          .eq('id', ticketId)
+        if (deleteError) throw deleteError
+
+        // Audit log for admin action
+        await adminClient.from('activities').insert({
+          user_id: user?.id,
+          type: 'admin_log',
+          description: `${action === 'accept' ? 'Accepted' : 'Rejected'} support ticket (ID: ${ticketId}) for User: ${targetUserId}`,
+        })
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

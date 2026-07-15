@@ -62,7 +62,10 @@ class NotificationTaskHandler extends TaskHandler {
           .listen(
         (rows) {
           try {
-            final activities = rows.map((e) => Activity.fromJson(e)).toList();
+            final activities = rows
+                .map((e) => Activity.fromJson(e))
+                .where((act) => act.type != 'support_ticket')
+                .toList();
             debugPrint('[FOREGROUND TASK STREAM] Received ${activities.length} rows.');
             
             if (_isFirstLoad) {

@@ -3,11 +3,11 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "ce85a908983e7a57797c0eb73d3a525f",
+const RESOURCES = {"flutter_bootstrap.js": "b0d917d2bda81e18b498ab0a761c7381",
 "version.json": "af9be878ceb3969f1fda03391d1e2943",
 "index.html": "613916f44fd21e315c3217dd7022e7c4",
 "/": "613916f44fd21e315c3217dd7022e7c4",
-"main.dart.js": "803683d9192c7841d64984935887268f",
+"main.dart.js": "c65f91b49e6ec808247bb4a129d01f8c",
 "flutter.js": "24bc71911b75b5f8135c949e27a2984e",
 "favicon.png": "9896dcd3effa3aa778566c353529d5bc",
 "icons/Icon-192.png": "9896dcd3effa3aa778566c353529d5bc",
@@ -25,7 +25,7 @@ const RESOURCES = {"flutter_bootstrap.js": "ce85a908983e7a57797c0eb73d3a525f",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
 "assets/shaders/stretch_effect.frag": "40d68efbbf360632f614c731219e95f0",
 "assets/AssetManifest.bin": "4a9b0b0f0d78566fede99f3bad88e693",
-"assets/fonts/MaterialIcons-Regular.otf": "0dcd6356708dcadc5a9e3909a9352a91",
+"assets/fonts/MaterialIcons-Regular.otf": "c53206e375a2d630d851127277d5bbc6",
 "assets/assets/images/whatsapp_logo.png": "774352deeaa60ebe04164a1e28489771",
 "assets/assets/images/upi_logo.png": "02e0e2a83c0a7fbe88382f7abc2c90d6",
 "assets/assets/images/google_logo.png": "579d58ce3b333812d6c65f7126044383",

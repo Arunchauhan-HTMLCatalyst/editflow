@@ -113,7 +113,10 @@ class RecentActivityNotifier extends AsyncNotifier<List<Activity>> {
         .listen(
       (rows) {
         try {
-          final activities = rows.map((e) => Activity.fromJson(e)).toList()
+          final activities = rows
+              .map((e) => Activity.fromJson(e))
+              .where((act) => act.type != 'support_ticket')
+              .toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
           debugPrint('[ACTIVITY STREAM] received ${activities.length}');
 
@@ -167,6 +170,7 @@ class RecentActivityNotifier extends AsyncNotifier<List<Activity>> {
           .from('activities')
           .select()
           .eq('user_id', uid)
+          .neq('type', 'support_ticket')
           .order('created_at', ascending: false)
           .limit(10)
           .timeout(const Duration(seconds: 15));
@@ -188,7 +192,8 @@ class RecentActivityNotifier extends AsyncNotifier<List<Activity>> {
     await SupabaseService.instance
         .from('activities')
         .delete()
-        .eq('user_id', uid);
+        .eq('user_id', uid)
+        .neq('type', 'support_ticket');
   }
 }
 
