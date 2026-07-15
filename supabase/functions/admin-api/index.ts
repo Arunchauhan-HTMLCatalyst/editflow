@@ -16,8 +16,8 @@ function getResendCredentials() {
 }
 
 function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, innerHtml: string) {
-  const badgeBg = isSuccess ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
-  const badgeTextColor = isSuccess ? '#059669' : '#DC2626';
+  const badgeBg = isSuccess ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+  const badgeTextColor = isSuccess ? '#10B981' : '#EF4444';
   const headerBorderColor = isSuccess ? '#10B981' : '#EF4444';
 
   return `
@@ -29,136 +29,137 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
       <title>${title}</title>
       <style>
         body {
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-          background-color: #F8FAFC;
-          color: #334155;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          background-color: #090D16;
+          color: #9CA3AF;
           margin: 0;
           padding: 40px 16px;
           -webkit-font-smoothing: antialiased;
         }
         .wrapper {
-          max-width: 540px;
+          max-width: 500px;
           margin: 0 auto;
-          background-color: #ffffff;
-          border: 1px solid #E2E8F0;
+          background-color: #111827;
+          border: 1px solid #1F2937;
           border-top: 5px solid ${headerBorderColor};
-          border-radius: 16px;
+          border-radius: 12px;
           overflow: hidden;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.03), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
         .header {
-          padding: 40px 40px 24px 40px;
+          padding: 36px 36px 20px 36px;
           text-align: center;
-          background: radial-gradient(circle at top, rgba(13, 148, 136, 0.03) 0%, rgba(255, 255, 255, 0) 70%);
+          background: radial-gradient(circle at top, rgba(13, 148, 136, 0.05) 0%, rgba(17, 24, 39, 0) 70%);
+          border-bottom: 1px solid #1F2937;
         }
         .badge {
           display: inline-block;
           background-color: ${badgeBg};
           color: ${badgeTextColor};
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 700;
-          letter-spacing: 1px;
-          padding: 6px 16px;
+          letter-spacing: 0.8px;
+          padding: 4px 12px;
           border-radius: 99px;
           text-transform: uppercase;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
           border: 1px solid ${isSuccess ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'};
         }
         .title {
-          color: #0F172A;
-          font-size: 24px;
+          color: #FFFFFF;
+          font-size: 20px;
           font-weight: 800;
           margin: 0;
-          line-height: 1.25;
-          letter-spacing: -0.5px;
+          line-height: 1.3;
+          letter-spacing: -0.4px;
         }
         .body {
-          padding: 0 40px 40px 40px;
-          font-size: 15px;
-          line-height: 1.625;
-          color: #475569;
+          padding: 28px 36px 36px 36px;
+          font-size: 13.5px;
+          line-height: 1.6;
+          color: #9CA3AF;
         }
         .body p {
-          margin: 0 0 16px 0;
+          margin: 0 0 14px 0;
         }
         .footer {
-          background-color: #F8FAFC;
-          padding: 32px 40px;
+          background-color: #0B0F19;
+          padding: 24px 36px;
           text-align: center;
-          font-size: 12px;
-          color: #64748B;
-          border-top: 1px solid #E2E8F0;
+          font-size: 11px;
+          color: #6B7280;
+          border-top: 1px solid #1F2937;
         }
         .footer-link {
-          color: #0D9488;
+          color: #10B981;
           text-decoration: none;
           font-weight: 600;
         }
         .highlight {
-          color: #0F172A;
+          color: #FFFFFF;
           font-weight: 600;
         }
         .btn-container {
           text-align: center;
-          margin: 28px 0;
+          margin: 24px 0;
         }
         .btn {
           display: inline-block;
           background: linear-gradient(135deg, #0D9488 0%, #10B981 100%);
           color: #ffffff !important;
-          font-size: 14px;
+          font-size: 12.5px;
           font-weight: 600;
           text-decoration: none;
-          padding: 14px 30px;
-          border-radius: 10px;
-          box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+          padding: 11px 26px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
         }
         .info-card {
-          background-color: #F8FAFC;
-          border: 1px solid #E2E8F0;
-          border-radius: 12px;
-          padding: 24px;
-          margin: 28px 0;
+          background-color: #1F2937;
+          border: 1px solid #374151;
+          border-radius: 8px;
+          padding: 18px;
+          margin: 24px 0;
         }
         .info-table {
           width: 100%;
           border-collapse: collapse;
         }
         .info-table td {
-          padding: 10px 0;
-          font-size: 13.5px;
+          padding: 8px 0;
+          font-size: 12.5px;
           vertical-align: top;
         }
         .info-table tr:not(:last-child) td {
-          border-bottom: 1px solid #E2E8F0;
+          border-bottom: 1px solid #374151;
         }
         .label {
-          color: #64748B;
+          color: #9CA3AF;
           font-weight: 500;
         }
         .value {
-          color: #0F172A;
+          color: #FFFFFF;
           font-weight: 600;
           text-align: right;
         }
         .feedback-box {
-          background-color: #FEF2F2;
-          border: 1px dashed #FCA5A5;
-          border-radius: 10px;
-          padding: 18px;
-          color: #991B1B;
-          font-size: 14px;
-          margin: 28px 0;
-          line-height: 1.55;
+          background-color: rgba(239, 68, 68, 0.05);
+          border: 1px dashed rgba(239, 68, 68, 0.3);
+          border-radius: 8px;
+          padding: 16px;
+          color: #F87171;
+          font-size: 13px;
+          margin: 24px 0;
+          line-height: 1.5;
         }
       </style>
     </head>
     <body>
       <div class="wrapper">
         <div class="header">
-          <div style="margin-bottom: 24px;">
-            <svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15); border-radius: 20px;">
-              <rect width="100" height="100" rx="20" fill="url(#logo-grad-mail)" />
+          <div style="margin-bottom: 20px;">
+            <svg width="56" height="56" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto; filter: drop-shadow(0 4px 8px rgba(13, 148, 136, 0.2));">
+              <rect width="100" height="100" rx="24" fill="url(#logo-grad-mail)" />
               <defs>
                 <linearGradient id="logo-grad-mail" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
                   <stop offset="0%" stop-color="#0D9488" />
@@ -178,9 +179,9 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
           ${innerHtml}
         </div>
         <div class="footer">
-          <p style="margin: 0 0 6px 0; font-weight: 700; color: #1E293B; font-size: 13px;">EditFlow Billing Support</p>
-          <p style="margin: 0 0 16px 0; font-size: 11px; line-height: 1.5;">If you have any questions or did not authorize this action, please reach out to our team at <a href="mailto:supportbyeditflow@acsoft.online" class="footer-link">supportbyeditflow@acsoft.online</a></p>
-          <p style="margin: 0; font-size: 10.5px; color: #94A3B8;">&copy; ${new Date().getFullYear()} EditFlow. All rights reserved.</p>
+          <p style="margin: 0 0 6px 0; font-weight: 700; color: #FFFFFF; font-size: 12px;">EditFlow Billing Support</p>
+          <p style="margin: 0 0 14px 0; font-size: 10.5px; line-height: 1.5; color: #6B7280;">If you have any questions or did not authorize this action, please reach out to our team at <a href="mailto:supportbyeditflow@acsoft.online" class="footer-link">supportbyeditflow@acsoft.online</a></p>
+          <p style="margin: 0; font-size: 10px; color: #4B5563;">&copy; ${new Date().getFullYear()} EditFlow. All rights reserved.</p>
         </div>
       </div>
     </body>
