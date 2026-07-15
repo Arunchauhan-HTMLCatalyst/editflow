@@ -24,9 +24,8 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/support')) return 3;
     if (location.startsWith('/admin/storage')) return 4;
     if (location.startsWith('/admin/notifications')) return 5;
-    if (location.startsWith('/admin/analytics')) return 6;
-    if (location.startsWith('/admin/logs')) return 7;
-    if (location.startsWith('/admin/settings')) return 8;
+    if (location.startsWith('/admin/logs')) return 6;
+    if (location.startsWith('/admin/settings')) return 7;
     return 0;
   }
 
@@ -51,12 +50,9 @@ class AdminShell extends ConsumerWidget {
         context.go('/admin/notifications');
         break;
       case 6:
-        context.go('/admin/analytics');
-        break;
-      case 7:
         context.go('/admin/logs');
         break;
-      case 8:
+      case 7:
         context.go('/admin/settings');
         break;
     }
@@ -67,9 +63,8 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/users')) return 'User Directory';
     if (location.startsWith('/admin/upgrades')) return 'Upgrade Requests';
     if (location.startsWith('/admin/support')) return 'Support Tickets';
-    if (location.startsWith('/admin/storage')) return 'Storage & Analytics';
+    if (location.startsWith('/admin/storage')) return 'Storage Overview';
     if (location.startsWith('/admin/notifications')) return 'Targeted Announcements';
-    if (location.startsWith('/admin/analytics')) return 'System Metrics';
     if (location.startsWith('/admin/logs')) return 'System Audit Logs';
     if (location.startsWith('/admin/settings')) return 'Global App Settings';
     return 'Super Admin Panel';
@@ -125,9 +120,8 @@ class AdminShell extends ConsumerWidget {
       _AdminMenuItem('Support Tickets', Icons.support_agent_rounded, 3),
       _AdminMenuItem('Storage', Icons.storage_rounded, 4),
       _AdminMenuItem('Notifications', Icons.campaign_rounded, 5),
-      _AdminMenuItem('Analytics', Icons.analytics_rounded, 6),
-      _AdminMenuItem('Audit Logs', Icons.receipt_long_rounded, 7),
-      _AdminMenuItem('App Settings', Icons.settings_rounded, 8),
+      _AdminMenuItem('Audit Logs', Icons.receipt_long_rounded, 6),
+      _AdminMenuItem('App Settings', Icons.settings_rounded, 7),
     ];
 
     Widget sidebarContent(BuildContext ctx) {

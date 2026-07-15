@@ -186,6 +186,17 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
 
 
 
+      // Check if UTR / Transaction ID is already used
+      final utrCheck = await Supabase.instance.client
+          .from('premium_upgrade_requests')
+          .select('id')
+          .eq('utr', _utrController.text.trim())
+          .maybeSingle();
+          
+      if (utrCheck != null) {
+        throw Exception('This UTR / Transaction ID has already been submitted and cannot be reused.');
+      }
+
       // Insert directly into the new premium_upgrade_requests table!
       await Supabase.instance.client.from('premium_upgrade_requests').insert({
         'user_id': user.id,

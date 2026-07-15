@@ -440,7 +440,24 @@ serve(async (req) => {
         const resendApiKey = Deno.env.get('RESEND_API_KEY');
         const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
 
-        if (resendApiKey && request.profiles?.email) {
+        // Extract profile metadata safely (handles both object and single-element array responses)
+        let profileEmail = '';
+        let profileName = 'there';
+        if (request.profiles) {
+          if (Array.isArray(request.profiles)) {
+            if (request.profiles.length > 0) {
+              profileEmail = request.profiles[0].email || '';
+              profileName = request.profiles[0].full_name || 'Valued User';
+            }
+          } else {
+            profileEmail = request.profiles.email || '';
+            profileName = request.profiles.full_name || 'Valued User';
+          }
+        }
+
+        console.log(`[Resend Email Core] resendApiKey exists: ${!!resendApiKey}, fromEmail: ${fromEmail}, targetEmail: ${profileEmail}`);
+
+        if (resendApiKey && profileEmail) {
           try {
             const htmlContent = `
               <!DOCTYPE html>
@@ -480,7 +497,7 @@ serve(async (req) => {
                     <div class="title">Your Premium Access is Active!</div>
                   </div>
                   <div class="content">
-                    Hi <span class="highlight">${request.profiles.full_name || 'there'}</span>,<br><br>
+                    Hi <span class="highlight">${profileName}</span>,<br><br>
                     Great news! Your manual payment verification has been completed by our admin team, and your <strong>EditFlow Premium (${duration === 'yearly' ? 'Yearly' : 'Monthly'})</strong> subscription is now active!
                     
                     <div class="invoice-box">
@@ -489,8 +506,8 @@ serve(async (req) => {
                           <tr>
                             <td>
                               <span style="font-size: 10px; color: #9CA3AF; text-transform: uppercase;">Invoice To</span>
-                              <div style="font-size: 13px; font-weight: bold; color: #ffffff;">${request.profiles.full_name || 'Valued User'}</div>
-                              <div style="font-size: 11px; color: #9CA3AF;">${request.profiles.email}</div>
+                              <div style="font-size: 13px; font-weight: bold; color: #ffffff;">${profileName}</div>
+                              <div style="font-size: 11px; color: #9CA3AF;">${profileEmail}</div>
                             </td>
                             <td style="text-align: right;">
                               <span style="font-size: 10px; color: #9CA3AF; text-transform: uppercase;">Invoice Details</span>
@@ -547,7 +564,7 @@ serve(async (req) => {
               </html>
             `;
 
-            await fetch('https://api.resend.com/emails', {
+            const res = await fetch('https://api.resend.com/emails', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${resendApiKey}`,
@@ -555,11 +572,13 @@ serve(async (req) => {
               },
               body: JSON.stringify({
                 from: `EditFlow <${fromEmail}>`,
-                to: [request.profiles.email],
+                to: [profileEmail],
                 subject: `🎉 Your EditFlow ${duration === 'yearly' ? 'Yearly' : 'Monthly'} Upgrade Approved!`,
                 html: htmlContent,
               }),
             });
+            const resData = await res.json();
+            console.log(`[Resend Email Core] Resend API Response:`, JSON.stringify(resData));
           } catch (emailErr) {
             console.error('Failed to send Welcome email:', emailErr);
           }

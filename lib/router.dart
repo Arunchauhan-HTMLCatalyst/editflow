@@ -30,7 +30,6 @@ import 'features/admin/screens/admin_dashboard_screen.dart';
 import 'features/admin/screens/admin_users_screen.dart';
 import 'features/admin/screens/admin_storage_screen.dart';
 import 'features/admin/screens/admin_notifications_screen.dart';
-import 'features/admin/screens/admin_analytics_screen.dart';
 import 'features/admin/screens/admin_logs_screen.dart';
 import 'features/admin/screens/admin_settings_screen.dart';
 import 'features/admin/screens/admin_support_screen.dart';
@@ -245,10 +244,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/notifications',
             pageBuilder: (context, state) => fadeTabPage(const AdminNotificationsScreen()),
-          ),
-          GoRoute(
-            path: '/admin/analytics',
-            pageBuilder: (context, state) => fadeTabPage(const AdminAnalyticsScreen()),
           ),
           GoRoute(
             path: '/admin/logs',

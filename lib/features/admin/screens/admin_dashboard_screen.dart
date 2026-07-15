@@ -12,6 +12,7 @@ class AdminDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(adminStatsProvider);
+    final analyticsAsync = ref.watch(adminAnalyticsProvider);
     final isDesktop = MediaQuery.of(context).size.width > 900;
 
     return statsAsync.when(
@@ -46,6 +47,7 @@ class AdminDashboardScreen extends ConsumerWidget {
         return RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(adminStatsProvider);
+            ref.invalidate(adminAnalyticsProvider);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -88,6 +90,93 @@ class AdminDashboardScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 32),
+
+                // USER REGISTRATION GROWTH BY MONTH
+                analyticsAsync.when(
+                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
+                  error: (err, _) => const SizedBox(),
+                  data: (analyticsData) {
+                    final users = analyticsData['users'] as List? ?? [];
+                    final Map<String, int> signupMonths = {};
+                    for (final u in users) {
+                      final createdStr = u['created_at'] as String?;
+                      if (createdStr != null) {
+                        final dt = DateTime.parse(createdStr);
+                        final monthStr = '${dt.year}-${dt.month.toString().padLeft(2, "0")}';
+                        signupMonths[monthStr] = (signupMonths[monthStr] ?? 0) + 1;
+                      }
+                    }
+
+                    final sortedMonths = signupMonths.entries.toList()
+                      ..sort((a, b) => a.key.compareTo(b.key));
+
+                    if (sortedMonths.isEmpty) return const SizedBox();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'USER REGISTRATION GROWTH BY MONTH',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.card,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border, width: 0.8),
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: sortedMonths.length,
+                            separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
+                            itemBuilder: (context, idx) {
+                              final item = sortedMonths[idx];
+                              final month = item.key;
+                              final count = item.value;
+                              final maxMonthCount = sortedMonths.map((m) => m.value).reduce((a, b) => a > b ? a : b);
+                              final ratio = maxMonthCount > 0 ? (count / maxMonthCount).clamp(0.0, 1.0) : 0.0;
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 80,
+                                      child: Text(
+                                        month,
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: LinearProgressIndicator(
+                                          value: ratio,
+                                          minHeight: 8,
+                                          backgroundColor: AppColors.border,
+                                          valueColor: const AlwaysStoppedAnimation(AppColors.primaryNeon),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Text(
+                                      '+$count users',
+                                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    );
+                  },
+                ),
 
                 // Layout breakdown: Daily New Users and Recent activities
                 Builder(
