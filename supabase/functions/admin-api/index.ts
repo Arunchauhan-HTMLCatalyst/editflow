@@ -288,108 +288,115 @@ serve(async (req) => {
                   body {
                     margin: 0;
                     padding: 0;
-                    background-color: #0b0f19;
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    background-color: #080c0d;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                     -webkit-font-smoothing: antialiased;
                   }
                   .wrapper {
                     width: 100%;
                     table-layout: fixed;
-                    background-color: #0b0f19;
-                    padding: 40px 0;
+                    background-color: #080c0d;
+                    padding: 48px 0;
                   }
                   .container {
-                    max-width: 600px;
+                    max-width: 560px;
                     margin: 0 auto;
-                    background-color: #111827;
-                    border-radius: 16px;
-                    border: 1px solid #1f2937;
-                    border-top: 4px solid #7c3aed;
+                    background-color: #101517;
+                    border-radius: 12px;
+                    border: 1px solid #1f2629;
+                    border-top: 4px solid #0d9488;
                     overflow: hidden;
-                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
                   }
                   .header {
-                    padding: 32px 32px 16px 32px;
+                    padding: 36px 36px 20px 36px;
                     text-align: center;
+                    border-bottom: 1px solid #1f2629;
                   }
                   .logo {
-                    width: 56px;
-                    height: 56px;
-                    margin-bottom: 12px;
+                    width: 48px;
+                    height: 48px;
+                    margin-bottom: 14px;
                     border-radius: 12px;
                   }
                   .title {
-                    font-size: 20px;
-                    font-weight: 800;
-                    color: #ffffff;
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #f8fafc;
                     margin: 0;
-                    letter-spacing: -0.5px;
+                    letter-spacing: -0.2px;
                   }
                   .content {
-                    padding: 0 32px 32px 32px;
+                    padding: 32px 36px 36px 36px;
                   }
                   .greeting {
                     font-size: 14px;
-                    color: #e5e7eb;
-                    line-height: 1.5;
+                    color: #f8fafc;
+                    font-weight: 600;
                     margin-top: 0;
+                    margin-bottom: 12px;
                   }
                   .message {
-                    font-size: 14px;
-                    color: #9ca3af;
+                    font-size: 13.5px;
+                    color: #94a3b8;
                     line-height: 1.6;
+                    margin: 0 0 24px 0;
                   }
-                  .resolution-box {
-                    background-color: #1f2937;
-                    border-left: 4px solid ${action === 'accept' ? '#10b981' : '#ef4444'};
+                  .resolution-card {
+                    background-color: #171d1f;
                     border-radius: 8px;
+                    border: 1px solid #273135;
                     padding: 20px;
-                    margin: 28px 0;
+                    margin-bottom: 28px;
                   }
-                  .resolution-status {
-                    font-size: 12px;
-                    font-weight: 800;
+                  .status-row {
+                    margin-bottom: 12px;
+                  }
+                  .status-badge {
+                    font-size: 11px;
+                    font-weight: 700;
                     text-transform: uppercase;
-                    letter-spacing: 0.8px;
-                    color: ${action === 'accept' ? '#34d399' : '#f87171'};
-                    margin-bottom: 8px;
-                    display: block;
+                    letter-spacing: 0.5px;
+                    padding: 4px 10px;
+                    border-radius: 4px;
+                    display: inline-block;
+                    background-color: ${action === 'accept' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)'};
+                    color: ${action === 'accept' ? '#10b981' : '#f43f5e'};
                   }
                   .resolution-text {
                     font-size: 13.5px;
-                    line-height: 1.5;
-                    color: #f3f4f6;
+                    line-height: 1.6;
+                    color: #f8fafc;
                     margin: 0;
                   }
                   .btn-container {
                     text-align: center;
-                    margin: 32px 0 16px 0;
+                    margin-top: 16px;
                   }
                   .btn {
-                    background-color: #7c3aed;
+                    background-color: #0d9488;
                     color: #ffffff !important;
                     text-decoration: none;
-                    font-weight: 700;
+                    font-weight: 600;
                     font-size: 13px;
-                    padding: 12px 28px;
-                    border-radius: 8px;
+                    padding: 10px 24px;
+                    border-radius: 6px;
                     display: inline-block;
-                    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
                   }
                   .footer {
-                    padding: 24px 32px;
-                    background-color: #0d121f;
-                    border-top: 1px solid #1f2937;
+                    padding: 24px 36px;
+                    background-color: #0c0f11;
+                    border-top: 1px solid #1f2629;
                     text-align: center;
                   }
                   .footer-text {
-                    font-size: 12px;
-                    color: #6b7280;
-                    line-height: 1.6;
+                    font-size: 11.5px;
+                    color: #64748b;
+                    line-height: 1.5;
                     margin: 0;
                   }
                   .footer-link {
-                    color: #9f7aea;
+                    color: #10b981;
                     text-decoration: none;
                   }
                 </style>
@@ -398,29 +405,31 @@ serve(async (req) => {
                 <div class="wrapper">
                   <div class="container">
                     <div class="header">
-                      <img src="https://editflow.acsoft.online/app/assets/assets/images/app_logo.png" alt="EditFlow Logo" class="logo">
-                      <h1 class="title">EditFlow Support Update</h1>
+                      <img src="https://editflow.acsoft.online/logo.svg" alt="EditFlow Logo" class="logo">
+                      <h1 class="title">Support Ticket Update</h1>
                     </div>
                     <div class="content">
-                      <p class="greeting">Hello ${userProfile?.full_name || 'there'},</p>
-                      <p class="message">Your support ticket has been reviewed and resolved by our administration team. Please find the details of the resolution below.</p>
+                      <p class="greeting">Hello ${userProfile?.full_name || 'User'},</p>
+                      <p class="message">The administration team has processed your support request ticket. The resolution details can be found below.</p>
                       
-                      <div class="resolution-box">
-                        <span class="resolution-status">${action === 'accept' ? 'ACCEPTED' : 'REJECTED'}</span>
+                      <div class="resolution-card">
+                        <div class="status-row">
+                          <span class="status-badge">${action === 'accept' ? 'Accepted' : 'Rejected'}</span>
+                        </div>
                         <p class="resolution-text">
                           ${feedback || (action === 'accept' ? 'Your support request has been accepted. We are working on your issue.' : 'Your support request has been rejected.')}
                         </p>
                       </div>
 
                       <div class="btn-container">
-                        <a href="https://editflow.acsoft.online/app/" class="btn" target="_blank">Open EditFlow Dashboard</a>
+                        <a href="https://editflow.acsoft.online/app/" class="btn" target="_blank">Access Dashboard</a>
                       </div>
                     </div>
                     <div class="footer">
                       <p class="footer-text">
-                        Need additional help? Reach out to us at <a href="mailto:editflow@acsoft.online" class="footer-link">editflow@acsoft.online</a>.
+                        If you have further inquiries, contact us at <a href="mailto:editflow@acsoft.online" class="footer-link">editflow@acsoft.online</a>.
                       </p>
-                      <p class="footer-text" style="margin-top: 8px; font-size: 11px;">
+                      <p class="footer-text" style="margin-top: 6px; font-size: 10.5px;">
                         © ${new Date().getFullYear()} EditFlow. All rights reserved.
                       </p>
                     </div>
