@@ -522,6 +522,32 @@ class SettingsScreen extends ConsumerWidget {
                   onTap: () => _importData(context, ref),
                 ),
               ],
+              // HELP & SUPPORT SECTION
+              Text(
+                'HELP & SUPPORT',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                  letterSpacing: 1.0,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _SettingsItem(
+                icon: Icons.question_answer_rounded,
+                label: 'FAQ / Help Center',
+                subtitle: 'Frequently Asked Questions & Guides',
+                isDark: isDark,
+                onTap: () => _showFAQBottomSheet(context, isDark),
+              ),
+              const SizedBox(height: 8),
+              _SettingsItem(
+                icon: Icons.support_agent_rounded,
+                label: 'Contact Support & Feedback',
+                subtitle: 'Email support, bug reports, and features',
+                isDark: isDark,
+                onTap: () => _showSupportBottomSheet(context, ref, isDark),
+              ),
               const SizedBox(height: 32),
 
               // SIGN OUT BUTTON
@@ -1801,6 +1827,415 @@ class _UpiIdCardState extends State<_UpiIdCard> {
         ),
       ),
     );
+  }
+}
+
+// Support configuration provider
+final supportSettingsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  try {
+    final response = await SupabaseService.instance
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'support')
+        .maybeSingle();
+    if (response != null && response['value'] != null) {
+      return response['value'] as Map<String, dynamic>;
+    }
+  } catch (e) {
+    debugPrint('Error loading support settings: $e');
+  }
+  return {
+    'email': 'editflow@acsoft.online',
+    'hours': 'Monday – Friday\n10:00 AM – 6:00 PM (IST)',
+    'response_time': 'Usually within 24–48 hours.'
+  };
+});
+
+// Interactive sheet functions
+void _showFAQBottomSheet(BuildContext context, bool isDark) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: isDark ? const Color(0xFF101517) : Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.border : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Frequently Asked Questions',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    fontFamily: 'Outfit',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    children: [
+                      _buildFAQCategory('Account', [
+                        _FAQItem('I forgot my password.', 'Click "Forgot Password" on the login screen to receive a reset link via email, or contact support if you need manual assistance.', isDark),
+                        _FAQItem('How do I delete my account?', 'Please contact our support team at editflow@acsoft.online to delete your account permanently.', isDark),
+                      ], isDark),
+                      _buildFAQCategory('Projects', [
+                        _FAQItem('How do I create a project?', 'Tap the "+" floating button or "Add Project" inside the Projects tab. Fill in the title, description, and link a client.', isDark),
+                        _FAQItem('How do I edit project details?', 'Open the project details page and tap the Edit (pencil) icon at the top right to modify any parameters.', isDark),
+                        _FAQItem('How do I delete a project?', 'Inside the project editor screen, scroll to the bottom and select "Delete Project". Confirm your choice in the dialog.', isDark),
+                        _FAQItem('Can I restore a deleted project?', 'Deleted projects are immediately wiped for security reasons and cannot be restored. Please proceed with caution.', isDark),
+                      ], isDark),
+                      _buildFAQCategory('Clients', [
+                        _FAQItem('How do I add a client?', 'Go to the Clients tab and tap the "+" button. Provide their company name, primary contact name, email, and billing info.', isDark),
+                        _FAQItem('Can a client have multiple projects?', 'Yes, a client profile can be linked to any number of active or archived projects.', isDark),
+                        _FAQItem('How do I remove a client?', 'Open the Client detail screen and tap "Remove Client" from the option actions. You can only remove clients who have no active reviews.', isDark),
+                      ], isDark),
+                      _buildFAQCategory('Video Reviews', [
+                        _FAQItem('How do timestamp comments work?', 'When clients watch a video review, they can type comments. The comment is automatically timestamped at the current playhead position.', isDark),
+                        _FAQItem('How do I generate a review link?', 'Open the project page, select "Create Review", upload the video asset, and tap "Generate Link". Copy and share this with your client.', isDark),
+                        _FAQItem('Can clients review without an account?', 'Yes! Review links are guest-friendly, enabling clients to comment and approve without signing up.', isDark),
+                        _FAQItem('Why has my review link expired?', 'Review links expire automatically based on the expiration duration configured when creating the link.', isDark),
+                        _FAQItem('How do I mark a project as completed?', 'Open the project detail page and change the pipeline status toggle to "Completed".', isDark),
+                      ], isDark),
+                      _buildFAQCategory('Payments & Invoices', [
+                        _FAQItem('How do I generate an invoice?', 'Select the project, click "Generate Invoice", configure the items/fees, and save to output a premium PDF layout.', isDark),
+                        _FAQItem('How does the UPI QR payment work?', 'When you add your UPI ID in Settings, invoices generate a scan-to-pay QR code for instant client settlements.', isDark),
+                        _FAQItem('Can I regenerate an invoice?', 'Yes, invoices can be re-edited or re-downloaded at any time from the payment details tab.', isDark),
+                      ], isDark),
+                      _buildFAQCategory('Security', [
+                        _FAQItem('Is my data secure?', 'All user profiles, projects, and invoices are protected by database Row-Level Security (RLS) policies.', isDark),
+                        _FAQItem('Who can access my projects?', 'Only you and users you share explicit guest review links with can access your project assets.', isDark),
+                        _FAQItem('Are guest review links secure?', 'Yes, guest review links use cryptographically secure random UUID slugs to prevent unauthorized discovery.', isDark),
+                      ], isDark),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+Widget _buildFAQCategory(String title, List<Widget> items, bool isDark) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+        child: Text(
+          title.toUpperCase(),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: isDark ? AppColors.primaryNeon : AppColors.primary,
+            letterSpacing: 1.0,
+          ),
+        ),
+      ),
+      ...items,
+    ],
+  );
+}
+
+Widget _FAQItem(String question, String answer, bool isDark) {
+  return Theme(
+    data: ThemeData(
+      dividerColor: Colors.transparent,
+      brightness: isDark ? Brightness.dark : Brightness.light,
+    ),
+    child: ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      title: Text(
+        question,
+        style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
+      ),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12.0, top: 4.0),
+          child: Text(
+            answer,
+            style: TextStyle(fontSize: 12.5, color: isDark ? AppColors.textSecondary : const Color(0xFF475569), height: 1.4),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+void _showSupportBottomSheet(BuildContext context, WidgetRef ref, bool isDark) {
+  final supportAsync = ref.read(supportSettingsProvider);
+  final supportInfo = supportAsync.valueOrNull ?? {
+    'email': 'editflow@acsoft.online',
+    'hours': 'Monday – Friday\n10:00 AM – 6:00 PM (IST)',
+    'response_time': 'Usually within 24–48 hours.'
+  };
+  
+  final email = supportInfo['email'] ?? 'editflow@acsoft.online';
+  final hours = supportInfo['hours'] ?? 'Monday – Friday\n10:00 AM – 6:00 PM (IST)';
+  final responseTime = supportInfo['response_time'] ?? 'Usually within 24–48 hours.';
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: isDark ? const Color(0xFF101517) : Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setSheetState) {
+          return DraggableScrollableSheet(
+            initialChildSize: 0.85,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            expand: false,
+            builder: (context, scrollController) {
+              return SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.border : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Support & Feedback',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        fontFamily: 'Outfit',
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Contact Info
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: isDark ? AppColors.border : const Color(0xFFE2E8F0), width: 0.8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('CONTACT SUPPORT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isDark ? AppColors.primaryNeon : AppColors.primary)),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              const Icon(Icons.email_rounded, size: 16, color: AppColors.textMuted),
+                              const SizedBox(width: 8),
+                              Text(email, style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 8),
+                              InkWell(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: email));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Support email copied to clipboard!')),
+                                  );
+                                },
+                                child: Icon(Icons.copy_rounded, size: 12, color: isDark ? AppColors.primaryNeon : AppColors.primary),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          const Text('BUSINESS HOURS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+                          const SizedBox(height: 2),
+                          Text(hours, style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black87)),
+                          const SizedBox(height: 10),
+                          const Text('RESPONSE TIME', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+                          const SizedBox(height: 2),
+                          Text(responseTime, style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black87)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Quick forms
+                    const Text('SUBMIT A REQUEST', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+                    const SizedBox(height: 12),
+                    
+                    // Simple Interactive Form
+                    _SupportRequestForm(isDark: isDark),
+                    const SizedBox(height: 24),
+                    
+                    // Version info
+                    const Divider(color: AppColors.border),
+                    const SizedBox(height: 16),
+                    Text('ABOUT EDITFLOW', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isDark ? AppColors.primaryNeon : AppColors.primary)),
+                    const SizedBox(height: 6),
+                    Text(
+                      'EditFlow is an all-in-one workspace built for freelance video editors to manage clients, projects, reviews, invoices, payments, and collaboration from one platform.',
+                      style: TextStyle(fontSize: 12, color: isDark ? AppColors.textSecondary : Colors.black87, height: 1.4),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('VERSION INFORMATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+                    const SizedBox(height: 4),
+                    Text('• Current Version: v2.0\n• Platform: Web & Android\n• Last Updated: July 2026', style: TextStyle(fontSize: 11, color: isDark ? Colors.white : Colors.black87)),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    },
+  );
+}
+
+class _SupportRequestForm extends StatefulWidget {
+  final bool isDark;
+  const _SupportRequestForm({required this.isDark});
+
+  @override
+  State<_SupportRequestForm> createState() => _SupportRequestFormState();
+}
+
+class _SupportRequestFormState extends State<_SupportRequestForm> {
+  final _formKey = GlobalKey<FormState>();
+  String _category = 'Technical Support';
+  final TextEditingController _subjectController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
+  bool _isSubmitting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<String>(
+            value: _category,
+            dropdownColor: widget.isDark ? AppColors.card : Colors.white,
+            style: TextStyle(color: widget.isDark ? Colors.white : Colors.black, fontSize: 13),
+            decoration: const InputDecoration(
+              labelText: 'Request Category',
+              labelStyle: TextStyle(color: AppColors.textSecondary),
+              border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'Technical Support', child: Text('Technical Support')),
+              DropdownMenuItem(value: 'Bug Report', child: Text('Bug Report')),
+              DropdownMenuItem(value: 'Feature Request', child: Text('Feature Request')),
+              DropdownMenuItem(value: 'Billing', child: Text('Billing')),
+              DropdownMenuItem(value: 'General Inquiry', child: Text('General Inquiry')),
+            ],
+            onChanged: (val) {
+              if (val != null) setState(() => _category = val);
+            },
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _subjectController,
+            style: TextStyle(color: widget.isDark ? Colors.white : Colors.black, fontSize: 13),
+            decoration: const InputDecoration(
+              labelText: 'Subject',
+              labelStyle: TextStyle(color: AppColors.textSecondary),
+              border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
+            ),
+            validator: (val) => val == null || val.trim().isEmpty ? 'Subject is required' : null,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _messageController,
+            maxLines: 4,
+            style: TextStyle(color: widget.isDark ? Colors.white : Colors.black, fontSize: 13),
+            decoration: const InputDecoration(
+              labelText: 'Description / Message Content',
+              labelStyle: TextStyle(color: AppColors.textSecondary),
+              border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
+              alignLabelWithHint: true,
+            ),
+            validator: (val) => val == null || val.trim().isEmpty ? 'Description is required' : null,
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _submitRequest,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Submit Request Ticket', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitRequest() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSubmitting = true);
+    try {
+      final desc = '[$_category] Subject: ${_subjectController.text}\nDescription: ${_messageController.text}\nDevice: Web/Mobile\nApp Version: v2.0';
+      await SupabaseService.instance.from('activities').insert({
+        'user_id': SupabaseService.userId,
+        'type': 'support_ticket',
+        'description': desc,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Support ticket submitted successfully!')),
+        );
+        _subjectController.clear();
+        _messageController.clear();
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Submission failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 }
 

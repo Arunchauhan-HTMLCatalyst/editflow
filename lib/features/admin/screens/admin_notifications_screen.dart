@@ -137,6 +137,47 @@ class _AdminNotificationsScreenState extends ConsumerState<AdminNotificationsScr
                         ),
                         const SizedBox(height: 16),
 
+                        // Preset Template Dropdown
+                        DropdownButtonFormField<Map<String, String>>(
+                          dropdownColor: AppColors.card,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          decoration: const InputDecoration(
+                            labelText: 'Use Preset Template (Optional)',
+                            labelStyle: TextStyle(color: AppColors.textSecondary),
+                            border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: {
+                                'title': 'New App Update Deployed!',
+                                'content': 'A new version of EditFlow (v2.0) is now available. Please refresh or update your app to explore the new dashboard features.'
+                              },
+                              child: Text('App Update Announcement'),
+                            ),
+                            DropdownMenuItem(
+                              value: {
+                                'title': 'New Feature Launched!',
+                                'content': 'We are excited to announce the launch of a new collaboration tool in EditFlow. You can now track revision steps directly.'
+                              },
+                              child: Text('New Feature Launch'),
+                            ),
+                            DropdownMenuItem(
+                              value: {
+                                'title': 'Scheduled Maintenance Alert',
+                                'content': 'EditFlow will undergo scheduled maintenance to optimize system database storage. Please save your work.'
+                              },
+                              child: Text('Maintenance Alert Preset'),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              _titleController.text = val['title'] ?? '';
+                              _descController.text = val['content'] ?? '';
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
                         // Title
                         TextFormField(
                           controller: _titleController,

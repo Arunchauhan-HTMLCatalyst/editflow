@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +13,41 @@ import 'features/dashboard/screens/notification_center_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/settings/providers/settings_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'services/supabase_service.dart';
+
+final maintenanceProvider = StreamProvider<Map<String, dynamic>>((ref) {
+  final controller = StreamController<Map<String, dynamic>>();
+  
+  Future<void> fetch() async {
+    try {
+      final response = await SupabaseService.instance
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'maintenance')
+          .maybeSingle();
+      if (response != null && response['value'] != null) {
+        if (!controller.isClosed) {
+          controller.add(response['value'] as Map<String, dynamic>);
+        }
+      }
+    } catch (e) {
+      if (!controller.isClosed) {
+        controller.add({'enabled': false, 'message': ''});
+      }
+    }
+  }
+
+  fetch();
+
+  final timer = Timer.periodic(const Duration(seconds: 20), (_) => fetch());
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
+});
 
 class AppShell extends ConsumerStatefulWidget {
   final GoRouterState state;
@@ -102,6 +138,32 @@ class _AppShellState extends ConsumerState<AppShell> {
           ];
 
     final isTablet = AppLayout.isTablet(context);
+    final authState = ref.watch(authProvider);
+    final maintenanceVal = ref.watch(maintenanceProvider).valueOrNull;
+    final isMaintenanceMode = maintenanceVal?['enabled'] == true && !authState.isAdmin;
+
+    final bannerWidget = isMaintenanceMode
+        ? Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: Colors.redAccent,
+            child: SafeArea(
+              bottom: false,
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 16),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      maintenanceVal?['message'] ?? 'EditFlow is currently in Maintenance. Please donot do any activity in your editflow account.',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : const SizedBox.shrink();
 
     final widgetScaffold = isTablet
         ? Scaffold(
@@ -139,15 +201,27 @@ class _AppShellState extends ConsumerState<AppShell> {
                   },
                 ),
                 Expanded(
-                  child: widget.child,
+                  child: Column(
+                    children: [
+                      bannerWidget,
+                      Expanded(child: widget.child),
+                    ],
+                  ),
                 ),
               ],
             ),
           )
         : Scaffold(
-            body: Padding(
-              padding: EdgeInsets.only(bottom: AppSpacing.navBarMargin + 4),
-              child: widget.child,
+            body: Column(
+              children: [
+                bannerWidget,
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.navBarMargin + 4),
+                    child: widget.child,
+                  ),
+                ),
+              ],
             ),
             bottomNavigationBar: _FloatingNavBar(
               currentIndex: currentIndex,
