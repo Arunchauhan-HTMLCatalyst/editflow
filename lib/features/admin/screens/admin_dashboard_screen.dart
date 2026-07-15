@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
@@ -93,7 +94,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'DAILY NEW USERS (LAST 14 DAYS)',
+                          'NEWLY REGISTERED USERS',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
@@ -112,7 +113,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                               ? const Padding(
                                   padding: EdgeInsets.all(24.0),
                                   child: Center(
-                                    child: Text('No daily data available.', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                                    child: Text('No new users found.', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                                   ),
                                 )
                               : ListView.separated(
@@ -122,32 +123,68 @@ class AdminDashboardScreen extends ConsumerWidget {
                                   separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
                                   itemBuilder: (context, idx) {
                                     final entry = dailyNewUsers[idx] as Map<String, dynamic>;
-                                    final dateStr = entry['date'] as String? ?? '';
-                                    final count = entry['count'] ?? 0;
+                                    final uid = entry['id'] as String? ?? '';
+                                    final name = entry['full_name'] as String? ?? 'User';
+                                    final email = entry['email'] as String? ?? '';
+                                    final createdAtStr = entry['created_at'] as String? ?? '';
+
+                                    String formattedTime = '';
+                                    if (createdAtStr.isNotEmpty) {
+                                      final dt = DateTime.parse(createdAtStr);
+                                      formattedTime = DateFormat('yyyy-MM-dd HH:mm').format(dt.toLocal());
+                                    }
 
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            dateStr,
-                                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
-                                          ),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            padding: const EdgeInsets.all(6),
                                             decoration: BoxDecoration(
-                                              color: count > 0 ? AppColors.success.withValues(alpha: 0.12) : AppColors.border,
-                                              borderRadius: BorderRadius.circular(12),
+                                              color: AppColors.success.withValues(alpha: 0.1),
+                                              shape: BoxShape.circle,
                                             ),
-                                            child: Text(
-                                              '+$count New Users',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: count > 0 ? AppColors.success : AppColors.textSecondary,
-                                              ),
+                                            child: const Icon(Icons.person_add_rounded, color: AppColors.success, size: 14),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Flexible(
+                                                      child: Text(
+                                                        name,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    InkWell(
+                                                      onTap: () {
+                                                        Clipboard.setData(ClipboardData(text: uid));
+                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                          const SnackBar(content: Text('User ID copied to clipboard!')),
+                                                        );
+                                                      },
+                                                      child: const Icon(Icons.copy_rounded, size: 10, color: AppColors.primaryNeon),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  email,
+                                                  style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+                                                ),
+                                              ],
                                             ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            formattedTime,
+                                            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
                                           ),
                                         ],
                                       ),

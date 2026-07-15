@@ -94,34 +94,13 @@ serve(async (req) => {
           adminClient.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo.toISOString()),
           adminClient.from('activities').select('user_id').gte('created_at', oneDayAgo.toISOString()),
           adminClient.from('activities').select('user_id').gte('created_at', thirtyDaysAgo.toISOString()),
-          adminClient.from('profiles').select('created_at').gte('created_at', fourteenDaysAgo.toISOString()),
+          adminClient.from('profiles').select('id, full_name, email, created_at').order('created_at', { ascending: false }).limit(20),
         ])
 
         const uniqueDAU = new Set((recentActivitiesForDAU || []).map((a: any) => a.user_id)).size
         const uniqueMAU = new Set((recentActivitiesForMAU || []).map((a: any) => a.user_id)).size
 
-        // Calculate daily registrations
-        const dailyRegistrations: Record<string, number> = {}
-        for (let i = 0; i < 14; i++) {
-          const d = new Date()
-          d.setDate(d.getDate() - i)
-          const dateKey = d.toISOString().split('T')[0]
-          dailyRegistrations[dateKey] = 0
-        }
-
-        for (const u of (recentProfiles || [])) {
-          if (u.created_at) {
-            const dateKey = u.created_at.split('T')[0]
-            if (dailyRegistrations[dateKey] !== undefined) {
-              dailyRegistrations[dateKey]++
-            }
-          }
-        }
-
-        const dailyList = Object.entries(dailyRegistrations).map(([date, count]) => ({
-          date,
-          count,
-        })).sort((a, b) => b.date.localeCompare(a.date))
+        const recentNewUsersList = recentProfiles || []
 
         // Calculate Storage Used
         let totalStorageBytes = 0
@@ -166,7 +145,7 @@ serve(async (req) => {
             totalStorageUsed: totalStorageBytes + dbSize,
             dau: uniqueDAU,
             mau: uniqueMAU,
-            dailyNewUsers: dailyList,
+            dailyNewUsers: recentNewUsersList,
           },
           recentActivity: recentActivity || []
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
