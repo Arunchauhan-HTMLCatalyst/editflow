@@ -107,6 +107,17 @@ serve(async (req) => {
           }
         }
 
+        // Fetch Postgres Database Size (tables, metadata, indexes)
+        let dbSize = 0
+        try {
+          const { data: dbData } = await adminClient.rpc('get_database_size')
+          if (dbData) {
+            dbSize = Number(dbData)
+          }
+        } catch (e) {
+          console.error('Error fetching database size:', e)
+        }
+
         // Recent activity
         const { data: recentActivity } = await adminClient
           .from('activities')
@@ -123,7 +134,7 @@ serve(async (req) => {
             totalClients: clientCount || 0,
             totalReviews: reviewCount || 0,
             totalComments: commentCount || 0,
-            totalStorageUsed: totalStorageBytes,
+            totalStorageUsed: totalStorageBytes + dbSize,
             dau: uniqueDAU,
             mau: uniqueMAU,
           },
@@ -250,10 +261,31 @@ serve(async (req) => {
           }
         }
 
+        // Fetch Postgres Database Size
+        let dbSize = 0
+        try {
+          const { data: dbData } = await adminClient.rpc('get_database_size')
+          if (dbData) {
+            dbSize = Number(dbData)
+          }
+        } catch (e) {
+          console.error('Error fetching database size:', e)
+        }
+
+        if (dbSize > 0) {
+          filesList.push({
+            name: "PostgreSQL Database (text, tables & metadata)",
+            bucket: "database",
+            sizeBytes: dbSize,
+            createdAt: new Date().toISOString(),
+          })
+          userUsage["system_database"] = dbSize
+        }
+
         filesList.sort((a, b) => b.sizeBytes - a.sizeBytes)
 
         return new Response(JSON.stringify({
-          totalStorageUsed: totalStorageBytes,
+          totalStorageUsed: totalStorageBytes + dbSize,
           largestFiles: filesList.slice(0, 20),
           userUsage,
         }), {

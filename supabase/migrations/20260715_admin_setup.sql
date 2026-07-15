@@ -28,3 +28,12 @@ INSERT INTO public.system_settings (key, value) VALUES
   ('maintenance', '{"enabled": false, "message": "EditFlow is currently undergoing scheduled maintenance. Please check back later."}'::jsonb),
   ('support', '{"email": "support@acsoft.online", "telegram": ""}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
+
+-- 4. RPC to fetch overall postgres database size (tables + metadata)
+CREATE OR REPLACE FUNCTION public.get_database_size()
+RETURNS bigint
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT pg_database_size(current_database());
+$$;
