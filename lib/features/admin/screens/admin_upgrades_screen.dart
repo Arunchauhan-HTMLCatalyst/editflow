@@ -20,16 +20,27 @@ class _AdminUpgradesScreenState extends ConsumerState<AdminUpgradesScreen> {
   Future<void> _processUpgrade(String requestId, String duration) async {
     setState(() => _isProcessing = true);
     try {
-      await AdminService.invokeAdminAction('approve_premium_upgrade', {
+      final res = await AdminService.invokeAdminAction('approve_premium_upgrade', {
         'requestId': requestId,
         'duration': duration,
       });
 
       if (mounted) {
+        String emailStatusMsg = "";
+        if (res['resend'] != null) {
+          final resend = res['resend'] as Map;
+          if (resend['error'] != null) {
+            emailStatusMsg = " (Email failed: ${resend['error']})";
+          } else if (resend['status'] != 200) {
+            emailStatusMsg = " (Email status: ${resend['status']} - ${resend['data']})";
+          } else {
+            emailStatusMsg = " (Email sent!)";
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.success,
-            content: Text('Successfully upgraded user account to $duration plan!'),
+            content: Text('Successfully upgraded user account to $duration plan!$emailStatusMsg'),
           ),
         );
         ref.invalidate(adminUpgradeRequestsProvider);
@@ -112,16 +123,27 @@ class _AdminUpgradesScreenState extends ConsumerState<AdminUpgradesScreen> {
 
                 setState(() => _isProcessing = true);
                 try {
-                  await AdminService.invokeAdminAction('reject_premium_upgrade', {
+                  final res = await AdminService.invokeAdminAction('reject_premium_upgrade', {
                     'requestId': requestId,
                     'feedback': reason,
                   });
 
                   if (mounted) {
+                    String emailStatusMsg = "";
+                    if (res['resend'] != null) {
+                      final resend = res['resend'] as Map;
+                      if (resend['error'] != null) {
+                        emailStatusMsg = " (Email failed: ${resend['error']})";
+                      } else if (resend['status'] != 200) {
+                        emailStatusMsg = " (Email status: ${resend['status']} - ${resend['data']})";
+                      } else {
+                        emailStatusMsg = " (Email sent!)";
+                      }
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         backgroundColor: AppColors.success,
-                        content: Text('Upgrade request rejected. User has been notified.'),
+                        content: Text('Upgrade request rejected.$emailStatusMsg'),
                       ),
                     );
                     ref.invalidate(adminUpgradeRequestsProvider);

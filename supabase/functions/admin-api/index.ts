@@ -477,6 +477,7 @@ serve(async (req) => {
 
         // 4. Send Welcome email
         const { key: resendApiKey, from: fromEmail } = getResendCredentials();
+        let resendResponse: any = null;
 
         // Fetch User Profile details separately to guarantee profile email resolution
         const { data: userProfile, error: profileErr } = await adminClient
@@ -613,12 +614,14 @@ serve(async (req) => {
             });
             const resData = await res.json();
             console.log(`[Resend Email Core] Resend API Response:`, JSON.stringify(resData));
-          } catch (emailErr) {
+            resendResponse = { status: res.status, data: resData };
+          } catch (emailErr: any) {
             console.error('Failed to send Welcome email:', emailErr);
+            resendResponse = { error: emailErr.message };
           }
         }
 
-        return new Response(JSON.stringify({ success: true }), {
+        return new Response(JSON.stringify({ success: true, resend: resendResponse }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -662,6 +665,7 @@ serve(async (req) => {
 
         // 3. Send email
         const { key: resendApiKey, from: fromEmail } = getResendCredentials();
+        let resendResponse: any = null;
 
         // Fetch User Profile details separately to guarantee profile email resolution
         const { data: userProfile, error: profileErr } = await adminClient
@@ -739,12 +743,14 @@ serve(async (req) => {
             });
             const resData = await res.json();
             console.log(`[Resend Email Core] Rejection Resend API Response:`, JSON.stringify(resData));
-          } catch (emailErr) {
+            resendResponse = { status: res.status, data: resData };
+          } catch (emailErr: any) {
             console.error('Failed to send rejection email:', emailErr);
+            resendResponse = { error: emailErr.message };
           }
         }
 
-        return new Response(JSON.stringify({ success: true }), {
+        return new Response(JSON.stringify({ success: true, resend: resendResponse }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
