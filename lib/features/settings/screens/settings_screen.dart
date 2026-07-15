@@ -535,16 +535,31 @@ class SettingsScreen extends ConsumerWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: const [
-                                      Text(
-                                        'Pro Tier (Monthly / Yearly)',
-                                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.primaryNeon),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Icon(CupertinoIcons.sparkles, color: AppColors.primaryNeon, size: 10),
-                                    ],
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: const [
+                                            Text(
+                                              'Pro Tier',
+                                              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.primaryNeon),
+                                            ),
+                                            SizedBox(width: 4),
+                                            Icon(CupertinoIcons.sparkles, color: AppColors.primaryNeon, size: 10),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          'Monthly / Yearly',
+                                          style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                  const SizedBox(width: 8),
                                   const Text(
                                     'Unlimited Clients & Projects',
                                     style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),

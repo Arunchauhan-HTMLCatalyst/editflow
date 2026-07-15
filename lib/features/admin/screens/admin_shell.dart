@@ -133,11 +133,12 @@ class AdminShell extends ConsumerWidget {
     Widget sidebarContent(BuildContext ctx) {
       return Container(
         color: AppColors.surface,
-        child: Column(
-          children: [
-            // Header Logo
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header Logo
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
               child: Row(
                 children: [
                   const EfLogo(size: 32),
@@ -330,8 +331,9 @@ class AdminShell extends ConsumerWidget {
             ),
           ],
         ),
-      );
-    }
+      ),
+    );
+  }
 
     return Scaffold(
       backgroundColor: AppColors.surface,
