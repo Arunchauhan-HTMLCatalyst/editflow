@@ -27,7 +27,9 @@
             <div class="nav-links">
                 <a href="#freelancer">Freelancer Features</a>
                 <a href="#client">Client Portal</a>
-                <a href="#why-us">Why EditFlow</a>
+                <a href="#reviews-system">Video Reviews</a>
+                <a href="#comparison">Comparison Matrix</a>
+                <a href="#faq">FAQ</a>
                 <a href="https://editflow.acsoft.online/app/" target="_blank" class="nav-web-link">Web Dashboard</a>
                 <a href="editflow-v2.0.apk" class="btn btn-primary nav-cta">
                     Download APK
@@ -286,6 +288,73 @@
         </div>
     </section>
 
+    <!-- Video Review System Section -->
+    <section id="reviews-system" class="features-section">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-tag" style="background-color: rgba(16, 185, 129, 0.1); color: var(--secondary);">VIDEO REVIEW SYSTEM</span>
+                <h2>Frame-Accurate Video Review Workspace</h2>
+                <p class="section-desc">Stop getting messy timestamp comments via email and WhatsApp. EditFlow provides a robust, interactive reviews suite built exclusively for video editors.</p>
+            </div>
+            
+            <div class="portal-showcase" style="flex-direction: row-reverse; margin-top: 40px;">
+                <div class="portal-text">
+                    <div class="portal-feature-item">
+                        <span class="num" style="color: var(--secondary);">01</span>
+                        <div>
+                            <h4>Frame-Accurate Timestamps</h4>
+                            <p>As clients watch your cuts, their comment text is instantly bound to the exact video frame (e.g. 00:45). Tapping the comment jumps the playhead to that frame immediately.</p>
+                        </div>
+                    </div>
+                    <div class="portal-feature-item">
+                        <span class="num" style="color: var(--secondary);">02</span>
+                        <div>
+                            <h4>Sleek Shareable Guest Links</h4>
+                            <p>Generate cryptographically secure guest links in one tap. Clients can view, add timestamped comments, and approve cuts without registering an account.</p>
+                        </div>
+                    </div>
+                    <div class="portal-feature-item">
+                        <span class="num" style="color: var(--secondary);">03</span>
+                        <div>
+                            <h4>Client Approval Statuses</h4>
+                            <p>Clients can tap a premium "Approve Cut" trigger, marking the project stage instantly. Integrates direct status sync updates across both panels.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="portal-mockup-wrapper">
+                    <!-- High fidelity representation of Video Review Suite -->
+                    <div class="glass-portal-card" style="border-color: rgba(16, 185, 129, 0.2);">
+                        <div class="portal-header">
+                            <span class="portal-title">Review Workspace</span>
+                            <span class="portal-badge" style="background-color: rgba(16, 185, 129, 0.1); color: var(--secondary);">Cut v2.mp4</span>
+                        </div>
+                        <!-- Video Player Graphic -->
+                        <div style="background: #000; height: 160px; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; margin: 12px 0;">
+                            <div style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.2); border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <span style="color: var(--secondary); font-size: 20px; margin-left: 2px;">▶</span>
+                            </div>
+                            <!-- Time indicator -->
+                            <span style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: monospace; color: #fff;">00:45 / 02:30</span>
+                        </div>
+                        <div class="project-strip">
+                            <div class="project-info">
+                                <span class="project-name">Timeline Comments</span>
+                            </div>
+                            <span class="project-status" style="background-color: rgba(16, 185, 129, 0.1); color: var(--secondary);">Approved</span>
+                        </div>
+                        <div class="comment-bubbles">
+                            <div class="bubble client" style="border-left-color: var(--secondary);">
+                                <span class="author" style="color: var(--secondary);">MKBHD (Client) <span style="font-family: monospace; font-size: 10px; color: var(--text-muted);">@00:45</span></span>
+                                <p>This color grading is perfect! Let's lock this version.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Why Us Section -->
     <section id="why-us" class="features-section">
         <div class="container">
@@ -320,6 +389,223 @@
         </div>
     </section>
 
+    <!-- Comparison Matrix Section -->
+    <section id="comparison" class="comparison-section">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-tag" style="background-color: rgba(13, 148, 136, 0.1); color: var(--primary-neon);">COMPUTATION MATRIX</span>
+                <h2>Detailed Feature Comparison</h2>
+                <p class="section-desc">See how EditFlow compares to standard project management and video proofing tools.</p>
+            </div>
+            
+            <div class="comparison-wrapper">
+                <table class="comp-table">
+                    <thead>
+                        <tr>
+                            <th>FEATURES</th>
+                            <th class="center">Trello</th>
+                            <th class="center">ClickUp</th>
+                            <th class="center">Frame.io</th>
+                            <th class="center highlight">
+                                <div class="editflow-logo-th">
+                                    <img src="logo.svg" width="16" height="16" alt="EditFlow Monogram">
+                                    EditFlow
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Category: Freelancer Dashboard -->
+                        <tr class="category-row">
+                            <td colspan="5">👤 FREELANCER DASHBOARD</td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">1. Client Management</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-partial"></span></td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">2. Project Management</td>
+                            <td class="center"><span class="marker-check">✓</span></td>
+                            <td class="center"><span class="marker-check">✓</span></td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">3. Project Status</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-check">✓</span></td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">4. Feedback Comment</td>
+                            <td class="center"><span class="marker-partial"></span></td>
+                            <td class="center"><span class="marker-check">✓</span></td>
+                            <td class="center"><span class="marker-check">✓</span></td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">5. Deadline Calendar</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-check">✓</span></td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">6. Payment & Invoice Management</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-partial"></span></td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">7. Invoice Generator</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">8. UPI QR Code</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        
+                        <!-- Category: Client Dashboard -->
+                        <tr class="category-row">
+                            <td colspan="5">👥 CLIENT DASHBOARD</td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">1. Freelancer Management</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-partial"></span></td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">2. Spend Tracking</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">3. Project Management</td>
+                            <td class="center"><span class="marker-partial"></span></td>
+                            <td class="center"><span class="marker-partial"></span></td>
+                            <td class="center"><span class="marker-partial"></span></td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">4. Assign Project</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-partial"></span></td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">5. Edit Project Details (Deadline, Price, etc.)</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-partial"></span></td>
+                            <td class="center marker-none">—</td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        
+                        <!-- Category: Video Review System -->
+                        <tr class="category-row">
+                            <td colspan="5">▶ VIDEO REVIEW SYSTEM</td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">1. Timestamp Based Comment</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-check">✓</span></td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">2. Access on Client Dashboard</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-check">✓</span></td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name">3. Shareable Link for Guest User</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center marker-none">—</td>
+                            <td class="center"><span class="marker-check">✓</span></td>
+                            <td class="center highlight"><span class="marker-check">✓</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="faq-section">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-tag" style="background-color: rgba(13, 148, 136, 0.1); color: var(--primary-neon);">FAQ</span>
+                <h2>Frequently Asked Questions</h2>
+                <p class="section-desc">Have questions about EditFlow? Find answers to commonly asked questions below.</p>
+            </div>
+            
+            <div class="faq-grid">
+                <!-- FAQ Item 1 -->
+                <div class="faq-item">
+                    <button class="faq-question">I forgot my password. How do I recover it?</button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            You can tap "Forgot Password" on the dashboard login screen. You will receive an email containing a secure password reset link. Alternatively, contact the support team at editflow@acsoft.online for quick assistance.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ Item 2 -->
+                <div class="faq-item">
+                    <button class="faq-question">How do I delete my account?</button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            For security and data compliance reasons, account deletion must be requested manually. Please contact our support team at editflow@acsoft.online and we will wipe your profile and related data within 24 hours.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ Item 3 -->
+                <div class="faq-item">
+                    <button class="faq-question">How do frame-accurate timestamp reviews work?</button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            When a client views a review video, typing a comment automatically logs it at the current video playhead time code. When you tap their comment, the player jumps straight to that frame, making revisions incredibly precise.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ Item 4 -->
+                <div class="faq-item">
+                    <button class="faq-question">Are guest review links secure?</button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Yes. Guest links utilize cryptographically secure, random 128-bit UUID strings. They are impossible to guess or crawl, ensuring only clients you share the link with can view your video assets.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ Item 5 -->
+                <div class="faq-item">
+                    <button class="faq-question">How does UPI QR Code generation work on invoices?</button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            You configure your personal UPI ID in the app settings. When generating an invoice PDF, EditFlow dynamically creates a scanning-compliant QR code for that exact invoice balance, enabling instant client checkouts.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- CTA Section -->
     <section class="cta-section">
         <div class="cta-container">
@@ -335,13 +621,36 @@
                     Web Dashboard
                 </a>
             </div>
-            <p class="apk-meta">Version 1.0.0 • Size: ~18MB • Requires Android 8.0+</p>
+            <p class="apk-meta">Version 2.0 • Size: ~62MB • Requires Android 8.0+</p>
         </div>
     </section>
 
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 40px; padding-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 30px; text-align: left;">
+                <div>
+                    <h4 style="color: #fff; font-size: 13px; font-family: 'Outfit'; font-weight: 800; letter-spacing: 0.8px; margin-bottom: 16px;">ABOUT EDITFLOW</h4>
+                    <p style="color: var(--text-muted); font-size: 12px; line-height: 1.6;">EditFlow is an all-in-one workspace built for freelance video editors to manage clients, projects, reviews, invoices, and payments in one unified platform.</p>
+                </div>
+                <div>
+                    <h4 style="color: #fff; font-size: 13px; font-family: 'Outfit'; font-weight: 800; letter-spacing: 0.8px; margin-bottom: 16px;">CONTACT SUPPORT</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.8;">
+                        <li>📧 <strong>Email:</strong> <a href="mailto:editflow@acsoft.online" style="color: var(--text-muted); text-decoration: none;">editflow@acsoft.online</a></li>
+                        <li>🕒 <strong>Hours:</strong> Mon – Fri (10:00 AM – 6:00 PM IST)</li>
+                        <li>⚡ <strong>Response:</strong> Usually within 24–48 hours</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: #fff; font-size: 13px; font-family: 'Outfit'; font-weight: 800; letter-spacing: 0.8px; margin-bottom: 16px;">LATEST APP UPDATE</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.8;">
+                        <li>🚀 <strong>Current Version:</strong> v2.0</li>
+                        <li>📅 <strong>Released:</strong> July 2026</li>
+                        <li>📱 <strong>Platform:</strong> Web & Android App</li>
+                    </ul>
+                </div>
+            </div>
+            
             <div class="footer-bottom">
                 <div class="footer-credit">
                     <img src="acsoft.png" alt="acsoft Logo" class="acsoft-footer-logo">
