@@ -37,7 +37,7 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
           -webkit-font-smoothing: antialiased;
         }
         .wrapper {
-          max-width: 500px;
+          max-width: 620px;
           margin: 0 auto;
           background-color: #111827;
           border: 1px solid #1F2937;
@@ -158,19 +158,7 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
       <div class="wrapper">
         <div class="header">
           <div style="margin-bottom: 20px;">
-            <svg width="56" height="56" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto; filter: drop-shadow(0 4px 8px rgba(13, 148, 136, 0.2));">
-              <rect width="100" height="100" rx="24" fill="url(#logo-grad-mail)" />
-              <defs>
-                <linearGradient id="logo-grad-mail" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#0D9488" />
-                  <stop offset="100%" stop-color="#10B981" />
-                </linearGradient>
-              </defs>
-              <path d="M 49.5 54 A 15.5 15.5 0 1 0 46.5 64" stroke="#ffffff" stroke-width="8" stroke-linecap="round" fill="none" />
-              <path d="M 18.5 54 L 79.34 54" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
-              <path d="M 63.5 22 L 63.5 82" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
-              <path d="M 63.5 22 Q 63.5 14 79 14" stroke="#ffffff" stroke-width="8" stroke-linecap="round" fill="none" />
-            </svg>
+            <img src="https://editflow.acsoft.online/logo.svg" width="56" height="56" alt="EditFlow Logo" style="display: block; margin: 0 auto; filter: drop-shadow(0 4px 8px rgba(13, 148, 136, 0.2)); border-radius: 14px;" />
           </div>
           <span class="badge">${badgeText}</span>
           <h1 class="title">${title}</h1>
