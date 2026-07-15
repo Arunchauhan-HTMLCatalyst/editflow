@@ -16,8 +16,8 @@ function getResendCredentials() {
 }
 
 function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, innerHtml: string) {
-  const badgeBg = isSuccess ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-  const badgeTextColor = isSuccess ? '#10B981' : '#EF4444';
+  const badgeBg = isSuccess ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+  const badgeTextColor = isSuccess ? '#059669' : '#DC2626';
   const headerBorderColor = isSuccess ? '#10B981' : '#EF4444';
 
   return `
@@ -26,10 +26,10 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>\${title}</title>
+      <title>${title}</title>
       <style>
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
           background-color: #F8FAFC;
           color: #334155;
           margin: 0;
@@ -37,92 +37,100 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
           -webkit-font-smoothing: antialiased;
         }
         .wrapper {
-          max-width: 580px;
+          max-width: 540px;
           margin: 0 auto;
           background-color: #ffffff;
           border: 1px solid #E2E8F0;
-          border-top: 6px solid \${headerBorderColor};
-          border-radius: 12px;
+          border-top: 5px solid ${headerBorderColor};
+          border-radius: 16px;
           overflow: hidden;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.03), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
         }
         .header {
-          padding: 32px 32px 20px 32px;
+          padding: 40px 40px 24px 40px;
           text-align: center;
-          border-bottom: 1px solid #F1F5F9;
+          background: radial-gradient(circle at top, rgba(13, 148, 136, 0.03) 0%, rgba(255, 255, 255, 0) 70%);
         }
         .badge {
           display: inline-block;
-          background-color: \${badgeBg};
-          color: \${badgeTextColor};
+          background-color: ${badgeBg};
+          color: ${badgeTextColor};
           font-size: 11px;
           font-weight: 700;
-          letter-spacing: 0.8px;
-          padding: 6px 14px;
+          letter-spacing: 1px;
+          padding: 6px 16px;
           border-radius: 99px;
           text-transform: uppercase;
-          margin-bottom: 16px;
+          margin-bottom: 20px;
+          border: 1px solid ${isSuccess ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'};
         }
         .title {
           color: #0F172A;
-          font-size: 22px;
+          font-size: 24px;
           font-weight: 800;
           margin: 0;
-          line-height: 1.3;
+          line-height: 1.25;
+          letter-spacing: -0.5px;
         }
         .body {
-          padding: 32px;
+          padding: 0 40px 40px 40px;
           font-size: 15px;
-          line-height: 1.6;
+          line-height: 1.625;
           color: #475569;
+        }
+        .body p {
+          margin: 0 0 16px 0;
         }
         .footer {
           background-color: #F8FAFC;
-          padding: 24px 32px;
+          padding: 32px 40px;
           text-align: center;
           font-size: 12px;
           color: #64748B;
-          border-top: 1px solid #F1F5F9;
+          border-top: 1px solid #E2E8F0;
         }
         .footer-link {
           color: #0D9488;
           text-decoration: none;
-          font-weight: 500;
+          font-weight: 600;
         }
         .highlight {
           color: #0F172A;
           font-weight: 600;
         }
+        .btn-container {
+          text-align: center;
+          margin: 28px 0;
+        }
         .btn {
           display: inline-block;
-          background-color: #0D9488;
+          background: linear-gradient(135deg, #0D9488 0%, #10B981 100%);
           color: #ffffff !important;
           font-size: 14px;
           font-weight: 600;
           text-decoration: none;
-          padding: 12px 24px;
-          border-radius: 8px;
-          margin: 20px 0;
-          text-align: center;
-          box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.2), 0 2px 4px -2px rgba(13, 148, 136, 0.2);
+          padding: 14px 30px;
+          border-radius: 10px;
+          box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
         }
         .info-card {
           background-color: #F8FAFC;
           border: 1px solid #E2E8F0;
-          border-radius: 8px;
-          padding: 20px;
-          margin: 24px 0;
+          border-radius: 12px;
+          padding: 24px;
+          margin: 28px 0;
         }
         .info-table {
           width: 100%;
           border-collapse: collapse;
         }
         .info-table td {
-          padding: 8px 0;
+          padding: 10px 0;
           font-size: 13.5px;
+          vertical-align: top;
         }
         .info-table tr:not(:last-child) td {
-          border-bottom: 1px solid #F1F5F9;
+          border-bottom: 1px solid #E2E8F0;
         }
         .label {
           color: #64748B;
@@ -136,43 +144,43 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
         .feedback-box {
           background-color: #FEF2F2;
           border: 1px dashed #FCA5A5;
-          border-radius: 8px;
-          padding: 16px;
+          border-radius: 10px;
+          padding: 18px;
           color: #991B1B;
           font-size: 14px;
-          margin: 24px 0;
-          line-height: 1.5;
+          margin: 28px 0;
+          line-height: 1.55;
         }
       </style>
     </head>
     <body>
       <div class="wrapper">
         <div class="header">
-          <div style="margin-bottom: 16px;">
-            <svg width="56" height="56" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto;">
-              <rect width="100" height="100" rx="28" fill="url(#logo-grad-mail)" />
+          <div style="margin-bottom: 24px;">
+            <svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15); border-radius: 20px;">
+              <rect width="100" height="100" rx="20" fill="url(#logo-grad-mail)" />
               <defs>
                 <linearGradient id="logo-grad-mail" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
                   <stop offset="0%" stop-color="#0D9488" />
                   <stop offset="100%" stop-color="#10B981" />
                 </linearGradient>
               </defs>
-              <path d="M 49.5 54 A 15.5 15.5 0 1 0 46.5 64" stroke="#ffffff" stroke-width="8.8" stroke-linecap="round" fill="none" />
-              <path d="M 18.5 54 L 79.34 54" stroke="#ffffff" stroke-width="8.8" stroke-linecap="round" />
-              <path d="M 63.5 22 L 63.5 82" stroke="#ffffff" stroke-width="8.8" stroke-linecap="round" />
-              <path d="M 63.5 22 Q 63.5 14 79 14" stroke="#ffffff" stroke-width="8.8" stroke-linecap="round" fill="none" />
+              <path d="M 49.5 54 A 15.5 15.5 0 1 0 46.5 64" stroke="#ffffff" stroke-width="8" stroke-linecap="round" fill="none" />
+              <path d="M 18.5 54 L 79.34 54" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+              <path d="M 63.5 22 L 63.5 82" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+              <path d="M 63.5 22 Q 63.5 14 79 14" stroke="#ffffff" stroke-width="8" stroke-linecap="round" fill="none" />
             </svg>
           </div>
-          <span class="badge">\${badgeText}</span>
-          <h1 class="title">\${title}</h1>
+          <span class="badge">${badgeText}</span>
+          <h1 class="title">${title}</h1>
         </div>
         <div class="body">
-          \${innerHtml}
+          ${innerHtml}
         </div>
         <div class="footer">
-          <p style="margin: 0 0 8px 0; font-weight: 500; color: #1E293B;">EditFlow Support Team</p>
-          <p style="margin: 0 0 16px 0; font-size: 11px;">If you have any questions, reach out to us at <a href="mailto:supportbyeditflow@acsoft.online" class="footer-link">supportbyeditflow@acsoft.online</a></p>
-          <p style="margin: 0; font-size: 10.5px; color: #94A3B8;">&copy; \${new Date().getFullYear()} EditFlow. All rights reserved.</p>
+          <p style="margin: 0 0 6px 0; font-weight: 700; color: #1E293B; font-size: 13px;">EditFlow Billing Support</p>
+          <p style="margin: 0 0 16px 0; font-size: 11px; line-height: 1.5;">If you have any questions or did not authorize this action, please reach out to our team at <a href="mailto:supportbyeditflow@acsoft.online" class="footer-link">supportbyeditflow@acsoft.online</a></p>
+          <p style="margin: 0; font-size: 10.5px; color: #94A3B8;">&copy; ${new Date().getFullYear()} EditFlow. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -496,46 +504,21 @@ serve(async (req) => {
             // Send notification email
             if (resendApiKey && user.email) {
               try {
-                const htmlContent = `
-                  <!DOCTYPE html>
-                  <html>
-                  <head>
-                    <meta charset="utf-8">
-                    <title>EditFlow Premium Expired</title>
-                    <style>
-                      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
-                      .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
-                      .header { text-align: center; margin-bottom: 30px; }
-                      .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
-                      .badge { display: inline-block; background-color: #EF4444; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
-                      .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
-                      .highlight { color: #ffffff; font-weight: 600; }
-                      .btn { display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-align: center; margin: 10px 0; }
-                      .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
-                    </style>
-                  </head>
-                  <body>
-                    <div class="container">
-                      <div class="header">
-                        <span class="badge">SUBSCRIPTION ENDED</span>
-                        <div class="title">Your Premium Access Has Expired</div>
-                      </div>
-                      <div class="content">
-                        Hi <span class="highlight">${user.full_name || 'there'}</span>,<br><br>
-                        Your EditFlow Premium subscription has ended. The limits of the Free plan (maximum of 5 clients and 10 projects) are now active on your account.<br><br>
-                        To continue managing unlimited clients and projects without interruptions, please renew your subscription.
-                      </div>
-                      <div style="text-align: center;">
-                        <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Renew Premium Now</a>
-                      </div>
-                      <br>
-                      <div class="footer">
-                        Sent automatically by EditFlow Core • supportbyeditflow@acsoft.online
-                      </div>
-                    </div>
-                  </body>
-                  </html>
+                const innerHtml = `
+                  <p>Hi <span class="highlight">${user.full_name || 'there'}</span>,</p>
+                  <p>Your EditFlow Premium subscription has ended. The limits of the Free plan (maximum of 5 clients and 10 projects) are now active on your account.</p>
+                  <p>To continue managing unlimited clients and projects without interruptions, please renew your subscription.</p>
+                  
+                  <div class="btn-container">
+                    <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Renew Premium Now</a>
+                  </div>
                 `;
+                const htmlContent = getEmailWrapper(
+                  "Your Premium Access Has Expired",
+                  "Subscription Ended",
+                  false,
+                  innerHtml
+                );
 
                 await fetch('https://api.resend.com/emails', {
                   method: 'POST',
@@ -693,7 +676,7 @@ serve(async (req) => {
               </div>
 
               <p>All active limits on creating projects and adding client profiles have been unlocked on your account. Log back into the app to start using your premium tools!</p>
-              <div style="text-align: center;">
+              <div class="btn-container">
                 <a href="https://editflow.acsoft.online/app/" class="btn" style="color: #ffffff;">Access Premium Dashboard</a>
               </div>
             `;
@@ -798,7 +781,7 @@ serve(async (req) => {
 
               <p>Please check the transaction UTR number in your payment receipt and try submitting the upgrade request again through the Settings dashboard.</p>
               
-              <div style="text-align: center;">
+              <div class="btn-container">
                 <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Submit Upgrade Again</a>
               </div>
             `;
@@ -923,7 +906,7 @@ serve(async (req) => {
 
               <p>All active limits on creating projects and adding client profiles have been unlocked on your account. Log back into the app to start using your premium tools!</p>
               
-              <div style="text-align: center;">
+              <div class="btn-container">
                 <a href="https://editflow.acsoft.online/app/" class="btn" style="color: #ffffff;">Access Premium Dashboard</a>
               </div>
             `;
@@ -1109,7 +1092,7 @@ serve(async (req) => {
 
                   <p>All active limits on creating projects and adding client profiles have been unlocked on your account. Log back into the app to start using your premium tools!</p>
                   
-                  <div style="text-align: center;">
+                  <div class="btn-container">
                     <a href="https://editflow.acsoft.online/app/" class="btn" style="color: #ffffff;">Access Premium Dashboard</a>
                   </div>
                 `;
@@ -1132,7 +1115,7 @@ serve(async (req) => {
 
                   <p>Please check the transaction UTR number in your payment receipt and try submitting the upgrade request again through the Settings dashboard.</p>
                   
-                  <div style="text-align: center;">
+                  <div class="btn-container">
                     <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Submit Upgrade Again</a>
                   </div>
                 `;
@@ -1171,7 +1154,7 @@ serve(async (req) => {
 
                 <p>If you need to view your ticket or submit further follow-up information, log back into the app dashboard.</p>
                 
-                <div style="text-align: center;">
+                <div class="btn-container">
                   <a href="https://editflow.acsoft.online/app/" class="btn" style="color: #ffffff;">Access App Dashboard</a>
                 </div>
               `;
