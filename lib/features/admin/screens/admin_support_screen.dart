@@ -119,8 +119,14 @@ class AdminSupportScreen extends ConsumerWidget {
                         List<String> bodyLines = [];
                         bool parsingBody = false;
 
-                        for (final line in lines) {
-                          if (line.startsWith('Subject: ')) {
+                        for (int i = 0; i < lines.length; i++) {
+                          final line = lines[i];
+                          if (i == 0 && line.contains('Subject: ')) {
+                            final parts = line.split('Subject: ');
+                            if (parts.length > 1) {
+                              subject = parts[1].trim();
+                            }
+                          } else if (line.startsWith('Subject: ')) {
                             subject = line.replaceFirst('Subject: ', '');
                           } else if (line.startsWith('Description: ')) {
                             bodyLines.add(line.replaceFirst('Description: ', ''));
@@ -353,92 +359,100 @@ class AdminSupportScreen extends ConsumerWidget {
           ? 'Your support request has been accepted. Our engineering team is currently investigating your ticket. We will reach out to you via your registered email address shortly. Thank you for your patience!'
           : 'Your support request has been rejected. This category of request is not supported at this time, or does not contain sufficient details. Please review our FAQ section or submit another ticket with more details.',
     );
-
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.card,
-          title: Text(
-            action == 'accept' ? 'Accept Support Ticket' : 'Reject Support Ticket',
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Add message feedback response to send to user:',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        bool isResolving = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppColors.card,
+              title: Text(
+                action == 'accept' ? 'Accept Support Ticket' : 'Reject Support Ticket',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
               ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: responseController,
-                maxLines: 3,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.all(8),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: action == 'accept' ? AppColors.primary : AppColors.error,
-              ),
-              onPressed: () async {
-                Navigator.pop(context); // Close input dialog
-
-                // Show loading overlay
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => const Center(
-                    child: CircularProgressIndicator(color: AppColors.primaryNeon),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Add message feedback response to send to user:',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
-                );
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: responseController,
+                    maxLines: 3,
+                    enabled: !isResolving,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.all(8),
+                    ),
+                  ),
+                  if (isResolving) ...[
+                    const SizedBox(height: 16),
+                    const Center(
+                      child: CircularProgressIndicator(color: AppColors.primaryNeon),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isResolving ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: action == 'accept' ? AppColors.primary : AppColors.error,
+                  ),
+                  onPressed: isResolving
+                      ? null
+                      : () async {
+                          setState(() {
+                            isResolving = true;
+                          });
+                          try {
+                            await AdminService.invokeAdminAction('handle_support_ticket', {
+                              'ticketId': ticketId,
+                              'action': action,
+                              'targetUserId': targetUserId,
+                              'feedback': responseController.text.trim(),
+                            });
 
-                try {
-                  await AdminService.invokeAdminAction('handle_support_ticket', {
-                    'ticketId': ticketId,
-                    'action': action,
-                    'targetUserId': targetUserId,
-                    'feedback': responseController.text.trim(),
-                  });
+                            // Invalidate to refresh the ticket list reactively
+                            ref.invalidate(adminStatsProvider);
 
-                  // Invalidate the provider to trigger reactive UI reload
-                  ref.invalidate(adminStatsProvider);
-
-                  if (context.mounted) {
-                    Navigator.pop(context); // Pop loading spinner
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Support request successfully ${action}ed! Client has been notified.',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        backgroundColor: action == 'accept' ? AppColors.success : AppColors.error,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    Navigator.pop(context); // Pop loading spinner
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to update ticket: $e')),
-                    );
-                  }
-                }
-              },
-              child: Text(action == 'accept' ? 'Accept' : 'Reject', style: const TextStyle(color: Colors.white)),
-            ),
-          ],
+                            if (context.mounted) {
+                              Navigator.pop(context); // Close input dialog
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Support request successfully ${action}ed! Client has been notified.',
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  backgroundColor: action == 'accept' ? AppColors.success : AppColors.error,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              setState(() {
+                                isResolving = false;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to update ticket: $e')),
+                              );
+                            }
+                          }
+                        },
+                  child: Text(action == 'accept' ? 'Accept' : 'Reject', style: const TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
