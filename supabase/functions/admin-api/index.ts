@@ -140,7 +140,7 @@ serve(async (req) => {
           .order('created_at', { ascending: false })
 
         if (supportError) {
-          console.error('Support Tickets Query Error:', supportError);
+          throw new Error('Support query error: ' + supportError.message);
         }
 
         return new Response(JSON.stringify({

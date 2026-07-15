@@ -103,6 +103,68 @@ class AdminSupportScreen extends ConsumerWidget {
                         final dt = DateTime.tryParse(createdAtStr)?.toLocal();
                         final formattedTime = dt != null ? DateFormat('MMM d, h:mm a').format(dt) : 'N/A';
 
+                        // Parse description components
+                        String category = 'Support';
+                        String subject = 'No Subject';
+                        String body = description;
+                        String deviceInfo = '';
+                        String appVersion = '';
+
+                        final catMatch = RegExp(r'^\[([^\]]+)\]').firstMatch(description);
+                        if (catMatch != null) {
+                          category = catMatch.group(1) ?? 'Support';
+                        }
+
+                        final lines = description.split('\n');
+                        List<String> bodyLines = [];
+                        bool parsingBody = false;
+
+                        for (final line in lines) {
+                          if (line.startsWith('Subject: ')) {
+                            subject = line.replaceFirst('Subject: ', '');
+                          } else if (line.startsWith('Description: ')) {
+                            bodyLines.add(line.replaceFirst('Description: ', ''));
+                            parsingBody = true;
+                          } else if (line.startsWith('Device: ')) {
+                            deviceInfo = line.replaceFirst('Device: ', '');
+                            parsingBody = false;
+                          } else if (line.startsWith('App Version: ')) {
+                            appVersion = line.replaceFirst('App Version: ', '');
+                            parsingBody = false;
+                          } else if (parsingBody) {
+                            bodyLines.add(line);
+                          }
+                        }
+
+                        if (bodyLines.isNotEmpty) {
+                          body = bodyLines.join('\n');
+                        } else {
+                          body = description;
+                        }
+
+                        // Determine category tag color
+                        Color tagColor;
+                        switch (category.toLowerCase()) {
+                          case 'account':
+                            tagColor = Colors.blueAccent;
+                            break;
+                          case 'projects':
+                            tagColor = Colors.purpleAccent;
+                            break;
+                          case 'payments & invoices':
+                          case 'payments':
+                            tagColor = Colors.greenAccent;
+                            break;
+                          case 'video reviews':
+                            tagColor = Colors.orangeAccent;
+                            break;
+                          case 'security':
+                            tagColor = Colors.redAccent;
+                            break;
+                          default:
+                            tagColor = AppColors.primaryNeon;
+                        }
+
                         return Container(
                           decoration: BoxDecoration(
                             color: AppColors.card,
@@ -118,66 +180,126 @@ class AdminSupportScreen extends ConsumerWidget {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                      child: Row(
                                         children: [
-                                          Text(
-                                            fullName,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
-                                          ),
-                                          if (email.isNotEmpty)
-                                            Text(
-                                              email,
-                                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                          CircleAvatar(
+                                            radius: 18,
+                                            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                                            child: Text(
+                                              fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                                             ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  fullName,
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                                                ),
+                                                if (email.isNotEmpty)
+                                                  Text(
+                                                    email,
+                                                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
-                                    Text(
-                                      formattedTime,
-                                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          formattedTime,
+                                          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: tagColor.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: tagColor.withValues(alpha: 0.25), width: 0.5),
+                                          ),
+                                          child: Text(
+                                            category.toUpperCase(),
+                                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: tagColor),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
+                                ),
+                                const SizedBox(height: 14),
+                                const Divider(color: AppColors.border, height: 1),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.label_important_outline_rounded, size: 16, color: AppColors.primaryNeon),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        subject,
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black26,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppColors.border.withValues(alpha: 0.4)),
+                                  ),
+                                  child: Text(
+                                    body,
+                                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.45),
+                                  ),
                                 ),
                                 const SizedBox(height: 12),
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      'User ID: ',
-                                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                                    ),
                                     Expanded(
-                                      child: Text(
-                                        targetUserId,
-                                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontFamily: 'monospace'),
-                                        overflow: TextOverflow.ellipsis,
+                                      child: Row(
+                                        children: [
+                                          const Text(
+                                            'User ID: ',
+                                            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              targetUserId,
+                                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontFamily: 'monospace'),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          InkWell(
+                                            onTap: () {
+                                              Clipboard.setData(ClipboardData(text: targetUserId));
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('User ID copied to clipboard!')),
+                                              );
+                                            },
+                                            child: const Icon(Icons.copy_rounded, size: 12, color: AppColors.primaryNeon),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    InkWell(
-                                      onTap: () {
-                                        Clipboard.setData(ClipboardData(text: targetUserId));
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('User ID copied to clipboard!')),
-                                        );
-                                      },
-                                      child: const Icon(Icons.copy_rounded, size: 13, color: AppColors.primaryNeon),
-                                    ),
+                                    if (deviceInfo.isNotEmpty || appVersion.isNotEmpty)
+                                      Text(
+                                        '${deviceInfo.isNotEmpty ? deviceInfo : ''}${deviceInfo.isNotEmpty && appVersion.isNotEmpty ? ' • ' : ''}${appVersion.isNotEmpty ? 'App $appVersion' : ''}',
+                                        style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                      ),
                                   ],
-                                ),
-                                const SizedBox(height: 16),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black26,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-                                  ),
-                                  child: Text(
-                                    description,
-                                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
-                                  ),
                                 ),
                                 const SizedBox(height: 16),
                                 Row(
@@ -228,8 +350,8 @@ class AdminSupportScreen extends ConsumerWidget {
   ) async {
     final responseController = TextEditingController(
       text: action == 'accept'
-          ? 'Your support request has been accepted. We are investigating your issue.'
-          : 'Your support request has been rejected.',
+          ? 'Your support request has been accepted. Our engineering team is currently investigating your ticket. We will reach out to you via your registered email address shortly. Thank you for your patience!'
+          : 'Your support request has been rejected. This category of request is not supported at this time, or does not contain sufficient details. Please review our FAQ section or submit another ticket with more details.',
     );
 
     showDialog(
@@ -271,7 +393,17 @@ class AdminSupportScreen extends ConsumerWidget {
                 backgroundColor: action == 'accept' ? AppColors.primary : AppColors.error,
               ),
               onPressed: () async {
-                Navigator.pop(context);
+                Navigator.pop(context); // Close input dialog
+
+                // Show loading overlay
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(
+                    child: CircularProgressIndicator(color: AppColors.primaryNeon),
+                  ),
+                );
+
                 try {
                   await AdminService.invokeAdminAction('handle_support_ticket', {
                     'ticketId': ticketId,
@@ -279,14 +411,26 @@ class AdminSupportScreen extends ConsumerWidget {
                     'targetUserId': targetUserId,
                     'feedback': responseController.text.trim(),
                   });
+
+                  // Invalidate the provider and await the refetch to complete
+                  ref.invalidate(adminStatsProvider);
+                  await ref.read(adminStatsProvider.future);
+
                   if (context.mounted) {
+                    Navigator.pop(context); // Pop loading spinner
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Support request successfully ${action}ed!')),
+                      SnackBar(
+                        content: Text(
+                          'Support request successfully ${action}ed! Client has been notified.',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        backgroundColor: action == 'accept' ? AppColors.success : AppColors.error,
+                      ),
                     );
                   }
-                  ref.invalidate(adminStatsProvider);
                 } catch (e) {
                   if (context.mounted) {
+                    Navigator.pop(context); // Pop loading spinner
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Failed to update ticket: $e')),
                     );
