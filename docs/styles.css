@@ -1991,7 +1991,7 @@ img {
     transition: transform 0.2s ease;
 }
 
-.dropdown:hover .dropdown-chevron {
+.dropdown.active .dropdown-chevron {
     transform: rotate(180deg);
 }
 
@@ -2012,7 +2012,7 @@ img {
     text-align: left;
 }
 
-.dropdown:hover .dropdown-menu {
+.dropdown.active .dropdown-menu {
     display: block;
 }
 

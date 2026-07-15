@@ -67,6 +67,22 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(animateRadial, 300); // trigger on load
     }
 
+    // Dropdown click toggle
+    const dropdown = document.querySelector('.dropdown');
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+    if (dropdown && dropdownToggle) {
+        dropdownToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('active');
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    }
+
     // FAQ Accordion Toggle Action
     const faqItems = document.querySelectorAll('.faq-item');
     faqItems.forEach(item => {
