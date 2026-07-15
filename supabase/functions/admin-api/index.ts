@@ -7,6 +7,14 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
+function getResendCredentials() {
+  let key = Deno.env.get('RESEND_API_KEY') || '';
+  let from = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
+  key = key.replace(/['"]/g, '').trim();
+  from = from.replace(/['"]/g, '').trim();
+  return { key, from };
+}
+
 serve(async (req) => {
   // Handle CORS preflight options request
   if (req.method === 'OPTIONS') {
@@ -301,8 +309,7 @@ serve(async (req) => {
         if (fetchErr) throw fetchErr;
 
         if (expiredUsers && expiredUsers.length > 0) {
-          const resendApiKey = Deno.env.get('RESEND_API_KEY');
-          const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
+          const { key: resendApiKey, from: fromEmail } = getResendCredentials();
 
           for (const user of expiredUsers) {
             // Update profile back to free limits
@@ -469,8 +476,7 @@ serve(async (req) => {
         });
 
         // 4. Send Welcome email
-        const resendApiKey = Deno.env.get('RESEND_API_KEY');
-        const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
+        const { key: resendApiKey, from: fromEmail } = getResendCredentials();
 
         // Extract profile metadata safely (handles both object and single-element array responses)
         let profileEmail = '';
@@ -659,8 +665,7 @@ serve(async (req) => {
         });
 
         // 3. Send email
-        const resendApiKey = Deno.env.get('RESEND_API_KEY');
-        const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
+        const { key: resendApiKey, from: fromEmail } = getResendCredentials();
 
         // Extract profile metadata safely (handles both object and single-element array responses)
         let profileEmail = '';
@@ -812,8 +817,7 @@ serve(async (req) => {
         });
 
         // Send Welcome email
-        const resendApiKey = Deno.env.get('RESEND_API_KEY');
-        const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
+        const { key: resendApiKey, from: fromEmail } = getResendCredentials();
 
         if (resendApiKey && userProfile?.email) {
           try {
@@ -1019,10 +1023,9 @@ serve(async (req) => {
             .maybeSingle()
 
           const userEmail = userProfile?.email
-          const resendApiKey = Deno.env.get('RESEND_API_KEY')
+          const { key: resendApiKey, from: fromEmail } = getResendCredentials();
 
           if (resendApiKey && userEmail) {
-            const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'supportbyeditflow@acsoft.online'
             
             let subjectText = '';
             let htmlContent = '';
