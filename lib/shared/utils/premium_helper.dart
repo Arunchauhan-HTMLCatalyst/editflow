@@ -394,10 +394,6 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                     const Divider(color: AppColors.border, height: 24),
                     
                     _buildFeatureItem('Unlimited Clients & Projects (Free: max 5/10)', true),
-                    _buildFeatureItem('Unlimited Client Feedback Reviews', true),
-                    _buildFeatureItem('Priority Fast Video Rendering', _selectedPlan == 'yearly'),
-                    _buildFeatureItem('Exclusive Pro Profile Badge', _selectedPlan == 'yearly'),
-                    _buildFeatureItem('Priority 24/7 Admin Support', _selectedPlan == 'yearly'),
                   ],
                 ),
               ),
