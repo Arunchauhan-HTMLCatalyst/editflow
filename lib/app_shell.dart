@@ -611,6 +611,25 @@ class _DesktopSidebar extends ConsumerWidget {
               ),
               child: Column(
                 children: [
+                  if (authState.isAdmin) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.push('/admin/dashboard'),
+                        icon: const Icon(Icons.admin_panel_settings_rounded, size: 14, color: Colors.white),
+                        label: const Text('Admin Panel', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   Row(
                     children: [
                       CircleAvatar(

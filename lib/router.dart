@@ -23,6 +23,17 @@ import 'features/auth/providers/auth_provider.dart';
 import 'app_shell.dart';
 import 'core/theme/app_transitions.dart';
 
+// Admin screens
+import 'features/admin/screens/admin_shell.dart';
+import 'features/admin/screens/admin_dashboard_screen.dart';
+import 'features/admin/screens/admin_users_screen.dart';
+import 'features/admin/screens/admin_projects_screen.dart';
+import 'features/admin/screens/admin_storage_screen.dart';
+import 'features/admin/screens/admin_notifications_screen.dart';
+import 'features/admin/screens/admin_analytics_screen.dart';
+import 'features/admin/screens/admin_logs_screen.dart';
+import 'features/admin/screens/admin_settings_screen.dart';
+
 class GoRouterRefreshListenable extends ChangeNotifier {
   GoRouterRefreshListenable(Ref ref) {
     ref.listen(
@@ -63,6 +74,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isAuthenticated && isAuthRoute && loc != '/splash') {
         return '/dashboard';
+      }
+
+      // Admin panel guard
+      if (loc.startsWith('/admin')) {
+        if (!isAuthenticated || !authState.isAdmin) {
+          return '/dashboard';
+        }
       }
 
       return null;
@@ -186,6 +204,50 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/payments',
             pageBuilder: (context, state) => fadeTabPage(const PaymentsScreen()),
+          ),
+        ],
+      ),
+
+      // ── Admin Shell ──────────────────────────────────────────
+      ShellRoute(
+        builder: (context, state, child) {
+          return AdminShell(
+            state: state,
+            child: child,
+          );
+        },
+        routes: [
+          GoRoute(
+            path: '/admin/dashboard',
+            pageBuilder: (context, state) => fadeTabPage(const AdminDashboardScreen()),
+          ),
+          GoRoute(
+            path: '/admin/users',
+            pageBuilder: (context, state) => fadeTabPage(const AdminUsersScreen()),
+          ),
+          GoRoute(
+            path: '/admin/projects',
+            pageBuilder: (context, state) => fadeTabPage(const AdminProjectsScreen()),
+          ),
+          GoRoute(
+            path: '/admin/storage',
+            pageBuilder: (context, state) => fadeTabPage(const AdminStorageScreen()),
+          ),
+          GoRoute(
+            path: '/admin/notifications',
+            pageBuilder: (context, state) => fadeTabPage(const AdminNotificationsScreen()),
+          ),
+          GoRoute(
+            path: '/admin/analytics',
+            pageBuilder: (context, state) => fadeTabPage(const AdminAnalyticsScreen()),
+          ),
+          GoRoute(
+            path: '/admin/logs',
+            pageBuilder: (context, state) => fadeTabPage(const AdminLogsScreen()),
+          ),
+          GoRoute(
+            path: '/admin/settings',
+            pageBuilder: (context, state) => fadeTabPage(const AdminSettingsScreen()),
           ),
         ],
       ),

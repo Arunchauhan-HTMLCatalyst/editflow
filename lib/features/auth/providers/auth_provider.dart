@@ -13,18 +13,32 @@ class AuthState {
   final AuthStatus status;
   final User? user;
   final String? error;
+  final String role;
+  final bool isSuspended;
 
   const AuthState({
     this.status = AuthStatus.uninitialized,
     this.user,
     this.error,
+    this.role = 'user',
+    this.isSuspended = false,
   });
 
-  AuthState copyWith({AuthStatus? status, User? user, String? error}) =>
+  bool get isAdmin => role == 'admin';
+
+  AuthState copyWith({
+    AuthStatus? status,
+    User? user,
+    String? error,
+    String? role,
+    bool? isSuspended,
+  }) =>
       AuthState(
         status: status ?? this.status,
         user: user ?? this.user,
         error: error,
+        role: role ?? this.role,
+        isSuspended: isSuspended ?? this.isSuspended,
       );
 }
 
@@ -40,17 +54,41 @@ class AuthProvider extends StateNotifier<AuthState> {
     try {
       final response = await Supabase.instance.client
           .from('profiles')
-          .select('id')
+          .select('role, is_suspended')
           .eq('id', user.id)
           .maybeSingle();
+
+      String role = 'user';
+      bool isSuspended = false;
+
       if (response == null) {
         await Supabase.instance.client.from('profiles').insert({
           'id': user.id,
           'full_name': user.userMetadata?['full_name'] ?? 'User',
           'email': user.email,
+          'role': 'user',
+          'is_suspended': false,
         });
         debugPrint('[AUTH SYNC] Created missing profile for user ${user.id}');
+      } else {
+        role = response['role'] as String? ?? 'user';
+        isSuspended = response['is_suspended'] as bool? ?? false;
       }
+
+      if (isSuspended) {
+        debugPrint('[AUTH SYNC] User suspended, signing out: ${user.id}');
+        state = AuthState(
+          status: AuthStatus.unauthenticated,
+          error: 'Your account has been suspended by the administrator.',
+        );
+        await signOut();
+        return;
+      }
+
+      state = state.copyWith(
+        role: role,
+        isSuspended: isSuspended,
+      );
     } catch (e) {
       debugPrint('[AUTH SYNC] Failed to sync profile: $e');
     }
