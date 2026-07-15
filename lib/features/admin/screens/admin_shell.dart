@@ -95,6 +95,15 @@ class AdminShell extends ConsumerWidget {
     final fullName = user?.userMetadata?['full_name'] ?? 'Admin';
     final email = user?.email ?? '';
 
+    final statsAsync = ref.watch(adminStatsProvider);
+    final int pendingSupportCount = statsAsync.maybeWhen(
+      data: (data) {
+        final supportRequests = data['supportRequests'] as List? ?? [];
+        return supportRequests.length;
+      },
+      orElse: () => 0,
+    );
+
     final menuItems = [
       _AdminMenuItem('Dashboard', Icons.dashboard_rounded, 0),
       _AdminMenuItem('Users', Icons.people_alt_rounded, 1),
@@ -190,14 +199,32 @@ class AdminShell extends ConsumerWidget {
                                 color: isSelected ? AppColors.primaryNeon : AppColors.textSecondary,
                               ),
                               const SizedBox(width: 12),
-                              Text(
-                                item.title,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                              Expanded(
+                                child: Text(
+                                  item.title,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                                  ),
                                 ),
                               ),
+                              if (item.index == 6 && pendingSupportCount > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.redAccent,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '$pendingSupportCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9.0,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
