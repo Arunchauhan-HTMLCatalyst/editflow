@@ -568,12 +568,32 @@ serve(async (req) => {
 
       case 'handle_support_ticket': {
         const { ticketId, action, targetUserId, feedback } = payload
-        
+        if (!ticketId) throw new Error('Missing ticketId');
+
+        // Fetch ticket details to see if it is a Premium Upgrade Request
+        const { data: ticket } = await adminClient
+          .from('support_tickets')
+          .select('description')
+          .eq('id', ticketId)
+          .maybeSingle();
+
+        const ticketDesc = ticket?.description || '';
+        const isUpgradeRequest = ticketDesc.includes('[Premium Upgrade Request]');
+        const requestedPlan = ticketDesc.includes('Plan: Yearly') ? 'Yearly' : 'Monthly';
+
         let desc = ''
         if (action === 'accept') {
-          desc = `Your support request has been accepted. Team response: ${feedback || 'We are working on your issue.'}`
+          if (isUpgradeRequest) {
+            desc = `Your ${requestedPlan} Premium Upgrade request has been accepted. ${feedback || 'Welcome to EditFlow Pro!'}`
+          } else {
+            desc = `Your support request has been accepted. Team response: ${feedback || 'We are working on your issue.'}`
+          }
         } else {
-          desc = `Your support request has been rejected. Details: ${feedback || 'Does not match categories.'}`
+          if (isUpgradeRequest) {
+            desc = `Your ${requestedPlan} Premium Upgrade request has been rejected. Details: ${feedback || 'Invalid UTR reference number or payment not received.'}`
+          } else {
+            desc = `Your support request has been rejected. Details: ${feedback || 'Does not match categories.'}`
+          }
         }
 
         // Inform user: Insert notification activity for user
@@ -596,16 +616,108 @@ serve(async (req) => {
           const resendApiKey = Deno.env.get('RESEND_API_KEY')
 
           if (resendApiKey && userEmail) {
-            const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'EditFlow Support <support@editflow.acsoft.online>'
-            const subjectText = action === 'accept' 
-              ? 'EditFlow Support Ticket: Accepted & Resolving'
-              : 'EditFlow Support Ticket Update';
+            const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'supportbyeditflow@acsoft.online'
+            
+            let subjectText = '';
+            let htmlContent = '';
 
-            const htmlContent = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="utf-8">
+            if (isUpgradeRequest) {
+              if (action === 'accept') {
+                subjectText = `🎉 Your EditFlow ${requestedPlan} Upgrade Approved!`;
+                htmlContent = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <title>EditFlow Premium Active</title>
+                    <style>
+                      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
+                      .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+                      .header { text-align: center; margin-bottom: 30px; }
+                      .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
+                      .badge { display: inline-block; background-color: #10B981; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
+                      .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
+                      .highlight { color: #ffffff; font-weight: 600; }
+                      .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <div class="header">
+                        <span class="badge">PRO UPGRADE SUCCESS</span>
+                        <div class="title">Your Premium Access is Active!</div>
+                      </div>
+                      <div class="content">
+                        Hi <span class="highlight">${userProfile.full_name || 'there'}</span>,<br><br>
+                        Great news! Your manual payment verification has been completed by our admin team, and your <strong>EditFlow Premium (${requestedPlan})</strong> subscription is now active!
+                      </div>
+                      <div class="footer">
+                        Sent automatically by EditFlow Core • supportbyeditflow@acsoft.online
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `;
+              } else {
+                subjectText = `🚨 EditFlow Premium Upgrade Rejected`;
+                htmlContent = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <title>EditFlow Premium Upgrade Rejected</title>
+                    <style>
+                      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
+                      .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+                      .header { text-align: center; margin-bottom: 30px; }
+                      .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
+                      .badge { display: inline-block; background-color: #EF4444; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
+                      .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
+                      .highlight { color: #ffffff; font-weight: 600; }
+                      .feedback-box { background-color: #1F2937; border-left: 4px solid #EF4444; border-radius: 4px; padding: 16px; margin: 24px 0; color: #E2E8F0; font-size: 14px; }
+                      .btn { display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-align: center; margin: 10px 0; }
+                      .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <div class="header">
+                        <span class="badge">UPGRADE REJECTED</span>
+                        <div class="title">Premium Upgrade Request Status</div>
+                      </div>
+                      <div class="content">
+                        Hi <span class="highlight">${userProfile.full_name || 'there'}</span>,<br><br>
+                        We reviewed your manual payment verification request for the <strong>EditFlow Pro ${requestedPlan} Plan</strong>, but we were unable to approve it at this time.<br>
+                        This is usually due to an incorrect UTR/Reference number or matching payment not being found in our accounts.
+                      </div>
+                      <div class="feedback-box">
+                        <strong>Reason/Feedback:</strong><br>
+                        ${feedback || 'Invalid transaction UTR reference number or payment not received. Please verify and submit request again.'}
+                      </div>
+                      <div style="text-align: center;">
+                        <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Try Upgrade Again</a>
+                      </div>
+                      <br>
+                      <div class="footer">
+                        Sent automatically by EditFlow Billing Core • supportbyeditflow@acsoft.online
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `;
+              }
+            } else {
+              subjectText = action === 'accept' 
+                ? 'EditFlow Support Ticket: Accepted & Resolving'
+                : 'EditFlow Support Ticket Update';
+            }
+
+            if (!htmlContent) {
+              htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
                 <style>
                   body {
                     margin: 0;
@@ -760,6 +872,7 @@ serve(async (req) => {
               </body>
               </html>
             `;
+            }
 
             const res = await fetch('https://api.resend.com/emails', {
               method: 'POST',
