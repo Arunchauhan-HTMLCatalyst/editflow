@@ -31,11 +31,23 @@
                 <a href="#comparison">Comparison Matrix</a>
                 <a href="#pricing">Pricing Plans</a>
                 <a href="#faq">FAQ</a>
-                <a href="https://editflow.acsoft.online/app/" target="_blank" class="nav-web-link">Web Dashboard</a>
-                <a href="editflow-v2.0.apk" class="btn btn-primary nav-cta">
-                    Download APK
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                </a>
+                <!-- Join EditFlow Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle">
+                        Join EditFlow
+                        <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="https://editflow.acsoft.online/app/" target="_blank">
+                            <span class="dd-title">Web Dashboard</span>
+                            <span class="dd-desc">Access via desktop browser</span>
+                        </a>
+                        <a href="editflow-v2.0.apk">
+                            <span class="dd-title">Download APK</span>
+                            <span class="dd-desc">Install Android application</span>
+                        </a>
+                    </div>
+                </div>
             </div>
             <button class="mobile-menu-toggle" aria-label="Toggle menu">
                 <span></span>
@@ -669,6 +681,7 @@
                             You configure your personal UPI ID in the app settings. When generating an invoice PDF, EditFlow dynamically creates a scanning-compliant QR code for that exact invoice balance, enabling instant client checkouts.
                         </div>
                     </div>
+                </div>
                 <!-- FAQ Item 6 -->
                 <div class="faq-item">
                     <button class="faq-question">How does Pro Plan manual verification work and how long does it take?</button>

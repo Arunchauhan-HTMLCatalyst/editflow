@@ -251,17 +251,51 @@ class SettingsScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  fullName ?? (user?.email?.split('@').first ?? 'User'),
-                                  style: AppTextStyles.body(isDark).copyWith(
-                                    fontSize: 17.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        fullName ?? (user?.email?.split('@').first ?? 'User'),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontFamily: 'Outfit',
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    if (authState.isPro) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryNeon.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: AppColors.primaryNeon.withValues(alpha: 0.3), width: 0.8),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(CupertinoIcons.sparkles, color: AppColors.primaryNeon, size: 9),
+                                            SizedBox(width: 3),
+                                            Text(
+                                              'PRO',
+                                              style: TextStyle(
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.w900,
+                                                color: AppColors.primaryNeon,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                                const SizedBox(height: 3),
+                                const SizedBox(height: 6),
                                 Text(
                                   user?.email ?? 'No email',
                                   maxLines: 1,
@@ -462,55 +496,129 @@ class SettingsScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                      ] else if (authState.premiumUntil != null && authState.role != 'admin') ...[
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
+                            color: AppColors.card,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border, width: 0.8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'WORKSPACE PLANS COMPARISON',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textMuted,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Free Tier',
+                                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Colors.white),
+                                  ),
+                                  Text(
+                                    'Max 5 Clients & 10 Projects',
+                                    style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                              const Divider(color: AppColors.border, height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: const [
+                                      Text(
+                                        'Pro Tier (Monthly / Yearly)',
+                                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.primaryNeon),
+                                      ),
+                                      SizedBox(width: 4),
+                                      Icon(CupertinoIcons.sparkles, color: AppColors.primaryNeon, size: 10),
+                                    ],
+                                  ),
+                                  const Text(
+                                    'Unlimited Clients & Projects',
+                                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else if (authState.premiumUntil != null && authState.role != 'admin') ...[
+                        const SizedBox(height: 20),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.primaryNeon.withValues(alpha: 0.45),
+                              width: 1.5,
+                            ),
                             gradient: LinearGradient(
                               colors: [
-                                AppColors.primary.withValues(alpha: 0.12),
-                                AppColors.primaryNeon.withValues(alpha: 0.12),
+                                AppColors.primary.withValues(alpha: 0.18),
+                                AppColors.primaryNeon.withValues(alpha: 0.18),
                               ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.primaryNeon.withValues(alpha: 0.35),
-                              width: 1,
-                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryNeon.withValues(alpha: 0.15),
+                                blurRadius: 16,
+                                spreadRadius: 1,
+                              ),
+                            ],
                           ),
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryNeon.withValues(alpha: 0.18),
+                                  color: AppColors.primaryNeon.withValues(alpha: 0.25),
                                   shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primaryNeon.withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                    ),
+                                  ],
                                 ),
                                 child: const Icon(
-                                  CupertinoIcons.star_fill,
-                                  color: AppColors.primaryNeon,
-                                  size: 18,
+                                  CupertinoIcons.sparkles,
+                                  color: Colors.white,
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 14),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'EditFlow Pro Active',
+                                      'EDITFLOW PRO ACTIVE',
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold, 
-                                        fontSize: 13, 
+                                        fontWeight: FontWeight.w900, 
+                                        fontSize: 13.5, 
                                         color: Colors.white,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
+                                    const SizedBox(height: 3),
                                     Text(
-                                      'Plan: Pro Active • Expires ${DateFormat('MMMM dd, yyyy').format(authState.premiumUntil!.toLocal())}',
-                                      style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+                                      'Active benefits until ${DateFormat('MMMM dd, yyyy').format(authState.premiumUntil!.toLocal())}',
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                                     ),
                                   ],
                                 ),

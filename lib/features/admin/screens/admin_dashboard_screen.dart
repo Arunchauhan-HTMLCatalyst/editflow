@@ -59,7 +59,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: isDesktop ? 1.4 : 1.6,
+                  childAspectRatio: isDesktop ? 1.95 : 2.1,
                   children: [
                     _buildStatCard(
                       'TOTAL USERS',
@@ -317,45 +317,59 @@ class AdminDashboardScreen extends ConsumerWidget {
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(16.0),
         border: Border.all(
-          color: AppColors.border,
-          width: 0.8,
+          color: color.withValues(alpha: 0.25),
+          width: 1,
+        ),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.card,
+            color.withValues(alpha: 0.03),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: AppColors.textSecondary,
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 18),
+                child: Icon(icon, color: color, size: 16),
               ),
             ],
           ),
+          const SizedBox(height: 10),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.w900,
               color: Colors.white,
               letterSpacing: -0.5,
