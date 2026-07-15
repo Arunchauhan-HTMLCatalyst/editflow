@@ -120,8 +120,9 @@ class _UpiPaymentSheet extends StatefulWidget {
 
 class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
   String _upiId = 'editflow@upi';
+  String _bankingName = 'EditFlow Admin';
   bool _isLoadingUpi = true;
-  String _selectedPlan = 'monthly'; // 'monthly' or 'yearly'
+  String _selectedPlan = 'monthly';
   final TextEditingController _utrController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isSubmitting = false;
@@ -145,13 +146,13 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
         if (mounted) {
           setState(() {
             _upiId = val['upi_id'] as String? ?? 'editflow@upi';
+            _bankingName = val['banking_name'] as String? ?? 'EditFlow Admin';
             _isLoadingUpi = false;
           });
         }
       } else {
         if (mounted) {
           setState(() {
-            _upiId = 'editflow@upi';
             _isLoadingUpi = false;
           });
         }
@@ -160,7 +161,6 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
       debugPrint('[PremiumHelper] Failed to load UPI settings: $e');
       if (mounted) {
         setState(() {
-          _upiId = 'editflow@upi';
           _isLoadingUpi = false;
         });
       }
@@ -187,12 +187,11 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
       final planLabel = _selectedPlan == 'monthly' ? 'Monthly' : 'Yearly';
       final amountLabel = _selectedPlan == 'monthly' ? '₹99' : '₹999';
 
+      // Insert into support_tickets table using only available table columns
+      // subject, category, and status are extracted by parsing the description prefix [Category] Subject: Subject
       await Supabase.instance.client.from('support_tickets').insert({
         'user_id': user.id,
-        'subject': '[Premium Upgrade Request]',
-        'description': 'Plan: $planLabel\nAmount: $amountLabel\nUTR: ${_utrController.text.trim()}',
-        'category': 'billing',
-        'status': 'open',
+        'description': '[Premium Upgrade Request]\nSubject: Premium Upgrade\nDescription: Plan: $planLabel\nAmount: $amountLabel\nUTR: ${_utrController.text.trim()}',
       });
 
       if (mounted) {
@@ -225,7 +224,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
   @override
   Widget build(BuildContext context) {
     final double amount = _selectedPlan == 'monthly' ? 99 : 999;
-    final String upiUrl = 'upi://pay?pa=$_upiId&pn=EditFlow&tn=Pro_Upgrade_${_selectedPlan.toUpperCase()}&am=$amount&cu=INR';
+    final String upiUrl = 'upi://pay?pa=$_upiId&pn=$_bankingName&tn=Pro_Upgrade_${_selectedPlan.toUpperCase()}&am=$amount&cu=INR';
 
     return Padding(
       padding: EdgeInsets.only(
@@ -241,7 +240,6 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Pull indicator bar
               Center(
                 child: Container(
                   width: 40,
@@ -325,7 +323,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                   ),
                 )
               else ...[
-                // QR Code
+                // QR Code with branded invoice design
                 Center(
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -345,6 +343,19 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                       version: QrVersions.auto,
                       size: 160.0,
                       gapless: false,
+                      errorCorrectionLevel: QrErrorCorrectLevel.H,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: Color(0xFF0F172A),
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: Color(0xFF0F172A),
+                      ),
+                      embeddedImage: const AssetImage('assets/images/app_logo_qr.png'),
+                      embeddedImageStyle: const QrEmbeddedImageStyle(
+                        size: Size(20, 20),
+                      ),
                     ),
                   ),
                 ),
@@ -358,33 +369,56 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
 
                 // Payee Details Copy Row
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: AppColors.card,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border, width: 0.8),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.account_balance_wallet_outlined, color: AppColors.textSecondary, size: 18),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Payee UPI ID', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                            Text(_upiId, style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
+                      Row(
+                        children: [
+                          const Icon(Icons.account_balance_wallet_outlined, color: AppColors.textSecondary, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Banking Payee Name', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                                Text(_bankingName, style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.copy_rounded, color: AppColors.primaryNeon, size: 18),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: _upiId));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('UPI ID copied to clipboard!')),
-                          );
-                        },
+                      const SizedBox(height: 12),
+                      const Divider(color: AppColors.border, height: 1),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Icon(Icons.qr_code_scanner_rounded, color: AppColors.textSecondary, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Payee UPI ID', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                                Text(_upiId, style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy_rounded, color: AppColors.primaryNeon, size: 18),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: _upiId));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('UPI ID copied to clipboard!')),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
