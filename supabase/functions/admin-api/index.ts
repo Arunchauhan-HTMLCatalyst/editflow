@@ -110,7 +110,7 @@ serve(async (req) => {
         const searchStr = payload?.search || ''
         let query = adminClient
           .from('profiles')
-          .select('*, projects(count), clients(count)')
+          .select('*')
 
         if (searchStr) {
           query = query.or(`full_name.ilike.%${searchStr}%,email.ilike.%${searchStr}%`)
@@ -119,7 +119,29 @@ serve(async (req) => {
         const { data: users, error: fetchErr } = await query.order('created_at', { ascending: false })
         if (fetchErr) throw fetchErr
 
-        return new Response(JSON.stringify({ users }), {
+        // Fetch counts manually to avoid missing foreign key relation cache errors
+        const [ { data: projects }, { data: clients } ] = await Promise.all([
+          adminClient.from('projects').select('user_id'),
+          adminClient.from('clients').select('user_id'),
+        ])
+
+        const projectCounts: Record<string, number> = {}
+        const clientCounts: Record<string, number> = {}
+
+        for (const p of (projects || [])) {
+          projectCounts[p.user_id] = (projectCounts[p.user_id] || 0) + 1
+        }
+        for (const c of (clients || [])) {
+          clientCounts[c.user_id] = (clientCounts[c.user_id] || 0) + 1
+        }
+
+        const usersWithCounts = (users || []).map(u => ({
+          ...u,
+          projects: { count: projectCounts[u.id] || 0 },
+          clients: { count: clientCounts[u.id] || 0 },
+        }))
+
+        return new Response(JSON.stringify({ users: usersWithCounts }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
@@ -149,11 +171,26 @@ serve(async (req) => {
       case 'get_projects': {
         const { data: projects, error } = await adminClient
           .from('projects')
-          .select('*, profiles(full_name, email), clients(name, company)')
+          .select('*, clients(name, company)')
           .order('created_at', { ascending: false })
         if (error) throw error
 
-        return new Response(JSON.stringify({ projects }), {
+        const { data: profiles, error: profError } = await adminClient
+          .from('profiles')
+          .select('id, full_name, email')
+        if (profError) throw profError
+
+        const profileMap: Record<string, { full_name: string; email: string }> = {}
+        for (const p of (profiles || [])) {
+          profileMap[p.id] = { full_name: p.full_name, email: p.email }
+        }
+
+        const projectsWithProfiles = (projects || []).map(p => ({
+          ...p,
+          profiles: profileMap[p.user_id] || { full_name: 'None', email: '' }
+        }))
+
+        return new Response(JSON.stringify({ projects: projectsWithProfiles }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
