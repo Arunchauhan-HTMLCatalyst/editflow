@@ -313,7 +313,95 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // Plan comparison card details
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _selectedPlan == 'yearly'
+                        ? AppColors.primaryNeon.withValues(alpha: 0.4)
+                        : AppColors.border,
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _selectedPlan == 'yearly' ? 'PRO YEARLY PLAN (RECOMMENDED)' : 'PRO MONTHLY PLAN',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: _selectedPlan == 'yearly' ? AppColors.primaryNeon : AppColors.primary,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        if (_selectedPlan == 'yearly')
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryNeon.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'SAVE 16%',
+                              style: TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryNeon,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          _selectedPlan == 'yearly' ? '₹999' : '₹99',
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _selectedPlan == 'yearly' ? '/year' : '/month',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _selectedPlan == 'yearly'
+                          ? 'Equivalent to just ₹83/month. Charged yearly.'
+                          : 'Charged monthly. Standard tier benefits.',
+                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    ),
+                    const Divider(color: AppColors.border, height: 24),
+                    
+                    _buildFeatureItem('Unlimited Clients & Projects (Free: max 5/10)', true),
+                    _buildFeatureItem('Unlimited Client Feedback Reviews', true),
+                    _buildFeatureItem('Priority Fast Video Rendering', _selectedPlan == 'yearly'),
+                    _buildFeatureItem('Exclusive Pro Profile Badge', _selectedPlan == 'yearly'),
+                    _buildFeatureItem('Priority 24/7 Admin Support', _selectedPlan == 'yearly'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
 
               if (_isLoadingUpi)
                 const Center(
@@ -466,8 +554,34 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
               ],
               const SizedBox(height: 12),
             ],
-          ),
         ),
+      ),
+    ),
+  );
+}
+
+  Widget _buildFeatureItem(String text, bool active) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Icon(
+            active ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded,
+            size: 14,
+            color: active ? AppColors.primaryNeon : AppColors.textMuted,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 11.5,
+                color: active ? Colors.white : AppColors.textSecondary,
+                fontWeight: active ? FontWeight.w500 : FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

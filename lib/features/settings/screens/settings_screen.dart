@@ -393,32 +393,50 @@ class SettingsScreen extends ConsumerWidget {
                         const SizedBox(height: 20),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
+                            gradient: LinearGradient(
+                              colors: [
+                                isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                isDark ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+                              ],
+                            ),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                              color: isDark ? AppColors.border : const Color(0xFFCBD5E1),
                               width: 0.8,
                             ),
                           ),
                           child: Row(
                             children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  CupertinoIcons.info_circle_fill,
+                                  color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Running on Free tier limits',
+                                      'EditFlow Free Plan',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold, 
-                                        fontSize: 12.5, 
+                                        fontSize: 13, 
                                         color: isDark ? Colors.white : const Color(0xFF0F172A),
                                       ),
                                     ),
                                     const SizedBox(height: 2),
                                     const Text(
-                                      'Max 5 clients and 10 projects',
+                                      'Limits: max 5 clients & 10 projects',
                                       style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
                                     ),
                                   ],
@@ -429,35 +447,76 @@ class SettingsScreen extends ConsumerWidget {
                                   backgroundColor: AppColors.primaryNeon,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                  elevation: 2,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  elevation: 0,
                                   minimumSize: Size.zero,
                                 ),
                                 onPressed: () {
                                   PremiumHelper.showUpgradeOptionsModal(context);
                                 },
                                 child: const Text(
-                                  'Upgrade to Pro',
-                                  style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold),
+                                  'Upgrade',
+                                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ] else if (authState.premiumUntil != null && authState.role != 'admin') ...[
-                        const SizedBox(height: 16),
-                        Divider(
-                          height: 1,
-                          color: Colors.white.withValues(alpha: 0.15),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildDetailRow(
-                          icon: CupertinoIcons.star_fill,
-                          label: 'Premium expires',
-                          value: DateFormat('MMM d, yyyy').format(authState.premiumUntil!.toLocal()),
-                          isDark: isDark,
-                          context: context,
-                          inverse: true,
+                        const SizedBox(height: 20),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary.withValues(alpha: 0.12),
+                                AppColors.primaryNeon.withValues(alpha: 0.12),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.primaryNeon.withValues(alpha: 0.35),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryNeon.withValues(alpha: 0.18),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  CupertinoIcons.star_fill,
+                                  color: AppColors.primaryNeon,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'EditFlow Pro Active',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold, 
+                                        fontSize: 13, 
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Plan: Pro Active • Expires ${DateFormat('MMMM dd, yyyy').format(authState.premiumUntil!.toLocal())}',
+                                      style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ],

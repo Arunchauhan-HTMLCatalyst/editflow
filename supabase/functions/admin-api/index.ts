@@ -456,21 +456,91 @@ serve(async (req) => {
                   .badge { display: inline-block; background-color: #10B981; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
                   .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
                   .highlight { color: #ffffff; font-weight: 600; }
+                  .invoice-box { background-color: #1F2937; border: 1px solid #374151; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: left; }
+                  .invoice-header { display: flex; justify-content: space-between; border-bottom: 1px solid #374151; padding-bottom: 12px; margin-bottom: 16px; }
                   .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
                 </style>
               </head>
               <body>
                 <div class="container">
                   <div class="header">
-                    <span class="badge">PRO UPGRADE SUCCESS</span>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                      <svg width="60" height="60" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
+                        <rect width="120" height="120" rx="30" fill="url(#grad)" />
+                        <defs>
+                          <linearGradient id="grad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#0D9488" />
+                            <stop offset="1" stop-color="#10B981" />
+                          </linearGradient>
+                        </defs>
+                        <text x="30" y="82" fill="white" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="64" letter-spacing="-4">ef</text>
+                      </svg>
+                    </div>
+                    <span class="badge">PRO UPGRADE APPROVED</span>
                     <div class="title">Your Premium Access is Active!</div>
                   </div>
                   <div class="content">
                     Hi <span class="highlight">${request.profiles.full_name || 'there'}</span>,<br><br>
                     Great news! Your manual payment verification has been completed by our admin team, and your <strong>EditFlow Premium (${duration === 'yearly' ? 'Yearly' : 'Monthly'})</strong> subscription is now active!
+                    
+                    <div class="invoice-box">
+                      <div style="border-bottom: 1px solid #374151; padding-bottom: 12px; margin-bottom: 16px;">
+                        <table style="width: 100%;">
+                          <tr>
+                            <td>
+                              <span style="font-size: 10px; color: #9CA3AF; text-transform: uppercase;">Invoice To</span>
+                              <div style="font-size: 13px; font-weight: bold; color: #ffffff;">${request.profiles.full_name || 'Valued User'}</div>
+                              <div style="font-size: 11px; color: #9CA3AF;">${request.profiles.email}</div>
+                            </td>
+                            <td style="text-align: right;">
+                              <span style="font-size: 10px; color: #9CA3AF; text-transform: uppercase;">Invoice Details</span>
+                              <div style="font-size: 12px; font-weight: bold; color: #ffffff;">INV-${new Date().getFullYear()}-${requestId.substring(0, 6).toUpperCase()}</div>
+                              <div style="font-size: 11px; color: #9CA3AF;">Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                            </td>
+                          </tr>
+                        </table>
+                      </div>
+                      
+                      <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+                        <thead>
+                          <tr style="border-bottom: 1px solid #374151; text-align: left;">
+                            <th style="padding: 8px 0; font-size: 10px; color: #9CA3AF; text-transform: uppercase;">Description</th>
+                            <th style="padding: 8px 0; font-size: 10px; color: #9CA3AF; text-transform: uppercase; text-align: right;">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td style="padding: 12px 0 6px 0; font-size: 13px; color: #E2E8F0; font-weight: bold;">
+                              EditFlow Pro Subscription (${duration === 'yearly' ? 'Yearly' : 'Monthly'})
+                            </td>
+                            <td style="padding: 12px 0 6px 0; font-size: 13px; color: #E2E8F0; font-weight: bold; text-align: right;">
+                              ${duration === 'yearly' ? '₹999' : '₹99'}
+                            </td>
+                          </tr>
+                          <tr style="border-bottom: 1px solid #374151;">
+                            <td style="padding: 4px 0 12px 0; font-size: 11px; color: #9CA3AF;">
+                              UTR Reference: <span style="font-family: monospace; color: #10B981; font-weight: bold;">${request.utr}</span>
+                            </td>
+                            <td style="padding: 4px 0 12px 0; font-size: 11px; color: #9CA3AF; text-align: right;">
+                              Paid
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 12px 0 0 0; font-size: 13px; color: #ffffff; font-weight: bold;">Total Amount Paid</td>
+                            <td style="padding: 12px 0 0 0; font-size: 15px; color: #10B981; font-weight: bold; text-align: right;">
+                              ${duration === 'yearly' ? '₹999' : '₹99'}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      
+                      <div style="background-color: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px; text-align: center; font-size: 11px; color: #10B981; font-weight: bold;">
+                        Verification Status: APPROVED & ACTIVATED
+                      </div>
+                    </div>
                   </div>
                   <div class="footer">
-                    Sent automatically by EditFlow Core • supportbyeditflow@acsoft.online
+                    Sent automatically by EditFlow Billing Core • supportbyeditflow@acsoft.online
                   </div>
                 </div>
               </body>
