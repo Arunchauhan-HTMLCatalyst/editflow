@@ -260,6 +260,14 @@ serve(async (req) => {
           const { error } = await adminClient.from('profiles').update({ role: targetRole }).eq('id', targetUserId)
           if (error) throw error
           desc = `Changed role of user (ID: ${targetUserId}) to ${targetRole}`
+        } else if (userAction === 'cancel_subscription') {
+          const { error } = await adminClient.from('profiles').update({
+            is_premium: false,
+            premium_until: null,
+            premium_plan_type: null,
+          }).eq('id', targetUserId)
+          if (error) throw error
+          desc = `Cancelled premium subscription of user (ID: ${targetUserId})`
         } else if (userAction === 'delete') {
           const { error } = await adminClient.auth.admin.deleteUser(targetUserId)
           if (error) throw error
@@ -654,7 +662,24 @@ serve(async (req) => {
         const resendApiKey = Deno.env.get('RESEND_API_KEY');
         const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
 
-        if (resendApiKey && request.profiles?.email) {
+        // Extract profile metadata safely (handles both object and single-element array responses)
+        let profileEmail = '';
+        let profileName = 'there';
+        if (request.profiles) {
+          if (Array.isArray(request.profiles)) {
+            if (request.profiles.length > 0) {
+              profileEmail = request.profiles[0].email || '';
+              profileName = request.profiles[0].full_name || 'Valued User';
+            }
+          } else {
+            profileEmail = request.profiles.email || '';
+            profileName = request.profiles.full_name || 'Valued User';
+          }
+        }
+
+        console.log(`[Resend Email Core] Rejection email - resendApiKey exists: ${!!resendApiKey}, fromEmail: ${fromEmail}, targetEmail: ${profileEmail}`);
+
+        if (resendApiKey && profileEmail) {
           try {
             const htmlContent = `
               <!DOCTYPE html>
@@ -682,7 +707,7 @@ serve(async (req) => {
                     <div class="title">Premium Upgrade Request Status</div>
                   </div>
                   <div class="content">
-                    Hi <span class="highlight">${request.profiles.full_name || 'there'}</span>,<br><br>
+                    Hi <span class="highlight">${profileName}</span>,<br><br>
                     We reviewed your manual payment verification request for the <strong>EditFlow Pro ${request.plan_type === 'yearly' ? 'Yearly' : 'Monthly'} Plan</strong>, but we were unable to approve it at this time.<br>
                     This is usually due to an incorrect UTR/Reference number or matching payment not being found in our accounts.
                   </div>
@@ -702,7 +727,7 @@ serve(async (req) => {
               </html>
             `;
 
-            await fetch('https://api.resend.com/emails', {
+            const res = await fetch('https://api.resend.com/emails', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${resendApiKey}`,
@@ -710,11 +735,13 @@ serve(async (req) => {
               },
               body: JSON.stringify({
                 from: `EditFlow <${fromEmail}>`,
-                to: [request.profiles.email],
+                to: [profileEmail],
                 subject: `🚨 EditFlow Premium Upgrade Rejected`,
                 html: htmlContent,
               }),
             });
+            const resData = await res.json();
+            console.log(`[Resend Email Core] Rejection Resend API Response:`, JSON.stringify(resData));
           } catch (emailErr) {
             console.error('Failed to send rejection email:', emailErr);
           }

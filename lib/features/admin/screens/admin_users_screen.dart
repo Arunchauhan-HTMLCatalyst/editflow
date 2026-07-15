@@ -290,6 +290,8 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                               _triggerUserAction(userId, 'suspend');
                             } else if (val == 'activate') {
                               _triggerUserAction(userId, 'activate');
+                            } else if (val == 'cancel_subscription') {
+                              _triggerUserAction(userId, 'cancel_subscription');
                             } else if (val == 'promote') {
                               _triggerUserAction(userId, 'change_role', 'admin');
                             } else if (val == 'demote') {
@@ -340,6 +342,17 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                     Icon(Icons.admin_panel_settings_outlined, size: 16, color: AppColors.primaryNeon),
                                     SizedBox(width: 8),
                                     Text('Promote to Admin'),
+                                  ],
+                                ),
+                              ),
+                            if (isPremium)
+                              const PopupMenuItem(
+                                value: 'cancel_subscription',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.star_border_rounded, size: 16, color: Colors.orangeAccent),
+                                    SizedBox(width: 8),
+                                    Text('Cancel Pro Plan'),
                                   ],
                                 ),
                               ),
