@@ -49,10 +49,8 @@ class AdminDashboardScreen extends ConsumerWidget {
         final yearlySubscribersCount = stats['yearlySubscribersCount'] ?? 0;
         final totalEarnings = stats['totalEarnings'] ?? 0;
 
-        return Padding(
-          padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
-          child: RefreshIndicator(
-            onRefresh: () async {
+        return RefreshIndicator(
+          onRefresh: () async {
             ref.invalidate(adminStatsProvider);
             ref.invalidate(adminAnalyticsProvider);
           },
@@ -436,9 +434,8 @@ class AdminDashboardScreen extends ConsumerWidget {
               ],
             ),
           ),
-        ),
-      );
-    },
+        );
+      },
     );
   }
 

@@ -168,50 +168,11 @@ class _AdminUpgradesScreenState extends ConsumerState<AdminUpgradesScreen> {
                 return r['status'] == _statusFilter;
               }).toList();
 
-              return Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title Section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'PREMIUM UPGRADE REQUESTS',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              'Verify manual payment transfers and activate subscription upgrades',
-                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                            ),
-                          ],
-                        ),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.card,
-                            side: const BorderSide(color: AppColors.border, width: 0.8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          onPressed: () => ref.invalidate(adminUpgradeRequestsProvider),
-                          icon: const Icon(Icons.refresh_rounded, size: 14, color: AppColors.primaryNeon),
-                          label: const Text('Refresh', style: TextStyle(color: Colors.white, fontSize: 12)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Plan status filters
-                    SingleChildScrollView(
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Plan status filters
+                  SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: ['pending', 'approved', 'rejected', 'all'].map((filter) {
@@ -429,9 +390,8 @@ class _AdminUpgradesScreenState extends ConsumerState<AdminUpgradesScreen> {
                             ),
                     ),
                   ],
-                ),
-              );
-            },
+                );
+              },
           ),
           if (_isProcessing)
             Positioned.fill(

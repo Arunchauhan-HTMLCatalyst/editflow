@@ -42,21 +42,6 @@ class AdminSupportScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'PENDING SUPPORT TICKETS',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      fontFamily: 'Outfit',
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Manage and respond to support request tickets submitted by users',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 24),
                   if (supportRequests.isEmpty)
                     Container(
                       width: double.infinity,
