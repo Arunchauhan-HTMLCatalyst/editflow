@@ -11,6 +11,7 @@ import '../../projects/providers/project_provider.dart';
 import '../../projects/models/project.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../../../shared/utils/premium_helper.dart';
 import '../widgets/stat_card.dart';
@@ -51,6 +52,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ref.read(commentRepositoryProvider).cleanupOldVoiceNotes().catchError((e) {
         debugPrint('[DASHBOARD] Background voice note cleanup error: $e');
       });
+      ref.read(authProvider.notifier).syncProfileData();
     });
   }
 

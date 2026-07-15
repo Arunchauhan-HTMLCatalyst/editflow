@@ -56,14 +56,17 @@ class SettingsScreen extends ConsumerWidget {
         top: true,
         bottom: false,
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            AppLayout.pagePadding(context),
-            AppLayout.pagePadding(context),
-            AppLayout.pagePadding(context),
-            AppLayout.pagePadding(context) + 24,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 800),
+              padding: EdgeInsets.fromLTRB(
+                AppLayout.pagePadding(context),
+                AppLayout.pagePadding(context),
+                AppLayout.pagePadding(context),
+                AppLayout.pagePadding(context) + 24,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Premium Header with Back Button
               Row(
@@ -423,17 +426,19 @@ class SettingsScreen extends ConsumerWidget {
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  backgroundColor: AppColors.primaryNeon,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  elevation: 2,
                                   minimumSize: Size.zero,
                                 ),
                                 onPressed: () {
                                   PremiumHelper.showUpgradeOptionsModal(context);
                                 },
                                 child: const Text(
-                                  'Upgrade',
-                                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                  'Upgrade to Pro',
+                                  style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
@@ -658,6 +663,8 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 48),
             ],
+              ),
+            ),
           ),
         ),
       ),

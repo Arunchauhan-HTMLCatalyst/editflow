@@ -100,6 +100,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Global system settings updated successfully!')),
         );
+        _isLoaded = false;
         ref.invalidate(adminSettingsProvider);
         setState(() {
           _isSaving = false;
