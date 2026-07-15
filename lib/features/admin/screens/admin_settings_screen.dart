@@ -25,6 +25,9 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   // Support state
   final TextEditingController _supportEmailController = TextEditingController();
 
+  // UPI configuration state
+  final TextEditingController _upiIdController = TextEditingController();
+
   bool _isSaving = false;
   bool _isLoaded = false;
 
@@ -43,6 +46,8 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         _maintenanceMessageController.text = value['message'] as String? ?? '';
       } else if (key == 'support') {
         _supportEmailController.text = value['email'] as String? ?? '';
+      } else if (key == 'upi') {
+        _upiIdController.text = value['upi_id'] as String? ?? 'editflow@upi';
       }
     }
 
@@ -78,6 +83,12 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             'value': {
               'email': _supportEmailController.text.trim(),
             }
+          },
+          {
+            'key': 'upi',
+            'value': {
+              'upi_id': _upiIdController.text.trim(),
+            }
           }
         ]
       });
@@ -108,6 +119,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     _announcementTextController.dispose();
     _maintenanceMessageController.dispose();
     _supportEmailController.dispose();
+    _upiIdController.dispose();
     super.dispose();
   }
 
@@ -207,6 +219,26 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                     ),
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) return 'Support email is required';
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 4. UPI QR Settings
+                _buildCard(
+                  title: 'UPI PAYMENT CONFIGURATION',
+                  child: TextFormField(
+                    controller: _upiIdController,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    decoration: const InputDecoration(
+                      labelText: 'Admin UPI ID (for QR Code)',
+                      hintText: 'e.g. yourname@upi',
+                      labelStyle: TextStyle(color: AppColors.textSecondary),
+                      border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'UPI ID is required';
                       return null;
                     },
                   ),

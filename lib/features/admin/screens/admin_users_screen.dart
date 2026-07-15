@@ -142,6 +142,11 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                   final clientsCount = u['clients'] is Map ? (u['clients']['count'] ?? 0) : 0;
                   final projectsCount = u['projects'] is Map ? (u['projects']['count'] ?? 0) : 0;
 
+                  final isPremium = u['is_premium'] as bool? ?? false;
+                  final premiumUntilStr = u['premium_until'] as String?;
+                  final premiumStartedAtStr = u['premium_started_at'] as String?;
+                  final premiumPlanType = u['premium_plan_type'] as String?;
+
                   final joinedDate = createdAtStr != null
                       ? DateFormat('MMM d, yyyy').format(DateTime.parse(createdAtStr))
                       : 'Unknown';
@@ -214,6 +219,25 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                         ),
                                       ),
                                     ),
+                                  const SizedBox(width: 8),
+                                  // Subscription Plan Badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: isPremium
+                                          ? AppColors.primaryNeon.withValues(alpha: 0.12)
+                                          : AppColors.textMuted.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      isPremium ? 'PAID (${(premiumPlanType ?? 'pro').toUpperCase()})' : 'FREE',
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: isPremium ? AppColors.primaryNeon : AppColors.textMuted,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -235,9 +259,24 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              Row(
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text('Joined: $joinedDate', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                                  if (isPremium) ...[
+                                    Container(width: 3, height: 3, decoration: const BoxDecoration(color: AppColors.textMuted, shape: BoxShape.circle)),
+                                    Text(
+                                      'Subscribed: ${premiumStartedAtStr != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(premiumStartedAtStr)) : 'N/A'}',
+                                      style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                    ),
+                                    Container(width: 3, height: 3, decoration: const BoxDecoration(color: AppColors.textMuted, shape: BoxShape.circle)),
+                                    Text(
+                                      'Expires: ${premiumUntilStr != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(premiumUntilStr)) : 'N/A'}',
+                                      style: const TextStyle(fontSize: 10, color: AppColors.primaryNeon, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],

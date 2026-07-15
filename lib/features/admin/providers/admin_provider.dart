@@ -2,6 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/admin_service.dart';
 
 final adminStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  try {
+    await AdminService.invokeAdminAction('check_expired_subscriptions');
+  } catch (e) {
+    // Suppress background verification errors
+  }
   return AdminService.invokeAdminAction('get_stats');
 });
 

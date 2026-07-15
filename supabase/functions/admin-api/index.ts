@@ -244,6 +244,252 @@ serve(async (req) => {
         })
       }
 
+      case 'check_expired_subscriptions': {
+        const nowStr = new Date().toISOString();
+
+        // Fetch expired premium users
+        const { data: expiredUsers, error: fetchErr } = await adminClient
+          .from('profiles')
+          .select('id, email, full_name, premium_plan_type')
+          .eq('is_premium', true)
+          .lt('premium_until', nowStr);
+
+        if (fetchErr) throw fetchErr;
+
+        if (expiredUsers && expiredUsers.length > 0) {
+          const resendApiKey = Deno.env.get('RESEND_API_KEY');
+          const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
+
+          for (const user of expiredUsers) {
+            // Update profile back to free limits
+            await adminClient
+              .from('profiles')
+              .update({
+                is_premium: false,
+                premium_plan_type: null,
+              })
+              .eq('id', user.id);
+
+            // Log activity
+            await adminClient.from('activities').insert({
+              user_id: user.id,
+              type: 'support_response',
+              description: 'Your Premium subscription has expired. Limits on clients and projects are active again.',
+            });
+
+            // Send notification email
+            if (resendApiKey && user.email) {
+              try {
+                const htmlContent = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <title>EditFlow Premium Expired</title>
+                    <style>
+                      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
+                      .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+                      .header { text-align: center; margin-bottom: 30px; }
+                      .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
+                      .badge { display: inline-block; background-color: #EF4444; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
+                      .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
+                      .highlight { color: #ffffff; font-weight: 600; }
+                      .btn { display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-align: center; margin: 10px 0; }
+                      .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <div class="header">
+                        <span class="badge">SUBSCRIPTION ENDED</span>
+                        <div class="title">Your Premium Access Has Expired</div>
+                      </div>
+                      <div class="content">
+                        Hi <span class="highlight">${user.full_name || 'there'}</span>,<br><br>
+                        Your EditFlow Premium subscription has ended. The limits of the Free plan (maximum of 5 clients and 10 projects) are now active on your account.<br><br>
+                        To continue managing unlimited clients and projects without interruptions, please renew your subscription.
+                      </div>
+                      <div style="text-align: center;">
+                        <a href="https://editflow.acsoft.online/app/#/settings" class="btn" style="color: #ffffff;">Renew Premium Now</a>
+                      </div>
+                      <br>
+                      <div class="footer">
+                        Sent automatically by EditFlow Core • supportbyeditflow@acsoft.online
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `;
+
+                await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${resendApiKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    from: `EditFlow <${fromEmail}>`,
+                    to: [user.email],
+                    subject: '🚨 Your EditFlow subscription has ended',
+                    html: htmlContent,
+                  }),
+                });
+              } catch (emailErr) {
+                console.error('Failed to send expiry email notification:', emailErr);
+              }
+            }
+          }
+        }
+
+        return new Response(JSON.stringify({ success: true, expiredCount: expiredUsers?.length || 0 }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'approve_premium': {
+        const { ticketId, targetUserId, duration } = payload;
+        if (!ticketId || !targetUserId) {
+          throw new Error('Missing ticketId or targetUserId parameter.');
+        }
+
+        // Fetch User Profile details to send custom email
+        const { data: userProfile, error: profileErr } = await adminClient
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', targetUserId)
+          .single();
+
+        if (profileErr) throw profileErr;
+
+        // Calculate expiration date
+        let expiryDate: Date;
+        let planLabel = '';
+        if (duration === 'monthly') {
+          expiryDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+          planLabel = 'Monthly (₹99)';
+        } else if (duration === 'yearly') {
+          expiryDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365);
+          planLabel = 'Yearly (₹999)';
+        } else {
+          expiryDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 100);
+          planLabel = 'Lifetime / Custom';
+        }
+
+        const premiumUntil = expiryDate.toISOString();
+
+        // Update database user profile
+        const { error: updateError } = await adminClient
+          .from('profiles')
+          .update({
+            is_premium: true,
+            premium_until: premiumUntil,
+            premium_started_at: new Date().toISOString(),
+            premium_plan_type: duration,
+          })
+          .eq('id', targetUserId);
+
+        if (updateError) throw updateError;
+
+        // Delete the support ticket (resolved)
+        const { error: deleteTicketError } = await adminClient
+          .from('support_tickets')
+          .delete()
+          .eq('id', ticketId);
+
+        if (deleteTicketError) throw deleteTicketError;
+
+        // Log the upgrade for the user (Notification Activity)
+        await adminClient.from('activities').insert({
+          user_id: targetUserId,
+          type: 'support_response',
+          description: `Congratulations! Your Premium subscription upgrade has been approved. Plan: ${planLabel}. Expiration: ${premiumUntil.split('T')[0]}.`,
+        });
+
+        // Send Welcome email
+        const resendApiKey = Deno.env.get('RESEND_API_KEY');
+        const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online';
+
+        if (resendApiKey && userProfile?.email) {
+          try {
+            const htmlContent = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <title>EditFlow Premium Active</title>
+                <style>
+                  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0B0F19; color: #E2E8F0; margin: 0; padding: 40px 20px; }
+                  .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1F2937; border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+                  .header { text-align: center; margin-bottom: 30px; }
+                  .title { color: #ffffff; font-size: 24px; font-weight: 800; margin: 10px 0; }
+                  .badge { display: inline-block; background-color: #10B981; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 20px; }
+                  .content { font-size: 15px; line-height: 1.6; color: #9CA3AF; margin-bottom: 30px; }
+                  .highlight { color: #ffffff; font-weight: 600; }
+                  .info-table { width: 100%; border-collapse: collapse; margin: 24px 0; background-color: #1F2937; border-radius: 8px; overflow: hidden; }
+                  .info-table td { padding: 14px 16px; border-bottom: 1px solid #374151; font-size: 13.5px; }
+                  .info-table td:first-child { color: #9CA3AF; font-weight: 500; width: 40%; }
+                  .info-table td:last-child { color: #FFFFFF; font-weight: 600; text-align: right; }
+                  .footer { text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 20px; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="header">
+                    <span class="badge">PRO UPGRADE SUCCESS</span>
+                    <div class="title">Your Premium Access is Active!</div>
+                  </div>
+                  <div class="content">
+                    Hi <span class="highlight">${userProfile.full_name || 'there'}</span>,<br><br>
+                    Great news! Your manual payment verification has been completed by our admin team, and your <strong>EditFlow Premium</strong> subscription is now active!
+                  </div>
+                  <table class="info-table">
+                    <tr>
+                      <td>Subscription Plan</td>
+                      <td>${planLabel}</td>
+                    </tr>
+                    <tr>
+                      <td>Status</td>
+                      <td style="color: #10B981;">Active / Unlocked</td>
+                    </tr>
+                    <tr>
+                      <td>Expiration Date</td>
+                      <td>${premiumUntil.split('T')[0]}</td>
+                    </tr>
+                  </table>
+                  <div class="content">
+                    All limits on adding clients and projects have been completely removed. Log back into your app to enjoy unlimited access!
+                  </div>
+                  <div class="footer">
+                    Sent automatically by EditFlow Core • supportbyeditflow@acsoft.online
+                  </div>
+                </div>
+              </body>
+              </html>
+            `;
+
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: `EditFlow <${fromEmail}>`,
+                to: [userProfile.email],
+                subject: '🚀 Welcome to EditFlow Premium!',
+                html: htmlContent,
+              }),
+            });
+          } catch (emailErr) {
+            console.error('Failed to send Welcome email notification:', emailErr);
+          }
+        }
+
+        return new Response(JSON.stringify({ success: true, premiumUntil }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'verify_stripe_session': {
         const { sessionId } = payload;
         const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');

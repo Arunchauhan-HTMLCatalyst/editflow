@@ -321,15 +321,25 @@ class AdminSupportScreen extends ConsumerWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 16),
-                                    ElevatedButton.icon(
-                                      onPressed: () => _handleSupportAction(context, ref, ticketId, targetUserId, 'accept'),
-                                      icon: const Icon(Icons.check_rounded, size: 14, color: Colors.white),
-                                      label: const Text('Accept & Resolve', style: TextStyle(fontSize: 11, color: Colors.white)),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primary,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                      ),
-                                    ),
+                                    subject == '[Premium Upgrade Request]'
+                                        ? ElevatedButton.icon(
+                                            onPressed: () => _handlePremiumUpgrade(context, ref, ticketId, targetUserId),
+                                            icon: const Icon(Icons.star_rounded, size: 14, color: Colors.white),
+                                            label: const Text('Approve Upgrade', style: TextStyle(fontSize: 11, color: Colors.white)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.primaryNeon,
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                            ),
+                                          )
+                                        : ElevatedButton.icon(
+                                            onPressed: () => _handleSupportAction(context, ref, ticketId, targetUserId, 'accept'),
+                                            icon: const Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                                            label: const Text('Accept & Resolve', style: TextStyle(fontSize: 11, color: Colors.white)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.primary,
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                            ),
+                                          ),
                                   ],
                                 ),
                               ],
@@ -449,6 +459,120 @@ class AdminSupportScreen extends ConsumerWidget {
                           }
                         },
                   child: Text(action == 'accept' ? 'Accept' : 'Reject', style: const TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _handlePremiumUpgrade(
+    BuildContext context,
+    WidgetRef ref,
+    String ticketId,
+    String targetUserId,
+  ) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        bool isResolving = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppColors.card,
+              title: const Text(
+                'Approve Premium Upgrade',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select the subscription duration to grant the user. An approval email notification will be sent automatically.',
+                    style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.45),
+                  ),
+                  if (isResolving) ...[
+                    const SizedBox(height: 16),
+                    const Center(
+                      child: CircularProgressIndicator(color: AppColors.primaryNeon),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isResolving ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                  onPressed: isResolving
+                      ? null
+                      : () async {
+                          setState(() => isResolving = true);
+                          try {
+                            await AdminService.invokeAdminAction('approve_premium', {
+                              'ticketId': ticketId,
+                              'targetUserId': targetUserId,
+                              'duration': 'monthly',
+                            });
+                            ref.invalidate(adminStatsProvider);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Monthly Premium Upgrade approved successfully!'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              setState(() => isResolving = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to approve upgrade: $e')),
+                              );
+                            }
+                          }
+                        },
+                  child: const Text('Monthly (30 Days)', style: TextStyle(color: Colors.white, fontSize: 11.5)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryNeon),
+                  onPressed: isResolving
+                      ? null
+                      : () async {
+                          setState(() => isResolving = true);
+                          try {
+                            await AdminService.invokeAdminAction('approve_premium', {
+                              'ticketId': ticketId,
+                              'targetUserId': targetUserId,
+                              'duration': 'yearly',
+                            });
+                            ref.invalidate(adminStatsProvider);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Yearly Premium Upgrade approved successfully!'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              setState(() => isResolving = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to approve upgrade: $e')),
+                              );
+                            }
+                          }
+                        },
+                  child: const Text('Yearly (365 Days)', style: TextStyle(color: Colors.white, fontSize: 11.5)),
                 ),
               ],
             );
