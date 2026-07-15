@@ -23,6 +23,7 @@ import '../../clients/providers/client_provider.dart';
 import '../../projects/models/project.dart';
 import '../../clients/models/client.dart';
 import '../../../shared/providers/computed_providers.dart';
+import '../../../shared/utils/premium_helper.dart';
 import '../../../services/supabase_service.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -385,6 +386,75 @@ class SettingsScreen extends ConsumerWidget {
                         context: context,
                         inverse: true,
                       ),
+                      if (!authState.isPro) ...[
+                        const SizedBox(height: 20),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Running on Free tier limits',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold, 
+                                        fontSize: 12.5, 
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Text(
+                                      'Max 5 clients and 10 projects',
+                                      style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  minimumSize: Size.zero,
+                                ),
+                                onPressed: () {
+                                  PremiumHelper.showUpgradeOptionsModal(context);
+                                },
+                                child: const Text(
+                                  'Upgrade',
+                                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else if (authState.premiumUntil != null && authState.role != 'admin') ...[
+                        const SizedBox(height: 16),
+                        Divider(
+                          height: 1,
+                          color: Colors.white.withValues(alpha: 0.15),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          icon: CupertinoIcons.star_fill,
+                          label: 'Premium expires',
+                          value: DateFormat('MMM d, yyyy').format(authState.premiumUntil!.toLocal()),
+                          isDark: isDark,
+                          context: context,
+                          inverse: true,
+                        ),
+                      ],
                     ],
                   ),
                 ),

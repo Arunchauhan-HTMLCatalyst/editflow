@@ -16,6 +16,7 @@ import '../../../shared/providers/computed_providers.dart';
 import '../../../services/supabase_service.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
+import '../../../shared/utils/premium_helper.dart';
 
 class ClientDetailScreen extends ConsumerStatefulWidget {
   final String clientId;
@@ -1254,6 +1255,7 @@ class _CreateProjectSheetState extends ConsumerState<_CreateProjectSheet> {
                 ? null
                 : () async {
                     if (nameController.text.trim().isEmpty) return;
+                    if (!PremiumHelper.checkProjectLimit(ref, context)) return;
                     setState(() => isSaving = true);
                     final project = Project(
                       id: '',

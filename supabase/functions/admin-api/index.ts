@@ -244,6 +244,82 @@ serve(async (req) => {
         })
       }
 
+      case 'verify_stripe_session': {
+        const { sessionId } = payload;
+        const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+        if (!stripeKey) {
+          throw new Error('STRIPE_SECRET_KEY secret is not configured on Supabase.');
+        }
+
+        // Fetch Checkout Session from Stripe
+        const sessionRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${stripeKey}`,
+          },
+        });
+
+        if (!sessionRes.ok) {
+          const errText = await sessionRes.text();
+          throw new Error(`Stripe Checkout Session API returned error: ${errText}`);
+        }
+
+        const session = await sessionRes.json();
+        if (session.payment_status !== 'paid' && session.status !== 'complete') {
+          throw new Error(`Transaction is unpaid. Status: ${session.payment_status}`);
+        }
+
+        // Determine expiration timestamp from subscription (if present)
+        let premiumUntil: string | null = null;
+        if (session.subscription) {
+          const subRes = await fetch(`https://api.stripe.com/v1/subscriptions/${session.subscription}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${stripeKey}`,
+            },
+          });
+          if (subRes.ok) {
+            const sub = await subRes.json();
+            if (sub.current_period_end) {
+              premiumUntil = new Date(sub.current_period_end * 1000).toISOString();
+            }
+          }
+        }
+
+        // If no subscription is linked (e.g. they bought a lifetime option instead),
+        // we set premiumUntil to 100 years from now.
+        if (!premiumUntil) {
+          premiumUntil = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 100).toISOString();
+        }
+
+        const targetUserId = session.client_reference_id || user?.id;
+        if (!targetUserId) {
+          throw new Error('Could not identify user ID associated with checkout session.');
+        }
+
+        // Update database user profile
+        const { error: updateError } = await adminClient
+          .from('profiles')
+          .update({
+            is_premium: true,
+            premium_until: premiumUntil,
+          })
+          .eq('id', targetUserId);
+
+        if (updateError) throw updateError;
+
+        // Log the upgrade for the user
+        await adminClient.from('activities').insert({
+          user_id: targetUserId,
+          type: 'support_response',
+          description: `Congratulations! Your account has been upgraded to Premium until ${premiumUntil.split('T')[0]}.`,
+        });
+
+        return new Response(JSON.stringify({ success: true, premiumUntil }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'handle_support_ticket': {
         const { ticketId, action, targetUserId, feedback } = payload
         

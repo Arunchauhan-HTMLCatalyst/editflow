@@ -17,6 +17,7 @@ import '../../../shared/widgets/animated_list_item.dart';
 import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../../settings/providers/settings_provider.dart';
+import '../../../shared/utils/premium_helper.dart';
 
 class ClientsScreen extends ConsumerStatefulWidget {
   const ClientsScreen({super.key});
@@ -277,7 +278,11 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                           color: AppColors.primary,
                         ),
                       ),
-                      onPressed: () => context.push('/add-client'),
+                      onPressed: () {
+                        if (PremiumHelper.checkClientLimit(ref, context)) {
+                          context.push('/add-client');
+                        }
+                      },
                     ),
                 ],
               ),
@@ -345,7 +350,11 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                             ? 'Try a different search'
                             : 'Add your first client to get started',
                         actionLabel: 'Add Client',
-                        onAction: () => context.push('/add-client'),
+                        onAction: () {
+                          if (PremiumHelper.checkClientLimit(ref, context)) {
+                            context.push('/add-client');
+                          }
+                        },
                       );
                     }
 

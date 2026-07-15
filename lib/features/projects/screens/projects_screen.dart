@@ -14,6 +14,7 @@ import '../../../shared/widgets/animated_list_item.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../models/project_status.dart';
+import '../../../shared/utils/premium_helper.dart';
 
 class ProjectsScreen extends ConsumerStatefulWidget {
   const ProjectsScreen({super.key});
@@ -91,9 +92,13 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
             ),
             onPressed: () {
               if (!isClient && clients.isEmpty) {
-                context.push('/add-client');
+                if (PremiumHelper.checkClientLimit(ref, context)) {
+                  context.push('/add-client');
+                }
               } else {
-                context.push('/projects/add');
+                if (PremiumHelper.checkProjectLimit(ref, context)) {
+                  context.push('/projects/add');
+                }
               }
             },
           ),
@@ -174,7 +179,11 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                     title: 'No projects yet',
                     subtitle: isClient ? 'Assign your first project' : 'Create your first project',
                     actionLabel: isClient ? 'Assign Project' : 'Add Project',
-                    onAction: () => context.push('/projects/add'),
+                    onAction: () {
+                      if (PremiumHelper.checkProjectLimit(ref, context)) {
+                        context.push('/projects/add');
+                      }
+                    },
                   );
                 }
 
@@ -213,7 +222,11 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                               title: 'No projects found',
                               subtitle: 'Try a different search',
                               actionLabel: isClient ? 'Assign Project' : 'Add Project',
-                              onAction: () => context.push('/projects/add'),
+                              onAction: () {
+                                if (PremiumHelper.checkProjectLimit(ref, context)) {
+                                  context.push('/projects/add');
+                                }
+                              },
                             )
                           : () {
                               final columns = AppLayout.gridColumns(context);

@@ -16,6 +16,7 @@ import 'features/projects/screens/review_screen.dart';
 import 'features/projects/screens/public_review_screen.dart';
 import 'features/projects/screens/add_project_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
+import 'features/settings/screens/premium_callback_screen.dart';
 import 'features/calendar/screens/calendar_screen.dart';
 import 'features/dashboard/screens/notification_center_screen.dart';
 import 'features/dashboard/screens/client_reviews_screen.dart';
@@ -109,6 +110,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         pageBuilder: (context, state) => settingsPage(const SettingsScreen()),
+      ),
+      GoRoute(
+        path: '/premium-callback',
+        pageBuilder: (context, state) {
+          final sessionId = state.uri.queryParameters['session_id'];
+          return slidePushPage(PremiumCallbackScreen(sessionId: sessionId));
+        },
       ),
       GoRoute(
         path: '/notifications',

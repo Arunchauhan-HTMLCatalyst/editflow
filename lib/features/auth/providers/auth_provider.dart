@@ -15,6 +15,8 @@ class AuthState {
   final String? error;
   final String role;
   final bool isSuspended;
+  final bool isPremium;
+  final DateTime? premiumUntil;
 
   const AuthState({
     this.status = AuthStatus.uninitialized,
@@ -22,9 +24,18 @@ class AuthState {
     this.error,
     this.role = 'user',
     this.isSuspended = false,
+    this.isPremium = false,
+    this.premiumUntil,
   });
 
   bool get isAdmin => role == 'admin';
+
+  bool get isPro {
+    if (isAdmin) return true;
+    if (!isPremium) return false;
+    if (premiumUntil == null) return false;
+    return premiumUntil!.isAfter(DateTime.now());
+  }
 
   AuthState copyWith({
     AuthStatus? status,
@@ -32,6 +43,8 @@ class AuthState {
     String? error,
     String? role,
     bool? isSuspended,
+    bool? isPremium,
+    DateTime? premiumUntil,
   }) =>
       AuthState(
         status: status ?? this.status,
@@ -39,6 +52,8 @@ class AuthState {
         error: error,
         role: role ?? this.role,
         isSuspended: isSuspended ?? this.isSuspended,
+        isPremium: isPremium ?? this.isPremium,
+        premiumUntil: premiumUntil ?? this.premiumUntil,
       );
 }
 
@@ -54,12 +69,14 @@ class AuthProvider extends StateNotifier<AuthState> {
     try {
       final response = await Supabase.instance.client
           .from('profiles')
-          .select('role, is_suspended')
+          .select('role, is_suspended, is_premium, premium_until')
           .eq('id', user.id)
           .maybeSingle();
 
       String role = 'user';
       bool isSuspended = false;
+      bool isPremium = false;
+      DateTime? premiumUntil;
 
       if (response == null) {
         await Supabase.instance.client.from('profiles').insert({
@@ -68,11 +85,18 @@ class AuthProvider extends StateNotifier<AuthState> {
           'email': user.email,
           'role': 'user',
           'is_suspended': false,
+          'is_premium': false,
+          'premium_until': null,
         });
         debugPrint('[AUTH SYNC] Created missing profile for user ${user.id}');
       } else {
         role = response['role'] as String? ?? 'user';
         isSuspended = response['is_suspended'] as bool? ?? false;
+        isPremium = response['is_premium'] as bool? ?? false;
+        final untilStr = response['premium_until'] as String?;
+        if (untilStr != null) {
+          premiumUntil = DateTime.tryParse(untilStr);
+        }
       }
 
       if (isSuspended) {
@@ -88,6 +112,8 @@ class AuthProvider extends StateNotifier<AuthState> {
       state = state.copyWith(
         role: role,
         isSuspended: isSuspended,
+        isPremium: isPremium,
+        premiumUntil: premiumUntil,
       );
     } catch (e) {
       debugPrint('[AUTH SYNC] Failed to sync profile: $e');
@@ -272,8 +298,11 @@ class AuthProvider extends StateNotifier<AuthState> {
     }
   }
 
-  void clearError() {
-    state = state.copyWith(error: null);
+  Future<void> syncProfileData() async {
+    final user = state.user;
+    if (user != null) {
+      await _syncProfile(user);
+    }
   }
 
   @override

@@ -12,6 +12,7 @@ import '../../projects/models/project.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
 import '../../../shared/providers/computed_providers.dart';
+import '../../../shared/utils/premium_helper.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/project_status_section.dart';
 import '../widgets/top_clients_section.dart';
@@ -197,9 +198,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   : (clients.isEmpty ? 'Add Client' : 'Add Project'),
                               onAction: () {
                                 if (!settings.isClientMode && clients.isEmpty) {
-                                  context.push('/add-client');
+                                  if (PremiumHelper.checkClientLimit(ref, context)) {
+                                    context.push('/add-client');
+                                  }
                                 } else {
-                                  context.push('/projects/add');
+                                  if (PremiumHelper.checkProjectLimit(ref, context)) {
+                                    context.push('/projects/add');
+                                  }
                                 }
                               },
                             ),
