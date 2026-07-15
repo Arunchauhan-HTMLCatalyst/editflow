@@ -134,10 +134,14 @@ serve(async (req) => {
           .limit(15)
 
         // Support tickets/requests
-        const { data: supportRequests } = await adminClient
+        const { data: supportRequests, error: supportError } = await adminClient
           .from('support_tickets')
-          .select('*, profiles:user_id(full_name, email)')
+          .select('*, profiles(full_name, email)')
           .order('created_at', { ascending: false })
+
+        if (supportError) {
+          console.error('Support Tickets Query Error:', supportError);
+        }
 
         return new Response(JSON.stringify({
           stats: {
