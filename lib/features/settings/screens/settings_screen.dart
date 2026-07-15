@@ -2232,10 +2232,14 @@ void _showFAQBottomSheet(BuildContext context, bool isDark) {
                         _FAQItem('Why has my review link expired?', 'Review links expire automatically based on the expiration duration configured when creating the link.', isDark),
                         _FAQItem('How do I mark a project as completed?', 'Open the project detail page and change the pipeline status toggle to "Completed".', isDark),
                       ], isDark),
-                      _buildFAQCategory('Payments & Invoices', [
+                       _buildFAQCategory('Payments & Invoices', [
                         _FAQItem('How do I generate an invoice?', 'Select the project, click "Generate Invoice", configure the items/fees, and save to output a premium PDF layout.', isDark),
                         _FAQItem('How does the UPI QR payment work?', 'When you add your UPI ID in Settings, invoices generate a scan-to-pay QR code for instant client settlements.', isDark),
                         _FAQItem('Can I regenerate an invoice?', 'Yes, invoices can be re-edited or re-downloaded at any time from the payment details tab.', isDark),
+                      ], isDark),
+                      _buildFAQCategory('Pro Subscription', [
+                        _FAQItem('How does manual Pro verification work?', 'After making the payment via QR code, enter the 12-digit UTR (Unique Transaction Reference) / Transaction ID in the upgrade sheet. Our admin team will verify it and activate your Pro plan.', isDark),
+                        _FAQItem('How long does verification take?', 'Verification typically takes between 12 to 24 hours. Once approved, you will receive an confirmation email invoice, and your Pro benefits will activate immediately.', isDark),
                       ], isDark),
                       _buildFAQCategory('Security', [
                         _FAQItem('Is my data secure?', 'All user profiles, projects, and invoices are protected by database Row-Level Security (RLS) policies.', isDark),
