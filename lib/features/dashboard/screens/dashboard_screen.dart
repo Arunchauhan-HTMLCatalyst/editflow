@@ -150,38 +150,94 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           AppLayout.pagePadding(context) + 24,
                         ),
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Dashboard',
-                                    style: AppTextStyles.title1(isDark).copyWith(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _getTimeBasedGreeting(),
-                                    style: AppTextStyles.caption(isDark).copyWith(
-                                      fontSize: 14,
-                                      color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
-                                    ),
-                                  ),
-                                ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: isDark
+                                    ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+                                    : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                              if (false)
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.settings_outlined,
-                                    color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(20.0),
+                              border: Border.all(
+                                color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+                                width: 0.8,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: isDark
+                                      ? AppColors.primary.withValues(alpha: 0.04)
+                                      : AppColors.primary.withValues(alpha: 0.1),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8),
+                                )
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            settings.isClientMode ? 'CLIENT PORTAL' : 'WORKSPACE',
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w900,
+                                              color: isDark ? AppColors.primaryNeon : Colors.white.withValues(alpha: 0.9),
+                                              letterSpacing: 1.5,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: isDark
+                                                  ? AppColors.primary.withValues(alpha: 0.15)
+                                                  : Colors.white.withValues(alpha: 0.2),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              settings.isClientMode ? 'CLIENT' : 'FREELANCER',
+                                              style: TextStyle(
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.w900,
+                                                color: isDark ? AppColors.primaryNeon : Colors.white,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        _getTimeBasedGreeting(),
+                                        style: const TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Welcome to your EditFlow workspace.',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.75),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  onPressed: () => context.push('/settings'),
                                 ),
-                            ],
+                              ],
+                            ),
                           ),
                           SizedBox(
                             height: MediaQuery.of(context).size.height * 0.6,
