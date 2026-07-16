@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://editflow.acsoft.online/sitemap.xml
