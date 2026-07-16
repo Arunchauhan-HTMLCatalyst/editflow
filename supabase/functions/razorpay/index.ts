@@ -25,21 +25,21 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
           background-color: #090D16;
           color: #9CA3AF;
           margin: 0;
-          padding: 40px 16px;
+          padding: 20px 12px;
           -webkit-font-smoothing: antialiased;
         }
         .wrapper {
-          max-width: 620px;
+          max-width: 700px;
           margin: 0 auto;
           background-color: #111827;
           border: 1px solid #1F2937;
           border-top: 5px solid ${headerBorderColor};
           border-radius: 12px;
           overflow: hidden;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
         }
         .header {
-          padding: 36px 36px 20px 36px;
+          padding: 20px 24px 12px 24px;
           text-align: center;
           background: radial-gradient(circle at top, rgba(13, 148, 136, 0.05) 0%, rgba(17, 24, 39, 0) 70%);
           border-bottom: 1px solid #1F2937;
@@ -51,34 +51,34 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
           font-size: 10px;
           font-weight: 700;
           letter-spacing: 0.8px;
-          padding: 4px 12px;
+          padding: 3px 10px;
           border-radius: 99px;
           text-transform: uppercase;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
           border: 1px solid ${isSuccess ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'};
         }
         .title {
           color: #FFFFFF;
-          font-size: 20px;
+          font-size: 19px;
           font-weight: 800;
           margin: 0;
-          line-height: 1.3;
+          line-height: 1.25;
           letter-spacing: -0.4px;
         }
         .body {
-          padding: 28px 36px 36px 36px;
-          font-size: 13.5px;
-          line-height: 1.6;
+          padding: 16px 24px 20px 24px;
+          font-size: 13px;
+          line-height: 1.5;
           color: #9CA3AF;
         }
         .body p {
-          margin: 0 0 14px 0;
+          margin: 0 0 10px 0;
         }
         .footer {
           background-color: #0B0F19;
-          padding: 24px 36px;
+          padding: 18px 24px;
           text-align: center;
-          font-size: 11px;
+          font-size: 10.5px;
           color: #6B7280;
           border-top: 1px solid #1F2937;
         }
@@ -93,34 +93,34 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
         }
         .btn-container {
           text-align: center;
-          margin: 24px 0;
+          margin: 16px 0;
         }
         .btn {
           display: inline-block;
           background: linear-gradient(135deg, #0D9488 0%, #10B981 100%);
           color: #ffffff !important;
-          font-size: 12.5px;
+          font-size: 12px;
           font-weight: 600;
           text-decoration: none;
-          padding: 11px 26px;
+          padding: 9px 22px;
           border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+          box-shadow: 0 4px 10px rgba(13, 148, 136, 0.15);
         }
         .info-card {
           background-color: #1F2937;
           border: 1px solid #374151;
           border-radius: 8px;
-          padding: 18px;
-          margin: 24px 0;
+          padding: 12px 16px;
+          margin: 16px 0;
         }
         .info-table {
           width: 100%;
           border-collapse: collapse;
         }
         .info-table td {
-          padding: 8px 0;
-          font-size: 12.5px;
-          vertical-align: top;
+          padding: 6px 0;
+          font-size: 12px;
+          vertical-align: middle;
         }
         .info-table tr:not(:last-child) td {
           border-bottom: 1px solid #374151;
@@ -128,29 +128,21 @@ function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, i
         .label {
           color: #9CA3AF;
           font-weight: 500;
+          text-align: left;
         }
         .value {
           color: #FFFFFF;
           font-weight: 600;
           text-align: right;
-        }
-        .feedback-box {
-          background-color: rgba(239, 68, 68, 0.05);
-          border: 1px dashed rgba(239, 68, 68, 0.3);
-          border-radius: 8px;
-          padding: 16px;
-          color: #F87171;
-          font-size: 13px;
-          margin: 24px 0;
-          line-height: 1.5;
+          word-break: break-all;
         }
       </style>
     </head>
     <body>
       <div class="wrapper">
         <div class="header">
-          <div style="margin-bottom: 20px;">
-            <img src="https://editflow.acsoft.online/logo.svg" width="56" height="56" alt="EditFlow Logo" style="display: block; margin: 0 auto; filter: drop-shadow(0 4px 8px rgba(13, 148, 136, 0.2)); border-radius: 14px;" />
+          <div style="margin-bottom: 12px;">
+            <img src="https://editflow.acsoft.online/logo.svg" width="48" height="48" alt="EditFlow Logo" style="display: block; margin: 0 auto; filter: drop-shadow(0 4px 8px rgba(13, 148, 136, 0.2)); border-radius: 14px;" />
           </div>
           <span class="badge">${badgeText}</span>
           <h1 class="title">${title}</h1>
