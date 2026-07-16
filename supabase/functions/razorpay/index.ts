@@ -7,6 +7,168 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
+function getEmailWrapper(title: string, badgeText: string, isSuccess: boolean, innerHtml: string) {
+  const badgeBg = isSuccess ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+  const badgeTextColor = isSuccess ? '#10B981' : '#EF4444';
+  const headerBorderColor = isSuccess ? '#10B981' : '#EF4444';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${title}</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          background-color: #090D16;
+          color: #9CA3AF;
+          margin: 0;
+          padding: 40px 16px;
+          -webkit-font-smoothing: antialiased;
+        }
+        .wrapper {
+          max-width: 620px;
+          margin: 0 auto;
+          background-color: #111827;
+          border: 1px solid #1F2937;
+          border-top: 5px solid ${headerBorderColor};
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .header {
+          padding: 36px 36px 20px 36px;
+          text-align: center;
+          background: radial-gradient(circle at top, rgba(13, 148, 136, 0.05) 0%, rgba(17, 24, 39, 0) 70%);
+          border-bottom: 1px solid #1F2937;
+        }
+        .badge {
+          display: inline-block;
+          background-color: ${badgeBg};
+          color: ${badgeTextColor};
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.8px;
+          padding: 4px 12px;
+          border-radius: 99px;
+          text-transform: uppercase;
+          margin-bottom: 16px;
+          border: 1px solid ${isSuccess ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'};
+        }
+        .title {
+          color: #FFFFFF;
+          font-size: 20px;
+          font-weight: 800;
+          margin: 0;
+          line-height: 1.3;
+          letter-spacing: -0.4px;
+        }
+        .body {
+          padding: 28px 36px 36px 36px;
+          font-size: 13.5px;
+          line-height: 1.6;
+          color: #9CA3AF;
+        }
+        .body p {
+          margin: 0 0 14px 0;
+        }
+        .footer {
+          background-color: #0B0F19;
+          padding: 24px 36px;
+          text-align: center;
+          font-size: 11px;
+          color: #6B7280;
+          border-top: 1px solid #1F2937;
+        }
+        .footer-link {
+          color: #10B981;
+          text-decoration: none;
+          font-weight: 600;
+        }
+        .highlight {
+          color: #FFFFFF;
+          font-weight: 600;
+        }
+        .btn-container {
+          text-align: center;
+          margin: 24px 0;
+        }
+        .btn {
+          display: inline-block;
+          background: linear-gradient(135deg, #0D9488 0%, #10B981 100%);
+          color: #ffffff !important;
+          font-size: 12.5px;
+          font-weight: 600;
+          text-decoration: none;
+          padding: 11px 26px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+        }
+        .info-card {
+          background-color: #1F2937;
+          border: 1px solid #374151;
+          border-radius: 8px;
+          padding: 18px;
+          margin: 24px 0;
+        }
+        .info-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .info-table td {
+          padding: 8px 0;
+          font-size: 12.5px;
+          vertical-align: top;
+        }
+        .info-table tr:not(:last-child) td {
+          border-bottom: 1px solid #374151;
+        }
+        .label {
+          color: #9CA3AF;
+          font-weight: 500;
+        }
+        .value {
+          color: #FFFFFF;
+          font-weight: 600;
+          text-align: right;
+        }
+        .feedback-box {
+          background-color: rgba(239, 68, 68, 0.05);
+          border: 1px dashed rgba(239, 68, 68, 0.3);
+          border-radius: 8px;
+          padding: 16px;
+          color: #F87171;
+          font-size: 13px;
+          margin: 24px 0;
+          line-height: 1.5;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="wrapper">
+        <div class="header">
+          <div style="margin-bottom: 20px;">
+            <img src="https://editflow.acsoft.online/logo.svg" width="56" height="56" alt="EditFlow Logo" style="display: block; margin: 0 auto; filter: drop-shadow(0 4px 8px rgba(13, 148, 136, 0.2)); border-radius: 14px;" />
+          </div>
+          <span class="badge">${badgeText}</span>
+          <h1 class="title">${title}</h1>
+        </div>
+        <div class="body">
+          ${innerHtml}
+        </div>
+        <div class="footer">
+          <p style="margin: 0 0 6px 0; font-weight: 700; color: #FFFFFF; font-size: 12px;">EditFlow Billing Support</p>
+          <p style="margin: 0 0 14px 0; font-size: 10.5px; line-height: 1.5; color: #6B7280;">If you have any questions or did not authorize this action, please reach out to our team at <a href="mailto:supportbyeditflow@acsoft.online" class="footer-link">supportbyeditflow@acsoft.online</a></p>
+          <p style="margin: 0; font-size: 10px; color: #4B5563;">&copy; ${new Date().getFullYear()} EditFlow. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -88,22 +250,22 @@ serve(async (req) => {
         }),
       })
 
-      const responseData = await response.json()
-
-      if (!response.ok) {
-        console.error('Razorpay Error Response:', responseData)
-        return new Response(JSON.stringify({ error: responseData.error?.description ?? 'Failed to create payment' }), {
+      if (response.status !== 200 && response.status !== 201) {
+        const errBody = await response.text()
+        console.error('Razorpay API error response:', response.status, errBody)
+        return new Response(JSON.stringify({ error: `Razorpay API error: ${errBody}` }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
 
-      return new Response(JSON.stringify({ short_url: responseData.short_url }), {
+      const linkData = await response.json()
+      return new Response(JSON.stringify({ short_url: linkData.short_url }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     } catch (e) {
-      console.error('Create Link Error:', e)
+      console.error('Error creating payment link:', e)
       return new Response(JSON.stringify({ error: e.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -168,6 +330,92 @@ serve(async (req) => {
         }
 
         console.log(`User ${userId} successfully upgraded to Premium until ${expiryDate.toISOString()}`)
+
+        // 3. Send welcome email via Resend
+        const resendApiKey = Deno.env.get('RESEND_API_KEY') || ''
+        const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'supportbyeditflow@acsoft.online'
+
+        // Fetch User Profile details to guarantee profile email resolution
+        const { data: userProfile, error: profileGetErr } = await adminClient
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', userId)
+          .single();
+
+        if (!profileGetErr && userProfile) {
+          const profileEmail = userProfile.email || ''
+          const profileName = userProfile.full_name || 'Valued User'
+
+          console.log(`[Resend Email Webhook] resendApiKey exists: ${!!resendApiKey}, fromEmail: ${fromEmail}, targetEmail: ${profileEmail}`);
+
+          if (resendApiKey && profileEmail) {
+            try {
+              const innerHtml = `
+                <p>Hi <span class="highlight">${profileName}</span>,</p>
+                <p>Great news! Your payment via Razorpay has been processed successfully, and your account has been upgraded to <strong class="highlight">EditFlow Premium</strong>.</p>
+                
+                <div class="info-card">
+                  <table class="info-table">
+                    <tr>
+                      <td class="label">Invoice Recipient</td>
+                      <td class="value">${profileName} (${profileEmail})</td>
+                    </tr>
+                    <tr>
+                      <td class="label">Invoice Number</td>
+                      <td class="value">INV-${new Date().getFullYear()}-${paymentId.substring(0, 6).toUpperCase()}</td>
+                    </tr>
+                    <tr>
+                      <td class="label">Premium Plan Type</td>
+                      <td class="value" style="color: #10B981; font-weight: 700;">${planType === 'yearly' ? 'Yearly Premium' : 'Monthly Premium'}</td>
+                    </tr>
+                    <tr>
+                      <td class="label">Transaction Reference</td>
+                      <td class="value" style="font-family: monospace;">${paymentId}</td>
+                    </tr>
+                    <tr>
+                      <td class="label">Total Amount Paid</td>
+                      <td class="value" style="color: #10B981; font-size: 16px; font-weight: 800;">${planType === 'yearly' ? '₹999' : '₹99'}</td>
+                    </tr>
+                    <tr>
+                      <td class="label">Subscription Active Until</td>
+                      <td class="value">${expiryDate.toISOString().split('T')[0]}</td>
+                    </tr>
+                  </table>
+                </div>
+
+                <p>All active limits on creating projects and adding client profiles have been unlocked on your account. Log back into the app to start using your premium tools!</p>
+                <div class="btn-container">
+                  <a href="https://editflow.acsoft.online/app/" class="btn" style="color: #ffffff;">Access Premium Dashboard</a>
+                </div>
+              `;
+              const htmlContent = getEmailWrapper(
+                "Your Premium Access is Active!",
+                "Payment Success",
+                true,
+                innerHtml
+              );
+
+              const res = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendApiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: `EditFlow <${fromEmail}>`,
+                  to: profileEmail,
+                  subject: 'Your Premium Access is Active! - EditFlow',
+                  html: htmlContent,
+                }),
+              });
+
+              const resData = await res.json();
+              console.log(`[Resend Email Webhook] Resend API Response:`, JSON.stringify(resData));
+            } catch (emailErr) {
+              console.error('Failed to send Resend email:', emailErr);
+            }
+          }
+        }
       }
 
       return new Response(JSON.stringify({ success: true }), {
