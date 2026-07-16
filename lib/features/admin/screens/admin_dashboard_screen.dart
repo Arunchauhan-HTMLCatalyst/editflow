@@ -214,21 +214,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                     _buildAuditLogsList(activities),
                   ],
                 ] else if (selectedTab == 2) ...[
-                  // 3. Pending Tasks (Support & Upgrade Verification Requests)
-                  if (isDesktop)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: _buildPendingUpgradesList(context, upgradeRequests)),
-                        const SizedBox(width: 24),
-                        Expanded(child: _buildPendingTicketsList(context, supportRequests)),
-                      ],
-                    )
-                  else ...[
-                    _buildPendingUpgradesList(context, upgradeRequests),
-                    const SizedBox(height: 28),
-                    _buildPendingTicketsList(context, supportRequests),
-                  ],
+                  // 3. Pending Tasks (Support Ticket Verification Requests Only)
+                  _buildPendingTicketsList(context, supportRequests),
                 ],
               ],
             ),

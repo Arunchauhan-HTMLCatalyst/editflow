@@ -83,7 +83,7 @@ serve(async (req) => {
             userId: user.id,
             planType: planType,
           },
-          callback_url: 'https://editflow.acsoft.online/app/#/dashboard?payment=success',
+          callback_url: 'https://editflow.acsoft.online/success.html',
           callback_method: 'get',
         }),
       })

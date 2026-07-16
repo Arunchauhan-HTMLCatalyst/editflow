@@ -25,10 +25,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   // Support state
   final TextEditingController _supportEmailController = TextEditingController();
 
-  // UPI configuration state
-  final TextEditingController _upiIdController = TextEditingController();
-  final TextEditingController _bankingNameController = TextEditingController();
-
   bool _isSaving = false;
   bool _isLoaded = false;
 
@@ -47,9 +43,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         _maintenanceMessageController.text = value['message'] as String? ?? '';
       } else if (key == 'support') {
         _supportEmailController.text = value['email'] as String? ?? '';
-      } else if (key == 'upi') {
-        _upiIdController.text = value['upi_id'] as String? ?? 'editflow@upi';
-        _bankingNameController.text = value['banking_name'] as String? ?? 'EditFlow Admin';
       }
     }
 
@@ -85,13 +78,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             'value': {
               'email': _supportEmailController.text.trim(),
             }
-          },
-          {
-            'key': 'upi',
-            'value': {
-              'upi_id': _upiIdController.text.trim(),
-              'banking_name': _bankingNameController.text.trim(),
-            }
           }
         ]
       });
@@ -123,8 +109,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     _announcementTextController.dispose();
     _maintenanceMessageController.dispose();
     _supportEmailController.dispose();
-    _upiIdController.dispose();
-    _bankingNameController.dispose();
     super.dispose();
   }
 
@@ -133,44 +117,42 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     final settingsAsync = ref.watch(adminSettingsProvider);
 
     return settingsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error loading settings: $e', style: const TextStyle(color: AppColors.textSecondary))),
-      data: (settings) {
-        _loadSettings(settings);
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNeon)),
+      error: (err, stack) => Center(child: Text('Error loading settings: $err', style: const TextStyle(color: Colors.white))),
+      data: (settingsList) {
+        _loadSettings(settingsList);
 
-        return Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Form(
+            key: _formKey,
+            child: ListView(
               children: [
-                // 1. Announcement Banner Settings Card
+                // 1. Announcement Banner Settings
                 _buildCard(
                   title: 'SYSTEM ANNOUNCEMENT BANNER',
                   child: Column(
                     children: [
-                      SwitchListTile(
-                        value: _announcementVisible,
-                        title: const Text('Show Banner', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
-                        subtitle: const Text('Toggles visibility of the banner for all users.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                        activeColor: AppColors.primaryNeon,
-                        contentPadding: EdgeInsets.zero,
-                        onChanged: (val) {
-                          setState(() {
-                            _announcementVisible = val;
-                          });
-                        },
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Show Announcement Banner', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                          Switch(
+                            value: _announcementVisible,
+                            onChanged: (val) => setState(() => _announcementVisible = val),
+                            activeColor: AppColors.primaryNeon,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _announcementTextController,
                         style: const TextStyle(color: Colors.white, fontSize: 13),
+                        maxLines: 2,
                         decoration: const InputDecoration(
                           labelText: 'Announcement Text',
                           labelStyle: TextStyle(color: AppColors.textSecondary),
                           border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
-                          hintText: 'e.g. Welcome to EditFlow v2.0! Check out shareable review links.',
-                          hintStyle: TextStyle(color: AppColors.textMuted),
                         ),
                       ),
                     ],
@@ -178,30 +160,29 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 2. Maintenance Mode Card
+                // 2. Maintenance Mode settings
                 _buildCard(
-                  title: 'MAINTENANCE MODE STATUS',
+                  title: 'MAINTENANCE MODE CONFIGURATION',
                   child: Column(
                     children: [
-                      SwitchListTile(
-                        value: _maintenanceEnabled,
-                        title: const Text('Enable Maintenance Mode', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
-                        subtitle: const Text('If enabled, standard users are locked out of the app.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                        activeColor: Colors.redAccent,
-                        contentPadding: EdgeInsets.zero,
-                        onChanged: (val) {
-                          setState(() {
-                            _maintenanceEnabled = val;
-                          });
-                        },
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Enable Maintenance Mode', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                          Switch(
+                            value: _maintenanceEnabled,
+                            onChanged: (val) => setState(() => _maintenanceEnabled = val),
+                            activeColor: Colors.redAccent,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _maintenanceMessageController,
-                        maxLines: 2,
                         style: const TextStyle(color: Colors.white, fontSize: 13),
+                        maxLines: 3,
                         decoration: const InputDecoration(
-                          labelText: 'Maintenance Message',
+                          labelText: 'Maintenance Overlay Message',
                           labelStyle: TextStyle(color: AppColors.textSecondary),
                           border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
                         ),
@@ -211,56 +192,21 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 3. Support Contact
+                // 3. Support Contact Settings
                 _buildCard(
-                  title: 'SYSTEM SUPPORT CONTACTS',
-                  child: TextFormField(
-                    controller: _supportEmailController,
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                    decoration: const InputDecoration(
-                      labelText: 'Support Contact Email',
-                      labelStyle: TextStyle(color: AppColors.textSecondary),
-                      border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
-                    ),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Support email is required';
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // 4. UPI QR Settings
-                _buildCard(
-                  title: 'UPI PAYMENT CONFIGURATION',
+                  title: 'SUPPORT CONTACT SETUP',
                   child: Column(
                     children: [
                       TextFormField(
-                        controller: _upiIdController,
+                        controller: _supportEmailController,
                         style: const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
-                          labelText: 'Admin UPI ID (for QR Code)',
-                          hintText: 'e.g. yourname@upi',
+                          labelText: 'Support Contact Email',
                           labelStyle: TextStyle(color: AppColors.textSecondary),
                           border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
                         ),
                         validator: (val) {
-                          if (val == null || val.trim().isEmpty) return 'UPI ID is required';
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _bankingNameController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
-                        decoration: const InputDecoration(
-                          labelText: 'Banking Payee Name',
-                          hintText: 'e.g. AC Soft Solutions',
-                          labelStyle: TextStyle(color: AppColors.textSecondary),
-                          border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
-                        ),
-                        validator: (val) {
-                          if (val == null || val.trim().isEmpty) return 'Banking payee name is required';
+                          if (val == null || val.trim().isEmpty) return 'Support email is required';
                           return null;
                         },
                       ),
