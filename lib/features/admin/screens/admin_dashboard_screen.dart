@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/admin_provider.dart';
 import '../services/admin_service.dart';
@@ -47,7 +48,6 @@ class AdminDashboardScreen extends ConsumerWidget {
         final totalClients = stats['totalClients'] ?? 0;
         final totalReviews = stats['totalReviews'] ?? 0;
         final totalComments = stats['totalComments'] ?? 0;
-        final totalStorageUsed = stats['totalStorageUsed'] ?? 0; // Bytes
 
         final dau = stats['dau'] ?? 0;
         final mau = stats['mau'] ?? 0;
@@ -137,7 +137,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 28),
 
-                  // 2. Subscription Revenue Split
+                  // 2. Subscription Revenue Split (incorporating Pie Chart)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -152,7 +152,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                           children: [
                             Expanded(child: _buildEarningsCard(totalEarnings)),
                             const SizedBox(width: 16),
-                            Expanded(child: _buildSubscribersBreakdownCard(paidUsersCount, unpaidUsersCount, monthlySubscribersCount, yearlySubscribersCount)),
+                            Expanded(child: _buildSubscribersPieChart(paidUsersCount, unpaidUsersCount, monthlySubscribersCount, yearlySubscribersCount)),
                           ],
                         )
                       else
@@ -160,14 +160,14 @@ class AdminDashboardScreen extends ConsumerWidget {
                           children: [
                             _buildEarningsCard(totalEarnings),
                             const SizedBox(height: 16),
-                            _buildSubscribersBreakdownCard(paidUsersCount, unpaidUsersCount, monthlySubscribersCount, yearlySubscribersCount),
+                            _buildSubscribersPieChart(paidUsersCount, unpaidUsersCount, monthlySubscribersCount, yearlySubscribersCount),
                           ],
                         ),
                       const SizedBox(height: 28),
                     ],
                   ),
 
-                  // 3. User growth analytics by Month
+                  // 3. User growth analytics by Month (incorporating Line Chart)
                   analyticsAsync.when(
                     loading: () => const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
                     error: (err, _) => const SizedBox(),
@@ -191,63 +191,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'USER REGISTRATION GROWTH BY MONTH',
-                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary),
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.card,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border, width: 0.8),
-                            ),
-                            child: ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: sortedMonths.length,
-                              separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
-                              itemBuilder: (context, idx) {
-                                final item = sortedMonths[idx];
-                                final month = item.key;
-                                final count = item.value;
-                                final maxMonthCount = sortedMonths.map((m) => m.value).reduce((a, b) => a > b ? a : b);
-                                final ratio = maxMonthCount > 0 ? (count / maxMonthCount).clamp(0.0, 1.0) : 0.0;
-
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 80,
-                                        child: Text(
-                                          month,
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: LinearProgressIndicator(
-                                            value: ratio,
-                                            minHeight: 8,
-                                            backgroundColor: AppColors.border,
-                                            valueColor: const AlwaysStoppedAnimation(AppColors.primaryNeon),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Text(
-                                        '+$count users',
-                                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Colors.white),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                          _buildUserGrowthLineChart(sortedMonths),
                           const SizedBox(height: 24),
                         ],
                       );
@@ -424,7 +368,11 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSubscribersBreakdownCard(int paid, int unpaid, int monthly, int yearly) {
+  Widget _buildSubscribersPieChart(int paid, int unpaid, int monthly, int yearly) {
+    final total = paid + unpaid;
+    final paidRatio = total > 0 ? (paid / total) : 0.0;
+    final unpaidRatio = total > 0 ? (unpaid / total) : 0.0;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -434,29 +382,197 @@ class AdminDashboardScreen extends ConsumerWidget {
         border: Border.all(color: AppColors.border, width: 0.8),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Paid / Premium Users', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              Text('$paid', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
-            ],
+          const Text(
+            'USER DISTRIBUTION',
+            style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold, letterSpacing: 0.8),
           ),
-          const Divider(color: AppColors.border, height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Unpaid / Free Users', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              Text('$unpaid', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
-            ],
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 110,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 4,
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 4,
+                      centerSpaceRadius: 24,
+                      sections: [
+                        PieChartSectionData(
+                          color: AppColors.primaryNeon,
+                          value: paid.toDouble(),
+                          title: '${(paidRatio * 100).toStringAsFixed(0)}%',
+                          radius: 16,
+                          titleStyle: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        PieChartSectionData(
+                          color: AppColors.textSecondary.withValues(alpha: 0.4),
+                          value: unpaid.toDouble(),
+                          title: '${(unpaidRatio * 100).toStringAsFixed(0)}%',
+                          radius: 16,
+                          titleStyle: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 6,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLegendItem('Premium Users', '$paid', AppColors.primaryNeon),
+                      const SizedBox(height: 8),
+                      _buildLegendItem('Free Users', '$unpaid', AppColors.textSecondary.withValues(alpha: 0.4)),
+                      const Divider(color: AppColors.border, height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Plan (M / Y)', style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary)),
+                          Text('$monthly / $yearly', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Divider(color: AppColors.border, height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Plan Split (Monthly / Yearly)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              Text('$monthly / $yearly', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryNeon)),
-            ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(String label, String value, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserGrowthLineChart(List<MapEntry<String, int>> sortedMonths) {
+    final List<FlSpot> spots = [];
+    for (int i = 0; i < sortedMonths.length; i++) {
+      spots.add(FlSpot(i.toDouble(), sortedMonths[i].value.toDouble()));
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'USER REGISTRATION GROWTH BY MONTH',
+            style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 180,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (value) => const FlLine(
+                    color: AppColors.border,
+                    strokeWidth: 0.5,
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      getTitlesWidget: (value, meta) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(color: AppColors.textMuted, fontSize: 9.5, fontWeight: FontWeight.bold),
+                        );
+                      },
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final idx = value.toInt();
+                        if (idx >= 0 && idx < sortedMonths.length) {
+                          final monthStr = sortedMonths[idx].key.split('-')[1];
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              monthStr,
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 9.5, fontWeight: FontWeight.bold),
+                            ),
+                          );
+                        }
+                        return const SizedBox();
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(
+                  show: false,
+                ),
+                minX: 0,
+                maxX: (sortedMonths.length - 1).toDouble(),
+                minY: 0,
+                maxY: (sortedMonths.map((m) => m.value).reduce((a, b) => a > b ? a : b) * 1.2).toDouble(),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primary, AppColors.primaryNeon],
+                    ),
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.15),
+                          AppColors.primaryNeon.withValues(alpha: 0.01),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

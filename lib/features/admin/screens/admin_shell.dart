@@ -85,6 +85,18 @@ class AdminShell extends ConsumerWidget {
     );
   }
 
+  String _formatBytes(num bytes) {
+    if (bytes <= 0) return '0 B';
+    const suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var i = 0;
+    var dBytes = bytes.toDouble();
+    while (dBytes >= 1024 && i < suffixes.length - 1) {
+      dBytes /= 1024;
+      i++;
+    }
+    return '${dBytes.toStringAsFixed(1)} ${suffixes[i]}';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = state.uri.toString();
@@ -95,8 +107,38 @@ class AdminShell extends ConsumerWidget {
     final user = authState.user;
     final fullName = user?.userMetadata?['full_name'] ?? 'Admin';
     final email = user?.email ?? '';
+    final avatarUrl = user?.userMetadata?['avatar_url'] as String?;
 
     final statsAsync = ref.watch(adminStatsProvider);
+    
+    final totalStorageUsed = statsAsync.maybeWhen(
+      data: (data) => (data['stats'] as Map?)?['totalStorageUsed'] ?? 0,
+      orElse: () => 0,
+    );
+    final storageText = _formatBytes(totalStorageUsed);
+
+    Widget storageIndicator() {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.border.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border, width: 0.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.storage_rounded, size: 12, color: AppColors.primaryNeon),
+            const SizedBox(width: 6),
+            Text(
+              storageText,
+              style: const TextStyle(fontSize: 10.5, color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      );
+    }
+
     final int pendingSupportCount = statsAsync.maybeWhen(
       data: (data) {
         final supportRequests = data['supportRequests'] as List? ?? [];
@@ -118,7 +160,6 @@ class AdminShell extends ConsumerWidget {
       _AdminMenuItem('Users', Icons.people_alt_rounded, 1),
       _AdminMenuItem('Upgrade Requests', Icons.star_rounded, 2),
       _AdminMenuItem('Support Tickets', Icons.support_agent_rounded, 3),
-      _AdminMenuItem('Storage', Icons.storage_rounded, 4),
       _AdminMenuItem('Notifications', Icons.campaign_rounded, 5),
       _AdminMenuItem('Audit Logs', Icons.receipt_long_rounded, 6),
       _AdminMenuItem('App Settings', Icons.settings_rounded, 7),
@@ -276,10 +317,15 @@ class AdminShell extends ConsumerWidget {
                       CircleAvatar(
                         radius: 16,
                         backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                        child: Text(
-                          fullName.isNotEmpty ? fullName[0].toUpperCase() : 'A',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryNeon),
-                        ),
+                        backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                            ? NetworkImage(avatarUrl)
+                            : null,
+                        child: avatarUrl == null || avatarUrl.isEmpty
+                            ? Text(
+                                fullName.isNotEmpty ? fullName[0].toUpperCase() : 'A',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryNeon),
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -340,6 +386,8 @@ class AdminShell extends ConsumerWidget {
                 style: const TextStyle(fontFamily: 'Outfit', fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
               ),
               actions: [
+                storageIndicator(),
+                const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
                   onPressed: () => _triggerRefresh(ref, context),
@@ -386,10 +434,17 @@ class AdminShell extends ConsumerWidget {
                               color: Colors.white,
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary, size: 20),
-                            tooltip: 'Refresh Page',
-                            onPressed: () => _triggerRefresh(ref, context),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              storageIndicator(),
+                              const SizedBox(width: 12),
+                              IconButton(
+                                icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary, size: 20),
+                                tooltip: 'Refresh Page',
+                                onPressed: () => _triggerRefresh(ref, context),
+                              ),
+                            ],
                           ),
                         ],
                       ),

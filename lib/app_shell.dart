@@ -212,6 +212,78 @@ class _AppShellState extends ConsumerState<AppShell> {
             ),
           )
         : Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              title: const Row(
+                children: [
+                  EfLogo(size: 26),
+                  SizedBox(width: 8),
+                  Text(
+                    'EditFlow',
+                    style: TextStyle(
+                      fontFamily: 'Outfit',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                Builder(
+                  builder: (context) {
+                    final activitiesAsync = ref.watch(recentActivityProvider);
+                    final count = activitiesAsync.valueOrNull?.length ?? 0;
+                    
+                    final iconButton = IconButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          barrierColor: Colors.black26,
+                          builder: (context) => Center(
+                            child: Container(
+                              width: 420,
+                              height: 600,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: const NotificationCenterScreen(isDialog: true),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.notifications_none_rounded, size: 20, color: Colors.white),
+                    );
+
+                    if (count > 0) {
+                      return Badge(
+                        label: Text('$count', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white)),
+                        backgroundColor: AppColors.error,
+                        child: iconButton,
+                      );
+                    }
+                    return iconButton;
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined, size: 20, color: Colors.white),
+                  onPressed: () => context.push('/settings'),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
             body: Column(
               children: [
                 bannerWidget,

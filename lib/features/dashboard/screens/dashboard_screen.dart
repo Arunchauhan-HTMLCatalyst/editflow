@@ -173,7 +173,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   ),
                                 ],
                               ),
-                              if (!AppLayout.isTablet(context))
+                              if (false)
                                 IconButton(
                                   icon: Icon(
                                     Icons.settings_outlined,
@@ -371,7 +371,7 @@ class _DashboardLayout extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  if (!AppLayout.isTablet(context))
+                  if (false)
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
