@@ -121,10 +121,12 @@ class _UpiPaymentSheet extends StatefulWidget {
 class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
   String _selectedPlan = 'monthly';
   bool _isSubmitting = false;
+  String? _errorMessage;
 
   Future<void> _submitRequest() async {
     setState(() {
       _isSubmitting = true;
+      _errorMessage = null;
     });
 
     try {
@@ -169,13 +171,8 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
       if (mounted) {
         setState(() {
           _isSubmitting = false;
+          _errorMessage = e.toString();
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.error,
-            content: Text('Checkout failed: $e'),
-          ),
-        );
       }
     }
   }
@@ -362,7 +359,29 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
               'You will be redirected to Razorpay to complete your purchase securely. Once the payment is complete, your Premium subscription will be instantly activated automatically.',
               style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
             ),
-            const SizedBox(height: 24),
+            if (_errorMessage != null) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 0.8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // Submit Button
             ElevatedButton(
