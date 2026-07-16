@@ -230,7 +230,7 @@ serve(async (req) => {
           },
           notify: {
             sms: false,
-            email: true,
+            email: false,
           },
           reminder_enable: false,
           notes: {
