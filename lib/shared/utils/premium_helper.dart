@@ -148,7 +148,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
       }
 
       final uri = Uri.parse(shortUrl);
-      if (await canLaunchUrl(uri)) {
+      try {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
         if (mounted) {
           Navigator.pop(context); // Close bottom sheet
@@ -162,8 +162,8 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
             ),
           );
         }
-      } else {
-        throw Exception('Could not open payment page');
+      } catch (e) {
+        throw Exception('Could not open payment page: $e');
       }
     } catch (e) {
       if (mounted) {
