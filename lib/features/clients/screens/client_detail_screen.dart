@@ -1051,8 +1051,8 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     setState(() => _sendingInvite = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final userProfile = ref.read(authProvider).userProfile;
-      final freelancerName = userProfile?.fullName ?? 'Your Freelancer';
+      final user = ref.read(authProvider).user;
+      final freelancerName = user?.userMetadata?['full_name'] as String? ?? 'Your Freelancer';
 
       final response = await SupabaseService.instance.functions.invoke(
         'invite-client',
@@ -1083,8 +1083,8 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
 
   void _shareInviteLink(Client client) {
     final inviteUrl = 'https://editflow.acsoft.online/login?code=${client.id}';
-    final userProfile = ref.read(authProvider).userProfile;
-    final freelancerName = userProfile?.fullName ?? 'Freelancer';
+    final user = ref.read(authProvider).user;
+    final freelancerName = user?.userMetadata?['full_name'] as String? ?? 'Freelancer';
     Share.share(
       'Join my client review portal on EditFlow to check video drafts and submit feedback! '
       'Invite Code: ${client.id}\n'
