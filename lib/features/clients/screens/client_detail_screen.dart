@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1026,6 +1027,42 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     );
   }
 
+  String _generateInviteCode() {
+    final random = Random.secure();
+    final values = List<int>.generate(16, (i) => random.nextInt(256));
+    values[6] = (values[6] & 0x0f) | 0x40; // Set version to 4
+    values[8] = (values[8] & 0x3f) | 0x80; // Set variant to RFC 4122
+    
+    final buffer = StringBuffer();
+    for (var i = 0; i < 16; i++) {
+      if (i == 4 || i == 6 || i == 8 || i == 10) {
+        buffer.write('-');
+      }
+      buffer.write(values[i].toRadixString(16).padLeft(2, '0'));
+    }
+    return buffer.toString();
+  }
+
+  Future<Client> _generateAndSaveInviteCode(Client client) async {
+    final code = _generateInviteCode();
+    final updated = client.copyWith(inviteCode: code);
+    await ref.read(clientProvider.notifier).updateClient(updated);
+    return updated;
+  }
+
+  Future<String?> _fetchConnectedClientEmail(String clientUserId) async {
+    try {
+      final response = await SupabaseService.instance
+          .from('profiles')
+          .select('email')
+          .eq('id', clientUserId)
+          .single();
+      return response['email'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _sendEmailInvite(Client client) async {
     String? email = client.email;
     if (email == null || email.trim().isEmpty) {
@@ -1076,13 +1113,16 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
       final user = ref.read(authProvider).user;
       final freelancerName = user?.userMetadata?['full_name'] as String? ?? 'Your Freelancer';
 
+      final updatedClient = await _generateAndSaveInviteCode(client);
+      final activeInviteCode = updatedClient.inviteCode ?? client.id;
+
       final response = await SupabaseService.instance.functions.invoke(
         'invite-client',
         body: {
           'email': email,
           'clientName': client.name,
           'freelancerName': freelancerName,
-          'inviteCode': client.id,
+          'inviteCode': activeInviteCode,
           'inviteUrl': 'https://editflow.acsoft.online/app/#/login',
         },
       );
@@ -1103,16 +1143,26 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     }
   }
 
-  void _shareInviteLink(Client client) {
-    final inviteUrl = 'https://editflow.acsoft.online/app/#/login?code=${client.id}';
-    final user = ref.read(authProvider).user;
-    final freelancerName = user?.userMetadata?['full_name'] as String? ?? 'Freelancer';
-    Share.share(
-      'Join my client review portal on EditFlow to check video drafts and submit feedback! '
-      'Invite Code: ${client.id}\n'
-      'Accept Link: $inviteUrl',
-      subject: '$freelancerName invited you to EditFlow Portal',
-    );
+  Future<void> _shareInviteLink(Client client) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final updatedClient = await _generateAndSaveInviteCode(client);
+      final activeInviteCode = updatedClient.inviteCode ?? client.id;
+      final inviteUrl = 'https://editflow.acsoft.online/app/#/login?code=$activeInviteCode';
+      final user = ref.read(authProvider).user;
+      final freelancerName = user?.userMetadata?['full_name'] as String? ?? 'Freelancer';
+      
+      await Share.share(
+        'Join my client review portal on EditFlow to check video drafts and submit feedback! '
+        'Invite Code: $activeInviteCode\n'
+        'Accept Link: $inviteUrl',
+        subject: '$freelancerName invited you to EditFlow Portal',
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to generate invite link: $e')),
+      );
+    }
   }
 
   Future<void> _disconnectClientPortal(Client client) async {
@@ -1211,27 +1261,54 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   if (hasPortalAccess) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF0C1011) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Linked ID: ${client.clientUserId}',
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 11,
-                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                    FutureBuilder<String?>(
+                      future: _fetchConnectedClientEmail(client.clientUserId!),
+                      builder: (context, snapshot) {
+                        final email = snapshot.data ?? 'Fetching email...';
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF0C1011) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                        ],
-                      ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.mail_solid,
+                                    size: 11,
+                                    color: isDark ? Colors.white54 : Colors.black54,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      'Account Email: $email',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Linked ID: ${client.clientUserId}',
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 10,
+                                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(

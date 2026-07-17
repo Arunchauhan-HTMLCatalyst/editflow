@@ -64,8 +64,11 @@ class _ConnectionSuccessScreenState extends ConsumerState<ConnectionSuccessScree
       // 1. Perform database update to link client to this workspace
       await SupabaseService.instance
           .from('clients')
-          .update({'client_user_id': uid})
-          .eq('id', widget.inviteCode);
+          .update({
+            'client_user_id': uid,
+            'invite_code': null, // Clear invite code so it's one-time use!
+          })
+          .eq('invite_code', widget.inviteCode);
 
       // 2. Invalidate providers so the client instantly sees the workspace data
       ref.invalidate(clientProvider);
@@ -75,7 +78,7 @@ class _ConnectionSuccessScreenState extends ConsumerState<ConnectionSuccessScree
       final clientRow = await SupabaseService.instance
           .from('clients')
           .select('name, user_id')
-          .eq('id', widget.inviteCode)
+          .eq('client_user_id', uid)
           .single();
 
       final freelancerRow = await SupabaseService.instance

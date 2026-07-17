@@ -9,6 +9,7 @@ class Client {
   final String? company;
   final String? notes;
   final String? clientUserId;
+  final String? inviteCode;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -21,6 +22,7 @@ class Client {
     this.company,
     this.notes,
     this.clientUserId,
+    this.inviteCode,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -34,6 +36,7 @@ class Client {
         company: json['company'] as String?,
         notes: json['notes'] as String?,
         clientUserId: json['client_user_id'] as String?,
+        inviteCode: json['invite_code'] as String?,
         createdAt: DateTime.parse(json['created_at'] as String),
         updatedAt: DateTime.parse(json['updated_at'] as String),
       );
@@ -56,6 +59,7 @@ class Client {
         'company': company,
         'notes': notes,
         'client_user_id': clientUserId,
+        'invite_code': inviteCode,
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
       };
@@ -70,6 +74,8 @@ class Client {
     String? notes,
     String? clientUserId,
     bool clearClientUserId = false,
+    String? inviteCode,
+    bool clearInviteCode = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) =>
@@ -82,6 +88,7 @@ class Client {
         company: company ?? this.company,
         notes: notes ?? this.notes,
         clientUserId: clearClientUserId ? null : (clientUserId ?? this.clientUserId),
+        inviteCode: clearInviteCode ? null : (inviteCode ?? this.inviteCode),
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );

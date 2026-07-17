@@ -71,8 +71,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       final uid = ref.read(authProvider).user?.id ?? SupabaseService.userId;
       final response = await SupabaseService.instance
           .from('clients')
-          .update({'client_user_id': uid})
-          .eq('id', inviteCode)
+          .update({
+            'client_user_id': uid,
+            'invite_code': null, // Clear invite code so it's one-time use!
+          })
+          .eq('invite_code', inviteCode)
           .select();
 
       if ((response as List).isNotEmpty) {

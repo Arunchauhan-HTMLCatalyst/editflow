@@ -52,8 +52,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               final uid = next.user?.id ?? SupabaseService.userId;
               await SupabaseService.instance
                   .from('clients')
-                  .update({'client_user_id': uid})
-                  .eq('id', inviteCode);
+                  .update({
+                    'client_user_id': uid,
+                    'invite_code': null, // Clear invite code so it's one-time use!
+                  })
+                  .eq('invite_code', inviteCode);
               
               ref.invalidate(clientProvider);
               ref.invalidate(projectProvider);
