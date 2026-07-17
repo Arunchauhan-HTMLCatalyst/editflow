@@ -69,6 +69,7 @@ class Client {
     String? company,
     String? notes,
     String? clientUserId,
+    bool clearClientUserId = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) =>
@@ -80,7 +81,7 @@ class Client {
         email: email ?? this.email,
         company: company ?? this.company,
         notes: notes ?? this.notes,
-        clientUserId: clientUserId ?? this.clientUserId,
+        clientUserId: clearClientUserId ? null : (clientUserId ?? this.clientUserId),
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );

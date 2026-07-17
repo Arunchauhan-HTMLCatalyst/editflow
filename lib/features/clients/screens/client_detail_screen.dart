@@ -1139,7 +1139,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
       try {
         final targetClientUserId = client.clientUserId;
 
-        final updated = client.copyWith(clientUserId: null);
+        final updated = client.copyWith(clearClientUserId: true);
         await ref.read(clientProvider.notifier).updateClient(updated);
 
         if (targetClientUserId != null && targetClientUserId.isNotEmpty) {
