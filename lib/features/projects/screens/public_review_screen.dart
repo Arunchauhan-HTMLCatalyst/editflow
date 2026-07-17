@@ -323,63 +323,66 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
-              child: Card(
-                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const EfLogo(size: 48),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Join Project Review',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Enter your name to view the video and post feedback.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 13),
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _nameInputController,
-                        style: const TextStyle(fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: 'Your Display Name',
-                          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(
-                              color: isDark ? Colors.white24 : Colors.black12,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Card(
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const EfLogo(size: 48),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Join Project Review',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Enter your name to view the video and post feedback.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 13),
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _nameInputController,
+                          style: const TextStyle(fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'Your Display Name',
+                            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: isDark ? Colors.white24 : Colors.black12,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: AppColors.primary),
                             ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: AppColors.primary),
+                          textCapitalization: TextCapitalization.words,
+                          onSubmitted: (_) => _submitGuestName(),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: _submitGuestName,
+                            child: const Text('Start Review', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
-                        textCapitalization: TextCapitalization.words,
-                        onSubmitted: (_) => _submitGuestName(),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          onPressed: _submitGuestName,
-                          child: const Text('Start Review', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
