@@ -8,20 +8,7 @@ class FcmService {
 
   static Future<void> initialize() async {
     try {
-      // 1. Request notification permissions from the user
-      final settings = await _fcm.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      debugPrint('[FCM] Permission status: ${settings.authorizationStatus}');
-
-      // 2. Register foreground message listener to trigger local notification banners
+      // 1. Register foreground message listener to trigger local notification banners
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('[FCM] Foreground notification received: ${message.notification?.title}');
         final notification = message.notification;
@@ -35,20 +22,39 @@ class FcmService {
         }
       });
 
-      // 3. Handle token updates on refresh
+      // 2. Handle token updates on refresh
       _fcm.onTokenRefresh.listen((token) {
         debugPrint('[FCM] Token refreshed: $token');
         _updateTokenInDatabase(token);
       });
+    } catch (e, st) {
+      debugPrint('[FCM] FCM initialization failed: $e\n$st');
+    }
+  }
 
-      // 4. Capture the initial FCM token for the device
+  static Future<void> requestPermissionAndInitialize() async {
+    try {
+      debugPrint('[FCM] Requesting notification permissions after splash...');
+      final settings = await _fcm.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+
+      debugPrint('[FCM] Permission status: ${settings.authorizationStatus}');
+
+      // Capture the initial FCM token for the device
       final token = await _fcm.getToken();
       if (token != null) {
         debugPrint('[FCM] Initial token acquired: $token');
         await _updateTokenInDatabase(token);
       }
     } catch (e, st) {
-      debugPrint('[FCM] Initialization failed: $e\n$st');
+      debugPrint('[FCM] Permission request failed: $e\n$st');
     }
   }
 

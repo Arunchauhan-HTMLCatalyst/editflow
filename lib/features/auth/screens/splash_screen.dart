@@ -6,6 +6,7 @@ import '../../../shared/widgets/app_logo.dart';
 import '../../../services/supabase_service.dart';
 
 import '../../../shared/widgets/ambient_glow_container.dart';
+import '../../../services/fcm_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -64,6 +65,7 @@ class _SplashScreenState extends State<SplashScreen>
         return;
       }
       debugPrint('[SPLASH] Navigating to /dashboard');
+      unawaited(FcmService.requestPermissionAndInitialize());
       context.go('/dashboard');
       return;
     }
@@ -76,6 +78,7 @@ class _SplashScreenState extends State<SplashScreen>
         if (data.session != null && mounted) {
           debugPrint('[SPLASH] onAuthStateChange detected session. Cancelling sub and going to /dashboard');
           sub?.cancel();
+          unawaited(FcmService.requestPermissionAndInitialize());
           context.go('/dashboard');
         }
       },
@@ -100,9 +103,11 @@ class _SplashScreenState extends State<SplashScreen>
     debugPrint('[SPLASH] Final check - User: ${finalUser?.id}');
     if (finalUser != null) {
       debugPrint('[SPLASH] Navigating to /dashboard (final check succeeded)');
+      unawaited(FcmService.requestPermissionAndInitialize());
       context.go('/dashboard');
     } else {
       debugPrint('[SPLASH] Navigating to /login (no session found)');
+      unawaited(FcmService.requestPermissionAndInitialize());
       context.go('/login');
     }
   }
