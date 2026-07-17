@@ -82,7 +82,18 @@ class CommentRepository {
             'reference_type': 'project',
             'created_at': DateTime.now().toIso8601String(),
           }).timeout(const Duration(seconds: 10));
-          debugPrint('[COMMENT NOTIFICATION] Inserted activity for $notifyUserId: $desc');
+
+          await SupabaseService.instance.functions.invoke(
+            'send-push',
+            body: {
+              'recipientUserId': notifyUserId,
+              'title': 'New Comment on $projectName',
+              'body': desc,
+              'route': '/projects/${comment.projectId}',
+            },
+          );
+
+          debugPrint('[COMMENT NOTIFICATION] Inserted activity and sent push for $notifyUserId: $desc');
         }
       } catch (e) {
         debugPrint('[COMMENT NOTIFICATION ERROR] $e');

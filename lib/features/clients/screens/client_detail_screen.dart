@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -227,7 +228,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                       ),
                     ),
                     child: Icon(
-                      cl.clientUserId != null ? CupertinoIcons.checkmark_seal_fill : CupertinoIcons.envelope_badge,
+                      cl.clientUserId != null ? CupertinoIcons.checkmark_seal_fill : CupertinoIcons.link,
                       size: 18,
                       color: cl.clientUserId != null ? AppColors.success : AppColors.primary,
                     ),
@@ -1136,8 +1137,30 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     if (confirmed == true) {
       final messenger = ScaffoldMessenger.of(context);
       try {
+        final targetClientUserId = client.clientUserId;
+
         final updated = client.copyWith(clientUserId: null);
         await ref.read(clientProvider.notifier).updateClient(updated);
+
+        if (targetClientUserId != null && targetClientUserId.isNotEmpty) {
+          final freelancerName = ref.read(authProvider).user?.userMetadata?['full_name'] ?? 'Freelancer';
+          unawaited(() async {
+            try {
+              await SupabaseService.instance.functions.invoke(
+                'send-push',
+                body: {
+                  'recipientUserId': targetClientUserId,
+                  'title': 'Portal Access Revoked',
+                  'body': 'Freelancer "$freelancerName" has revoked your portal connection.',
+                  'route': '/login',
+                },
+              );
+            } catch (err) {
+              debugPrint('[REVOKE NOTIFICATION ERROR] $err');
+            }
+          }());
+        }
+
         messenger.showSnackBar(
           const SnackBar(content: Text('Client portal access revoked successfully')),
         );

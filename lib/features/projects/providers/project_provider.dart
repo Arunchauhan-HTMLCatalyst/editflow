@@ -298,6 +298,17 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
               'reference_type': 'project',
               'created_at': DateTime.now().toIso8601String(),
             });
+
+            await SupabaseService.instance.functions.invoke(
+              'send-push',
+              body: {
+                'recipientUserId': newProject.userId,
+                'title': 'New Project Assigned',
+                'body': 'Client "$clientName" assigned you a new project: "${newProject.name}"',
+                'route': '/projects/${newProject.id}',
+              },
+            );
+
             debugPrint('[PROJECT NOTIFICATION] Sent notification to freelancer ${newProject.userId} for project ${newProject.name}');
           } catch (err) {
             debugPrint('[PROJECT NOTIFICATION ERROR] $err');
@@ -351,6 +362,17 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
               'reference_type': 'project',
               'created_at': DateTime.now().toIso8601String(),
             });
+
+            await SupabaseService.instance.functions.invoke(
+              'send-push',
+              body: {
+                'recipientUserId': updated.userId,
+                'title': 'Project Updated',
+                'body': 'Client "$clientName" updated project: "${updated.name}"',
+                'route': '/projects/${updated.id}',
+              },
+            );
+
             debugPrint('[PROJECT NOTIFICATION] Sent project_updated notification to freelancer ${updated.userId}');
           } catch (err) {
             debugPrint('[PROJECT NOTIFICATION ERROR] $err');

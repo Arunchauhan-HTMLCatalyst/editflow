@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,7 @@ import '../../settings/providers/settings_provider.dart';
 import '../../../services/supabase_service.dart';
 import '../providers/client_provider.dart';
 import '../../projects/providers/project_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class FreelancerDetailScreen extends ConsumerWidget {
   final String freelancerId;
@@ -467,6 +469,8 @@ class FreelancerDetailScreen extends ConsumerWidget {
     if (confirmed == true) {
       final messenger = ScaffoldMessenger.of(context);
       try {
+        final clientName = ref.read(authProvider).user?.userMetadata?['full_name'] ?? 'Client';
+
         final response = await SupabaseService.instance
             .from('clients')
             .update({'client_user_id': null})
@@ -477,6 +481,22 @@ class FreelancerDetailScreen extends ConsumerWidget {
         if ((response as List).isEmpty) {
           throw Exception('Failed to disconnect. (No matching connection found in database. freelancerId: $freelancerId, myId: ${SupabaseService.userId})');
         }
+
+        unawaited(() async {
+          try {
+            await SupabaseService.instance.functions.invoke(
+              'send-push',
+              body: {
+                'recipientUserId': freelancerId,
+                'title': 'Workspace Disconnected',
+                'body': 'Client "$clientName" has disconnected from your workspace.',
+                'route': '/clients',
+              },
+            );
+          } catch (err) {
+            debugPrint('[DISCONNECT NOTIFICATION ERROR] $err');
+          }
+        }());
 
         ref.invalidate(clientProvider);
         ref.invalidate(projectProvider);
