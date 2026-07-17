@@ -475,7 +475,7 @@ class FreelancerDetailScreen extends ConsumerWidget {
             .select();
 
         if ((response as List).isEmpty) {
-          throw Exception('Failed to disconnect. You may already be unlinked.');
+          throw Exception('Failed to disconnect. (No matching connection found in database. freelancerId: $freelancerId, myId: ${SupabaseService.userId})');
         }
 
         ref.invalidate(clientProvider);
