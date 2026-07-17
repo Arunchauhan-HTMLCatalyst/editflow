@@ -126,7 +126,7 @@ function getEmailTemplate(clientName: string, freelancerName: string, inviteCode
     <body>
       <div class="wrapper">
         <div class="header">
-          <img src="https://editflow.acsoft.online/app/icons/Icon-192.png" alt="EditFlow Logo" style="width: 52px; height: 52px; margin-bottom: 12px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.2);" />
+          <img src="https://editflow.acsoft.online/app/logo.svg" alt="EditFlow Logo" style="width: 52px; height: 52px; margin-bottom: 12px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.2);" />
           <br />
           <span class="badge">Portal Invitation</span>
           <h1 class="title">You have been invited to EditFlow</h1>
