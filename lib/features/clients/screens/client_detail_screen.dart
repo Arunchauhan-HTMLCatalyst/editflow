@@ -19,6 +19,7 @@ import '../../settings/models/currency_config.dart';
 import '../../../shared/utils/premium_helper.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class ClientDetailScreen extends ConsumerStatefulWidget {
   final String clientId;
@@ -1053,7 +1054,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
       final userProfile = ref.read(authProvider).userProfile;
       final freelancerName = userProfile?.fullName ?? 'Your Freelancer';
 
-      final response = await SupabaseService.instance.client.functions.invoke(
+      final response = await SupabaseService.instance.functions.invoke(
         'invite-client',
         body: {
           'email': email,
