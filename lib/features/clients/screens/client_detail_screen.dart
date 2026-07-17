@@ -220,6 +220,29 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                       color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                       shape: BoxShape.circle,
                       border: Border.all(
+                        color: cl.clientUserId != null
+                            ? AppColors.success.withValues(alpha: 0.4)
+                            : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08)),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Icon(
+                      cl.clientUserId != null ? CupertinoIcons.checkmark_seal_fill : CupertinoIcons.envelope_badge,
+                      size: 18,
+                      color: cl.clientUserId != null ? AppColors.success : AppColors.primary,
+                    ),
+                  ),
+                  onPressed: () => _showPortalInvitationDialog(context, cl),
+                ),
+                const SizedBox(width: 8),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  child: Container(
+                    padding: const EdgeInsets.all(6.0),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                      shape: BoxShape.circle,
+                      border: Border.all(
                         color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                         width: 0.8,
                       ),
@@ -573,8 +596,6 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           ),
         ],
       ),
-      const SizedBox(height: 20),
-      _buildPortalInvitationCard(isDark, client),
       const SizedBox(height: 20),
       _HealthChips(
         total: metrics.totalValue,
@@ -1126,6 +1147,180 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         );
       }
     }
+  }
+
+  void _showPortalInvitationDialog(BuildContext context, Client client) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final hasPortalAccess = client.clientUserId != null && client.clientUserId!.isNotEmpty;
+
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(
+                    hasPortalAccess ? CupertinoIcons.checkmark_seal_fill : CupertinoIcons.envelope_badge,
+                    size: 20,
+                    color: hasPortalAccess ? AppColors.success : AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    hasPortalAccess ? 'Portal Connected' : 'Portal Invitation',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hasPortalAccess
+                        ? 'Client is connected to your workspace. They can view projects and reviews.'
+                        : 'Grant client portal access using the invite code or send an email invitation.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (hasPortalAccess) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0C1011) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Linked ID: ${client.clientUserId}',
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 11,
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        Navigator.of(ctx).pop();
+                        await _disconnectClientPortal(client);
+                      },
+                      icon: const Icon(CupertinoIcons.clear_circled_solid, size: 14),
+                      label: const Text('Revoke Access', style: TextStyle(fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(38),
+                        elevation: 0,
+                      ),
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0C1011) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Invite Code: ${client.id.substring(0, 8).toUpperCase()}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(CupertinoIcons.doc_on_doc, size: 14, color: AppColors.textSecondary),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: client.id));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Full invitation code copied')),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _sendingInvite
+                                ? null
+                                : () async {
+                                    setDialogState(() => _sendingInvite = true);
+                                    await _sendEmailInvite(client);
+                                    if (context.mounted) {
+                                      setDialogState(() => _sendingInvite = false);
+                                      Navigator.of(ctx).pop();
+                                    }
+                                  },
+                            icon: _sendingInvite
+                                ? const SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white),
+                                  )
+                                : const Icon(CupertinoIcons.mail, size: 13),
+                            label: const Text('Send Email', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.of(ctx).pop();
+                              _shareInviteLink(client);
+                            },
+                            icon: const Icon(CupertinoIcons.share, size: 13),
+                            label: const Text('Share Link', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary, width: 0.8),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }
 class _HealthChips extends StatelessWidget {
