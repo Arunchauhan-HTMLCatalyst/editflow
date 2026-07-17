@@ -49,6 +49,20 @@ class _SplashScreenState extends State<SplashScreen>
     _checkAuth();
   }
 
+  void _navigateNext() {
+    if (!mounted) return;
+    unawaited(FcmService.requestPermissionAndInitialize());
+    final code = SupabaseService.pendingInviteCode;
+    if (code != null && code.isNotEmpty) {
+      SupabaseService.pendingInviteCode = null;
+      debugPrint('[SPLASH] Navigating to connection success screen with code: $code');
+      context.go('/connection-success?code=$code');
+    } else {
+      debugPrint('[SPLASH] Navigating to /dashboard');
+      context.go('/dashboard');
+    }
+  }
+
   Future<void> _checkAuth() async {
     debugPrint('[SPLASH] _checkAuth started. Current user: ${SupabaseService.currentUser?.id}');
     await Future.delayed(const Duration(milliseconds: 500));
@@ -64,9 +78,7 @@ class _SplashScreenState extends State<SplashScreen>
         debugPrint('[SPLASH] Not mounted after user session delay');
         return;
       }
-      debugPrint('[SPLASH] Navigating to /dashboard');
-      unawaited(FcmService.requestPermissionAndInitialize());
-      context.go('/dashboard');
+      _navigateNext();
       return;
     }
 
@@ -76,10 +88,9 @@ class _SplashScreenState extends State<SplashScreen>
       (data) {
         debugPrint('[SPLASH] onAuthStateChange event: ${data.event}, session: ${data.session != null ? "active" : "null"}');
         if (data.session != null && mounted) {
-          debugPrint('[SPLASH] onAuthStateChange detected session. Cancelling sub and going to /dashboard');
+          debugPrint('[SPLASH] onAuthStateChange detected session. Cancelling sub.');
           sub?.cancel();
-          unawaited(FcmService.requestPermissionAndInitialize());
-          context.go('/dashboard');
+          _navigateNext();
         }
       },
       onError: (e, st) {
@@ -102,9 +113,8 @@ class _SplashScreenState extends State<SplashScreen>
     final finalUser = SupabaseService.currentUser;
     debugPrint('[SPLASH] Final check - User: ${finalUser?.id}');
     if (finalUser != null) {
-      debugPrint('[SPLASH] Navigating to /dashboard (final check succeeded)');
-      unawaited(FcmService.requestPermissionAndInitialize());
-      context.go('/dashboard');
+      debugPrint('[SPLASH] Navigating (final check succeeded)');
+      _navigateNext();
     } else {
       debugPrint('[SPLASH] Navigating to /login (no session found)');
       unawaited(FcmService.requestPermissionAndInitialize());

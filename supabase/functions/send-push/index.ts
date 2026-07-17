@@ -25,15 +25,26 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   };
 
   // Convert PEM private key string to ArrayBuffer
-  const pem = serviceAccount.private_key;
+  let pem = serviceAccount.private_key;
+  if (!pem) {
+    throw new Error("Service account JSON does not contain a private_key field");
+  }
+  // Handle literal \n (escaped newlines from JSON env vars) vs actual newlines
+  pem = pem.replace(/\\n/g, "\n");
+  
   const pemHeader = "-----BEGIN PRIVATE KEY-----";
   const pemFooter = "-----END PRIVATE KEY-----";
   const pemContents = pem
     .replace(pemHeader, "")
     .replace(pemFooter, "")
-    .replace(/\s+/g, "");
+    .replace(/[\s\r\n]+/g, "");
   
-  const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+  let binaryDer: Uint8Array;
+  try {
+    binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+  } catch (e) {
+    throw new Error(`Failed to decode base64 PEM key (length=${pemContents.length}): ${e.message}`);
+  }
 
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
@@ -151,6 +162,16 @@ serve(async (req) => {
         },
         data: {
           route: route || "/dashboard",
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+        android: {
+          priority: "HIGH" as const,
+          notification: {
+            channel_id: "editflow_notifications",
+            default_sound: true,
+            default_vibrate_timings: true,
+            notification_priority: "PRIORITY_HIGH" as const,
+          },
         },
         webpush: {
           notification: {

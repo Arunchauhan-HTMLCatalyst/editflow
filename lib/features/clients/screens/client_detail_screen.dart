@@ -1123,7 +1123,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           'clientName': client.name,
           'freelancerName': freelancerName,
           'inviteCode': activeInviteCode,
-          'inviteUrl': 'https://editflow.acsoft.online/app/#/login',
+          'inviteUrl': 'https://editflow.acsoft.online/app/#/login?code=$activeInviteCode',
         },
       );
 

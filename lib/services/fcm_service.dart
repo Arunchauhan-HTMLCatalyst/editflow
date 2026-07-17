@@ -6,6 +6,22 @@ import 'supabase_service.dart';
 class FcmService {
   static final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
+  /// Web Push VAPID key — get from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
+  /// TODO: Replace with actual VAPID key from Firebase Console for web push to work
+  static const String? _webVapidKey = null;
+
+  static Future<String?> _getToken() async {
+    try {
+      if (kIsWeb && _webVapidKey != null) {
+        return await _fcm.getToken(vapidKey: _webVapidKey);
+      }
+      return await _fcm.getToken();
+    } catch (e) {
+      debugPrint('[FCM] Failed to get token: $e');
+      return null;
+    }
+  }
+
   static Future<void> initialize() async {
     try {
       // 1. Register foreground message listener to trigger local notification banners
@@ -48,7 +64,7 @@ class FcmService {
       debugPrint('[FCM] Permission status: ${settings.authorizationStatus}');
 
       // Capture the initial FCM token for the device
-      final token = await _fcm.getToken();
+      final token = await _getToken();
       if (token != null) {
         debugPrint('[FCM] Initial token acquired: $token');
         await _updateTokenInDatabase(token);
@@ -60,7 +76,7 @@ class FcmService {
 
   static Future<void> updateTokenForCurrentUser() async {
     try {
-      final token = await _fcm.getToken();
+      final token = await _getToken();
       if (token != null) {
         await _updateTokenInDatabase(token);
       }
