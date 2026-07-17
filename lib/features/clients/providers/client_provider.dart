@@ -224,7 +224,8 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
     final previousState = state.valueOrNull ?? [];
     final tempClient = client.copyWith(id: '_temp_${DateTime.now().millisecondsSinceEpoch}');
 
-    state = AsyncData([tempClient, ...previousState]);
+    _lastValidData = [tempClient, ...previousState];
+    state = AsyncData(_lastValidData);
 
     try {
       final newClient = await repo.create(client);
@@ -233,11 +234,13 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
         newClient,
         ...current.where((c) => c.id != tempClient.id && c.id != newClient.id),
       ];
+      _lastValidData = updatedList;
       state = AsyncData(updatedList);
       _saveToCache(_getCacheKey(), updatedList);
       debugPrint('[ClientProvider] addClient: created ${newClient.id}');
     } catch (e, st) {
       debugPrint('[ClientProvider] addClient failed: $e');
+      _lastValidData = previousState;
       state = AsyncError<List<Client>>(e, st).copyWithPrevious(AsyncData(previousState));
     }
   }
@@ -247,17 +250,20 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
     final previousState = state.valueOrNull ?? [];
 
     final optimistic = previousState.map((c) => c.id == client.id ? client : c).toList();
+    _lastValidData = optimistic;
     state = AsyncData(optimistic);
 
     try {
       final updated = await repo.update(client);
       final current = state.valueOrNull ?? [];
       final updatedList = current.map((c) => c.id == updated.id ? updated : c).toList();
+      _lastValidData = updatedList;
       state = AsyncData(updatedList);
       _saveToCache(_getCacheKey(), updatedList);
       debugPrint('[ClientProvider] updateClient: updated ${updated.id}');
     } catch (e, st) {
       debugPrint('[ClientProvider] updateClient failed: $e');
+      _lastValidData = previousState;
       state = AsyncError<List<Client>>(e, st).copyWithPrevious(AsyncData(previousState));
     }
   }
@@ -267,6 +273,7 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
     final previousState = state.valueOrNull ?? [];
 
     final updatedList = previousState.where((c) => c.id != id).toList();
+    _lastValidData = updatedList;
     state = AsyncData(updatedList);
     _saveToCache(_getCacheKey(), updatedList);
 
@@ -275,6 +282,7 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
       debugPrint('[ClientProvider] deleteClient: deleted $id');
     } catch (e, st) {
       debugPrint('[ClientProvider] deleteClient failed: $e');
+      _lastValidData = previousState;
       state = AsyncError<List<Client>>(e, st).copyWithPrevious(AsyncData(previousState));
     }
   }

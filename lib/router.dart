@@ -73,7 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      if (isAuthenticated && isAuthRoute && loc != '/splash') {
+      if (isAuthenticated && isAuthRoute && loc != '/splash' && !isPublicRoute) {
         return '/dashboard';
       }
 
@@ -93,34 +93,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Auth / utility screens ── slide up from bottom ──────────────
       GoRoute(
         path: '/splash',
-        pageBuilder: (context, state) => slideUpPage(const SplashScreen()),
+        pageBuilder: (context, state) => slideUpPage(const SplashScreen(), key: state.pageKey),
       ),
       GoRoute(
         path: '/login',
-        pageBuilder: (context, state) => slideUpPage(const LoginScreen()),
+        pageBuilder: (context, state) => slideUpPage(const LoginScreen(), key: state.pageKey),
       ),
       GoRoute(
         path: '/register',
-        pageBuilder: (context, state) => slideUpPage(const RegisterScreen()),
+        pageBuilder: (context, state) => slideUpPage(const RegisterScreen(), key: state.pageKey),
       ),
       GoRoute(
         path: '/forgot-password',
-        pageBuilder: (context, state) => slideUpPage(const ForgotPasswordScreen()),
+        pageBuilder: (context, state) => slideUpPage(const ForgotPasswordScreen(), key: state.pageKey),
       ),
       GoRoute(
         path: '/settings',
-        pageBuilder: (context, state) => settingsPage(const SettingsScreen()),
+        pageBuilder: (context, state) => settingsPage(const SettingsScreen(), key: state.pageKey),
       ),
       GoRoute(
         path: '/premium-callback',
         pageBuilder: (context, state) {
           final sessionId = state.uri.queryParameters['session_id'];
-          return slidePushPage(PremiumCallbackScreen(sessionId: sessionId));
+          return slidePushPage(PremiumCallbackScreen(sessionId: sessionId), key: state.pageKey);
         },
       ),
       GoRoute(
         path: '/notifications',
-        pageBuilder: (context, state) => slidePushPage(const NotificationCenterScreen()),
+        pageBuilder: (context, state) => slidePushPage(const NotificationCenterScreen(), key: state.pageKey),
       ),
 
       // Sheet-style creation screens → slide up from bottom
@@ -134,12 +134,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             preselectedClientId: clientId,
             preselectedFreelancerId: freelancerId,
             preselectedFreelancerName: freelancerName,
-          ));
+          ), key: state.pageKey);
         },
       ),
       GoRoute(
         path: '/add-client',
-        pageBuilder: (context, state) => slideUpPage(const AddClientScreen()),
+        pageBuilder: (context, state) => slideUpPage(const AddClientScreen(), key: state.pageKey),
       ),
 
       // Detail screens → slide in from right
@@ -147,19 +147,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/clients/:id',
         pageBuilder: (context, state) => slidePushPage(ClientDetailScreen(
           clientId: state.pathParameters['id']!,
-        )),
+        ), key: state.pageKey),
       ),
       GoRoute(
         path: '/freelancers/:id',
         pageBuilder: (context, state) => slidePushPage(FreelancerDetailScreen(
           freelancerId: state.pathParameters['id']!,
-        )),
+        ), key: state.pageKey),
       ),
       GoRoute(
         path: '/projects/:id',
         pageBuilder: (context, state) => slidePushPage(ProjectDetailScreen(
           projectId: state.pathParameters['id']!,
-        )),
+        ), key: state.pageKey),
       ),
       GoRoute(
         path: '/projects/:projectId/reviews/:videoId',
@@ -172,14 +172,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             projectId: projectId,
             videoId: videoId,
             isClient: isClient,
-          ));
+          ), key: state.pageKey);
         },
       ),
       GoRoute(
         path: '/share/review/:token',
         pageBuilder: (context, state) {
           final token = state.pathParameters['token']!;
-          return slidePushPage(PublicReviewScreen(shareToken: token));
+          return slidePushPage(PublicReviewScreen(shareToken: token), key: state.pageKey);
         },
       ),
 
@@ -195,23 +195,23 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Bottom-nav tabs → fade only (no slide)
           GoRoute(
             path: '/dashboard',
-            pageBuilder: (context, state) => fadeTabPage(const DashboardScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const DashboardScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/clients',
-            pageBuilder: (context, state) => fadeTabPage(const ClientsScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const ClientsScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/reviews',
-            pageBuilder: (context, state) => fadeTabPage(const ClientReviewsScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const ClientReviewsScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/calendar',
-            pageBuilder: (context, state) => fadeTabPage(const CalendarScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const CalendarScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/payments',
-            pageBuilder: (context, state) => fadeTabPage(const PaymentsScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const PaymentsScreen(), key: state.pageKey),
           ),
         ],
       ),
@@ -227,35 +227,35 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/admin/dashboard',
-            pageBuilder: (context, state) => fadeTabPage(const AdminDashboardScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const AdminDashboardScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/admin/users',
-            pageBuilder: (context, state) => fadeTabPage(const AdminUsersScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const AdminUsersScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/admin/upgrades',
-            pageBuilder: (context, state) => fadeTabPage(const AdminUpgradesScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const AdminUpgradesScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/admin/storage',
-            pageBuilder: (context, state) => fadeTabPage(const AdminStorageScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const AdminStorageScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/admin/notifications',
-            pageBuilder: (context, state) => fadeTabPage(const AdminNotificationsScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const AdminNotificationsScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/admin/logs',
-            pageBuilder: (context, state) => fadeTabPage(const AdminLogsScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const AdminLogsScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/admin/support',
-            pageBuilder: (context, state) => fadeTabPage(const AdminSupportScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const AdminSupportScreen(), key: state.pageKey),
           ),
           GoRoute(
             path: '/admin/settings',
-            pageBuilder: (context, state) => fadeTabPage(const AdminSettingsScreen()),
+            pageBuilder: (context, state) => fadeTabPage(const AdminSettingsScreen(), key: state.pageKey),
           ),
         ],
       ),

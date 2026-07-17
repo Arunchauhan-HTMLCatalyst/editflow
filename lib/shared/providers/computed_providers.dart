@@ -46,6 +46,14 @@ class RecentActivityNotifier extends AsyncNotifier<List<Activity>> {
   bool _isFirstLoad = true;
 
   void _triggerLocalNotification(Activity activity) {
+    // Skip client logs and freelancer self project creations from triggering local notification banners
+    if (activity.type == 'client_created' || activity.type == 'client_deleted') {
+      return;
+    }
+    if (activity.type == 'project_created' && activity.description.startsWith('Created project')) {
+      return;
+    }
+
     String title = 'EditFlow Update';
     switch (activity.type) {
       case 'comment_created':

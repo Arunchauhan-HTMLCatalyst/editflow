@@ -18,6 +18,7 @@ import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../../shared/providers/computed_providers.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../../shared/utils/premium_helper.dart';
+import '../../../services/supabase_service.dart';
 
 class ClientsScreen extends ConsumerStatefulWidget {
   const ClientsScreen({super.key});
@@ -259,7 +260,38 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                       ),
                     ],
                   ),
-                  if (!isClient)
+                  if (isClient)
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.surface : CupertinoColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(CupertinoIcons.add, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Add Freelancer',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      onPressed: () => _showAddFreelancerDialog(context),
+                    )
+                  else
                     CupertinoButton(
                       padding: EdgeInsets.zero,
                       child: Container(
@@ -419,5 +451,100 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
       ),
     ),
   );
+  }
+
+  Future<void> _showAddFreelancerDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    bool connecting = false;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Add Freelancer'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Enter the invitation code provided by your freelancer to link your workspace.',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Invitation Code',
+                    hintText: 'e.g. 8d3ec50b-...',
+                  ),
+                  enabled: !connecting,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: connecting ? null : () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: connecting
+                    ? null
+                    : () async {
+                        final code = controller.text.trim();
+                        if (code.isEmpty) return;
+
+                        final uuidRegExp = RegExp(
+                          r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+                        );
+                        if (!uuidRegExp.hasMatch(code)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Invalid invitation code format. Please verify the code.')),
+                          );
+                          return;
+                        }
+
+                        setDialogState(() => connecting = true);
+                        try {
+                          final response = await SupabaseService.instance
+                              .from('clients')
+                              .update({'client_user_id': SupabaseService.userId})
+                              .eq('id', code)
+                              .select();
+
+                          if ((response as List).isEmpty) {
+                            throw Exception('No workspace found with this invitation code, or it is already connected.');
+                          }
+
+                          ref.invalidate(clientProvider);
+                          ref.invalidate(projectProvider);
+
+                          if (context.mounted) {
+                            Navigator.of(ctx).pop();
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Freelancer workspace connected successfully!')),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Connection failed: $e')),
+                          );
+                        } finally {
+                          setDialogState(() => connecting = false);
+                        }
+                      },
+                child: connecting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Connect'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }

@@ -305,6 +305,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       }
 
       final updatedList = _sort([newProject, ...previousState]);
+      _lastValidData = updatedList;
       state = AsyncData(updatedList);
       _saveToCache(_getCacheKey(), updatedList);
       debugPrint('[ProjectProvider] addProject: created ${newProject.id}');
@@ -320,12 +321,14 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
     final previousState = state.valueOrNull ?? [];
 
     final optimistic = previousState.map((p) => p.id == project.id ? project : p).toList();
+    _lastValidData = optimistic;
     state = AsyncData(optimistic);
 
     try {
       final updated = await repo.update(project);
       final current = state.valueOrNull ?? [];
       final updatedList = current.map((p) => p.id == updated.id ? updated : p).toList();
+      _lastValidData = updatedList;
       state = AsyncData(updatedList);
       _saveToCache(_getCacheKey(), updatedList);
       debugPrint('[ProjectProvider] updateProject: updated ${updated.id}');
@@ -386,6 +389,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
     final projectName = previousState.where((p) => p.id == id).firstOrNull?.name ?? '';
 
     final updatedList = previousState.where((p) => p.id != id).toList();
+    _lastValidData = updatedList;
     state = AsyncData(updatedList);
     _saveToCache(_getCacheKey(), updatedList);
 
@@ -422,6 +426,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
     final repo = ref.read(projectRepositoryProvider);
     final previousState = state.valueOrNull ?? [];
     final optimisticList = projects.map((p) => p.id == id ? updated : p).toList();
+    _lastValidData = optimisticList;
     state = AsyncData(optimisticList);
     _saveToCache(_getCacheKey(), optimisticList);
 
@@ -429,6 +434,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       final confirmed = await repo.update(updated);
       final current = state.valueOrNull ?? [];
       final updatedList = current.map((p) => p.id == confirmed.id ? confirmed : p).toList();
+      _lastValidData = updatedList;
       state = AsyncData(updatedList);
       _saveToCache(_getCacheKey(), updatedList);
       debugPrint('[ProjectProvider] updateStatus: $id -> ${newStatus.displayName}');

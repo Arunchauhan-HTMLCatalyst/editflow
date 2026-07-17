@@ -368,13 +368,44 @@ class ReviewRepository {
     }
   }
 
-  Future<void> addReviewCommentByShareToken(String token, ReviewComment comment) async {
+  Future<ReviewComment> addReviewCommentByShareToken(String token, ReviewComment comment) async {
+    final client = SupabaseService.instance;
+    try {
+      client.rest.headers['x-share-token'] = token;
+      final response = await client
+          .from('review_comments')
+          .insert(comment.toJson()..remove('id'))
+          .select()
+          .single()
+          .timeout(const Duration(seconds: 10));
+      return ReviewComment.fromJson(response);
+    } finally {
+      client.rest.headers.remove('x-share-token');
+    }
+  }
+
+  Future<void> updateReviewCommentByShareToken(String token, String commentId, String commentText) async {
     final client = SupabaseService.instance;
     try {
       client.rest.headers['x-share-token'] = token;
       await client
           .from('review_comments')
-          .insert(comment.toJson()..remove('id'))
+          .update({'comment': commentText})
+          .eq('id', commentId)
+          .timeout(const Duration(seconds: 10));
+    } finally {
+      client.rest.headers.remove('x-share-token');
+    }
+  }
+
+  Future<void> deleteReviewCommentByShareToken(String token, String commentId) async {
+    final client = SupabaseService.instance;
+    try {
+      client.rest.headers['x-share-token'] = token;
+      await client
+          .from('review_comments')
+          .delete()
+          .eq('id', commentId)
           .timeout(const Duration(seconds: 10));
     } finally {
       client.rest.headers.remove('x-share-token');

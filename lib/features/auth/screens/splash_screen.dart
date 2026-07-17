@@ -187,7 +187,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Freelance Project Management',
+                        "Editor's workspace",
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,

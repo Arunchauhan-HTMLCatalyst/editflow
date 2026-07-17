@@ -22,7 +22,6 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
   final _emailController = TextEditingController();
   final _companyController = TextEditingController();
   final _notesController = TextEditingController();
-  final _clientUserIdController = TextEditingController();
   bool _isSaving = false;
 
   @override
@@ -32,7 +31,6 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
     _emailController.dispose();
     _companyController.dispose();
     _notesController.dispose();
-    _clientUserIdController.dispose();
     super.dispose();
   }
 
@@ -49,7 +47,7 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
         email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
         company: _companyController.text.trim().isEmpty ? null : _companyController.text.trim(),
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-        clientUserId: _clientUserIdController.text.trim().isEmpty ? null : _clientUserIdController.text.trim(),
+        clientUserId: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -183,26 +181,6 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
                     hintText: 'Acme Corp',
                   ),
                   textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _clientUserIdController,
-                  decoration: const InputDecoration(
-                    labelText: 'Client User ID (for portal access)',
-                    hintText: 'Paste client\'s Supabase auth ID',
-                  ),
-                  textInputAction: TextInputAction.next,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return null;
-                    final trimmed = v.trim();
-                    final uuidRegExp = RegExp(
-                      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-                    );
-                    if (!uuidRegExp.hasMatch(trimmed)) {
-                      return 'Enter a valid Supabase User ID (UUID format)';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

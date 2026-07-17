@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "376711198932",
+    "project_id": "editflow-editorsworkspace",
+    "storage_bucket": "editflow-editorsworkspace.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:376711198932:android:21c51834243adec5cd2341",
+        "android_client_info": {
+          "package_name": "online.acsoft.editflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfxLsphWR_Zs6n2dQHfx11mpD4ulplq6E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

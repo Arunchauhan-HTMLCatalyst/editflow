@@ -174,12 +174,60 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ],
                               ),
                               if (!AppLayout.isTablet(context))
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.settings_outlined,
-                                    color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                                  ),
-                                  onPressed: () => context.push('/settings'),
+                                Row(
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.1),
+                                          width: 0.8,
+                                        ),
+                                      ),
+                                      child: Consumer(
+                                        builder: (context, ref, child) {
+                                          final activitiesAsync = ref.watch(recentActivityProvider);
+                                          final count = activitiesAsync.valueOrNull?.length ?? 0;
+                                          final iconButton = IconButton(
+                                            icon: Icon(
+                                              Icons.notifications_none_rounded,
+                                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                              size: 20,
+                                            ),
+                                            onPressed: () => context.push('/notifications'),
+                                          );
+                                          if (count > 0) {
+                                            return Badge(
+                                              label: Text('$count', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white)),
+                                              backgroundColor: AppColors.error,
+                                              child: iconButton,
+                                            );
+                                          }
+                                          return iconButton;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.1),
+                                          width: 0.8,
+                                        ),
+                                      ),
+                                      child: IconButton(
+                                        icon: Icon(
+                                          Icons.settings_outlined,
+                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                          size: 20,
+                                        ),
+                                        onPressed: () => context.push('/settings'),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                             ],
                           ),

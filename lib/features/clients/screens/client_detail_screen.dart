@@ -17,6 +17,8 @@ import '../../../services/supabase_service.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
 import '../../../shared/utils/premium_helper.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
 
 class ClientDetailScreen extends ConsumerStatefulWidget {
   final String clientId;
@@ -32,10 +34,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
   late TextEditingController _emailController;
   late TextEditingController _companyController;
   late TextEditingController _notesController;
-  late TextEditingController _clientUserIdController;
   bool _isEditing = false;
   bool _isSaving = false;
   bool _contactExpanded = false;
+  bool _sendingInvite = false;
   Client? _cachedClient;
   List<Project> _cachedProjects = [];
   final _editFormKey = GlobalKey<FormState>();
@@ -48,7 +50,6 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     _emailController = TextEditingController();
     _companyController = TextEditingController();
     _notesController = TextEditingController();
-    _clientUserIdController = TextEditingController();
   }
 
   @override
@@ -58,7 +59,6 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     _emailController.dispose();
     _companyController.dispose();
     _notesController.dispose();
-    _clientUserIdController.dispose();
     super.dispose();
   }
 
@@ -236,7 +236,6 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                     _emailController.text = cl.email ?? '';
                     _companyController.text = cl.company ?? '';
                     _notesController.text = cl.notes ?? '';
-                    _clientUserIdController.text = cl.clientUserId ?? '';
                   },
                 ),
                 const SizedBox(width: 8),
@@ -574,6 +573,8 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         ],
       ),
       const SizedBox(height: 20),
+      _buildPortalInvitationCard(isDark, client),
+      const SizedBox(height: 20),
       _HealthChips(
         total: metrics.totalValue,
         revenue: metrics.revenue,
@@ -723,24 +724,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
             controller: _companyController,
             decoration: const InputDecoration(labelText: 'Company'),
           ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _clientUserIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Client User ID (for portal access)',
-                ),
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return null;
-              final trimmed = v.trim();
-              final uuidRegExp = RegExp(
-                r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-              );
-              if (!uuidRegExp.hasMatch(trimmed)) {
-                return 'Enter a valid Supabase User ID (UUID format)';
-              }
-              return null;
-            },
-          ),
+
           const SizedBox(height: 16),
           TextFormField(
             controller: _notesController,
@@ -806,7 +790,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
           company: _companyController.text.trim().isEmpty ? null : _companyController.text.trim(),
           notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-          clientUserId: _clientUserIdController.text.trim().isEmpty ? null : _clientUserIdController.text.trim(),
+          clientUserId: existing.clientUserId,
           createdAt: existing.createdAt,
           updatedAt: DateTime.now(),
         );
@@ -857,6 +841,289 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
       await ref.read(clientProvider.notifier).deleteClient(widget.clientId);
       if (!mounted) return;
       context.pop();
+    }
+  }
+
+  Widget _buildPortalInvitationCard(bool isDark, Client client) {
+    final hasPortalAccess = client.clientUserId != null && client.clientUserId!.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF14191B) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
+          width: 0.8,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                hasPortalAccess ? CupertinoIcons.checkmark_seal_fill : CupertinoIcons.envelope_badge,
+                size: 18,
+                color: hasPortalAccess ? AppColors.success : AppColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasPortalAccess ? 'Client Portal Connected' : 'Client Portal Invitation',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            hasPortalAccess
+                ? 'Client is connected to your workspace. They can view projects and reviews.'
+                : 'Send email invites or share invitation codes/links to grant client portal access.',
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (hasPortalAccess) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0C1011) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Linked ID: ${client.clientUserId}',
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 10,
+                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(CupertinoIcons.clear_circled_solid, color: AppColors.error, size: 18),
+                  onPressed: () => _disconnectClientPortal(client),
+                  tooltip: 'Revoke Portal Access',
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0C1011) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Invite Code: ${client.id.substring(0, 8).toUpperCase()}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(CupertinoIcons.doc_on_doc, size: 14, color: AppColors.textSecondary),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: client.id));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Full invitation code copied to clipboard')),
+                            );
+                          },
+                          tooltip: 'Copy Code',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _sendingInvite ? null : () => _sendEmailInvite(client),
+                    icon: _sendingInvite
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white),
+                          )
+                        : const Icon(CupertinoIcons.mail, size: 13),
+                    label: const Text('Send Email', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _shareInviteLink(client),
+                    icon: const Icon(CupertinoIcons.share, size: 13),
+                    label: const Text('Share Link', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary, width: 0.8),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendEmailInvite(Client client) async {
+    String? email = client.email;
+    if (email == null || email.trim().isEmpty) {
+      final controller = TextEditingController();
+      final added = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Enter Client Email'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('The client does not have an email address set. Please enter one to send the invitation:'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(labelText: 'Email Address', hintText: 'client@email.com'),
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Submit'),
+            ),
+          ],
+        ),
+      );
+
+      if (added == true && controller.text.trim().isNotEmpty) {
+        email = controller.text.trim();
+        try {
+          final updated = client.copyWith(email: email);
+          await ref.read(clientProvider.notifier).updateClient(updated);
+        } catch (_) {}
+      } else {
+        return;
+      }
+    }
+
+    setState(() => _sendingInvite = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final userProfile = ref.read(authProvider).userProfile;
+      final freelancerName = userProfile?.fullName ?? 'Your Freelancer';
+
+      final response = await SupabaseService.instance.client.functions.invoke(
+        'invite-client',
+        body: {
+          'email': email,
+          'clientName': client.name,
+          'freelancerName': freelancerName,
+          'inviteCode': client.id,
+          'inviteUrl': 'https://editflow.acsoft.online/login',
+        },
+      );
+
+      if (response.status != 200) {
+        throw Exception(response.data is Map ? response.data['error'] : 'Send failed');
+      }
+
+      messenger.showSnackBar(
+        SnackBar(content: Text('Invitation successfully emailed to $email')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Email failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _sendingInvite = false);
+    }
+  }
+
+  void _shareInviteLink(Client client) {
+    final inviteUrl = 'https://editflow.acsoft.online/login?code=${client.id}';
+    final userProfile = ref.read(authProvider).userProfile;
+    final freelancerName = userProfile?.fullName ?? 'Freelancer';
+    Share.share(
+      'Join my client review portal on EditFlow to check video drafts and submit feedback! '
+      'Invite Code: ${client.id}\n'
+      'Accept Link: $inviteUrl',
+      subject: '$freelancerName invited you to EditFlow Portal',
+    );
+  }
+
+  Future<void> _disconnectClientPortal(Client client) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Revoke Client Portal Access'),
+        content: Text('Are you sure you want to disconnect ${client.name}? They will lose access to all shared projects.'),
+        actions: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          TextButton(
+            child: const Text('Revoke Access', style: TextStyle(color: AppColors.error)),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        final updated = client.copyWith(clientUserId: null);
+        await ref.read(clientProvider.notifier).updateClient(updated);
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Client portal access revoked successfully')),
+        );
+      } catch (e) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Failed to revoke access: $e')),
+        );
+      }
     }
   }
 }

@@ -82,12 +82,12 @@ class _ShareLinkDialogState extends ConsumerState<ShareLinkDialog> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: isDark ? const Color(0xFF090D16) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 20,
             spreadRadius: 2,
           )
         ],
@@ -102,9 +102,19 @@ class _ShareLinkDialogState extends ConsumerState<ShareLinkDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Share Review Link',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                Row(
+                  children: [
+                    const Icon(CupertinoIcons.share, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Share Guest Review Link',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
                 ),
                 IconButton(
                   icon: const Icon(CupertinoIcons.clear_circled_solid, size: 22, color: Colors.grey),
@@ -114,107 +124,142 @@ class _ShareLinkDialogState extends ConsumerState<ShareLinkDialog> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Generate a public player link for stakeholders without accounts.',
-              style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 13),
+              'Generate a cryptographically secure player link for stakeholders to view and add timestamped comments without registering an account.',
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 13),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             if (_generatedLink == null) ...[
               // Link Expiry Option Selection
               const Text(
-                'Link Expiry duration:',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                'Select Expiry Duration:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: _expiryOptions.map((opt) {
                   final isSelected = opt.value == _selectedExpiryHours;
-                  return ChoiceChip(
-                    label: Text(opt.label),
-                    selected: isSelected,
-                    selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                    backgroundColor: Colors.transparent,
-                    checkmarkColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? AppColors.primary
-                          : (isDark ? Colors.white70 : Colors.black87),
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _selectedExpiryHours = opt.value;
-                        });
-                      }
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedExpiryHours = opt.value;
+                      });
                     },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.primary.withOpacity(0.12) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected 
+                              ? AppColors.primary 
+                              : (isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1)),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Text(
+                        opt.label,
+                        style: TextStyle(
+                          color: isSelected ? AppColors.primary : (isDark ? Colors.white70 : Colors.black87),
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0D9488), Color(0xFF10B981)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  onPressed: _isGenerating ? null : _generateLink,
-                  child: _isGenerating
-                      ? const CupertinoActivityIndicator(color: Colors.white)
-                      : const Text('Generate Shareable Link', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _isGenerating ? null : _generateLink,
+                    child: _isGenerating
+                        ? const CupertinoActivityIndicator(color: Colors.white)
+                        : const Text('Generate Shareable Link', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ),
             ] else ...[
               // Generated Link Display
               const Text(
-                'Review Link Generated:',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                'Review Link Generated Successfully:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                  borderRadius: BorderRadius.circular(10),
+                  color: isDark ? const Color(0xFF111625) : Colors.black.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark ? Colors.white10 : Colors.black12,
+                    color: isDark ? const Color(0xFF1E293B) : Colors.black12,
+                    width: 1.0,
                   ),
                 ),
                 child: Row(
                   children: [
+                    const Icon(CupertinoIcons.link, color: AppColors.primary, size: 18),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _generatedLink!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, color: AppColors.primary),
+                        style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _copied ? Colors.green : AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: _copied 
+                          ? [Colors.green, Colors.teal] 
+                          : [const Color(0xFF0D9488), const Color(0xFF10B981)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  icon: Icon(_copied ? Icons.check_circle : Icons.copy),
-                  label: Text(
-                    _copied ? 'Copied to Clipboard!' : 'Copy Link',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: Icon(_copied ? Icons.check_circle_rounded : Icons.copy_rounded, size: 18),
+                    label: Text(
+                      _copied ? 'Copied to Clipboard!' : 'Copy Link',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: _copyToClipboard,
                   ),
-                  onPressed: _copyToClipboard,
                 ),
               ),
             ],

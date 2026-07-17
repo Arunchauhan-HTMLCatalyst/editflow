@@ -16,8 +16,9 @@ Widget _applyBlurTransition(Animation<double> animation, Widget child) {
 // TAB SWITCH — fade only (instant, no slide)
 // Used for bottom nav: Dashboard ↔ Clients ↔ Calendar ↔ Payments
 // ─────────────────────────────────────────────
-Page<void> fadeTabPage(Widget child) {
+Page<void> fadeTabPage(Widget child, {LocalKey? key}) {
   return CustomTransitionPage<void>(
+    key: key,
     child: child,
     transitionDuration: _tabDuration,
     reverseTransitionDuration: _tabDuration,
@@ -37,8 +38,9 @@ Page<void> fadeTabPage(Widget child) {
 // DETAIL PUSH — slide in from right + fade + blur
 // Used for: project detail, client detail
 // ─────────────────────────────────────────────
-Page<void> slidePushPage(Widget child) {
+Page<void> slidePushPage(Widget child, {LocalKey? key}) {
   return CustomTransitionPage<void>(
+    key: key,
     child: child,
     transitionDuration: _pushDuration,
     reverseTransitionDuration: _pushDuration,
@@ -84,8 +86,9 @@ Page<void> slidePushPage(Widget child) {
 // SHEET PUSH — slide up from bottom + fade + blur
 // Used for: add project, add client, settings, auth screens
 // ─────────────────────────────────────────────
-Page<void> slideUpPage(Widget child) {
+Page<void> slideUpPage(Widget child, {LocalKey? key}) {
   return CustomTransitionPage<void>(
+    key: key,
     child: child,
     transitionDuration: _sheetDuration,
     reverseTransitionDuration: const Duration(milliseconds: 300),
@@ -118,8 +121,9 @@ Page<void> slideUpPage(Widget child) {
 // Used for: settings screen (sits outside ShellRoute so bottom nav
 // disappears — the background must NOT move to avoid a visual jump)
 // ─────────────────────────────────────────────
-Page<void> settingsPage(Widget child) {
+Page<void> settingsPage(Widget child, {LocalKey? key}) {
   return CustomTransitionPage<void>(
+    key: key,
     child: child,
     transitionDuration: _pushDuration,
     reverseTransitionDuration: _pushDuration,

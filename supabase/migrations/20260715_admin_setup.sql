@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
 ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 
 -- Allow anyone (authenticated or anonymous) to view settings (e.g. to read maintenance status or announcement banner)
+DROP POLICY IF EXISTS "Allow public read access to system settings" ON public.system_settings;
 CREATE POLICY "Allow public read access to system settings"
   ON public.system_settings FOR SELECT USING (true);
 

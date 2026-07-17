@@ -13,6 +13,9 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../projects/models/project.dart';
 import '../../settings/models/currency_config.dart';
 import '../../settings/providers/settings_provider.dart';
+import '../../../services/supabase_service.dart';
+import '../providers/client_provider.dart';
+import '../../projects/providers/project_provider.dart';
 
 class FreelancerDetailScreen extends ConsumerWidget {
   final String freelancerId;
@@ -84,6 +87,28 @@ class FreelancerDetailScreen extends ConsumerWidget {
             color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
           ),
         ),
+        actions: [
+          CupertinoButton(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: Container(
+              padding: const EdgeInsets.all(6.0),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                  width: 0.8,
+                ),
+              ),
+              child: const Icon(
+                CupertinoIcons.clear_circled,
+                size: 18,
+                color: AppColors.error,
+              ),
+            ),
+            onPressed: () => _disconnectFreelancer(context, ref),
+          ),
+        ],
       ),
       body: AmbientGlowContainer(
         child: SafeArea(
@@ -415,6 +440,59 @@ class FreelancerDetailScreen extends ConsumerWidget {
       width: 0.5,
       color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
     );
+  }
+
+  Future<void> _disconnectFreelancer(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove Freelancer'),
+        content: const Text(
+          'Are you sure you want to disconnect from this freelancer? '
+          'You will lose access to all shared projects and reviews.',
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          TextButton(
+            child: const Text('Disconnect', style: TextStyle(color: AppColors.error)),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        final response = await SupabaseService.instance
+            .from('clients')
+            .update({'client_user_id': null})
+            .eq('user_id', freelancerId)
+            .eq('client_user_id', SupabaseService.userId)
+            .select();
+
+        if ((response as List).isEmpty) {
+          throw Exception('Failed to disconnect. You may already be unlinked.');
+        }
+
+        ref.invalidate(clientProvider);
+        ref.invalidate(projectProvider);
+        
+        if (context.mounted) {
+          context.pop();
+        }
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Disconnected from freelancer successfully.')),
+        );
+      } catch (e) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Disconnection failed: $e')),
+        );
+      }
+    }
   }
 }
 

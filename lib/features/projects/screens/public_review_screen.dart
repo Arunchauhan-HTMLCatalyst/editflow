@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/ef_logo.dart';
 import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../../shared/widgets/loading_widget.dart';
 import '../../../shared/widgets/empty_state.dart';
@@ -35,6 +36,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
   List<ReviewVideo> _videos = [];
   ReviewVideo? _currentVideo;
   String? _guestName;
+  List<String> _myGuestCommentIds = [];
 
   VideoPlayerController? _controller;
   bool _isPlayerInitialized = false;
@@ -113,6 +115,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
       // 4. Check Guest Name
       final prefs = await SharedPreferences.getInstance();
       _guestName = prefs.getString('guest_name');
+      _myGuestCommentIds = prefs.getStringList('my_guest_comment_ids_${widget.shareToken}') ?? [];
 
       // 5. Initialize Video Player
       if (_guestName != null && _guestName!.isNotEmpty) {
@@ -138,42 +141,36 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     // Clean up old controller if any
     if (_controller != null) {
       _controller!.removeListener(_videoListener);
-      await _controller!.dispose();
-      _controller = null;
-      setState(() {
-        _isPlayerInitialized = false;
-        _hasPlayerError = false;
-      });
+      _controller!.dispose();
+      _isPlayerInitialized = false;
     }
 
     try {
-      final playableUrl = VideoSourceManager.getPlayableUrl(_currentVideo!.url);
-      _controller = VideoPlayerController.networkUrl(Uri.parse(playableUrl));
-
+      final url = _currentVideo!.url;
+      final playableUrl = VideoSourceManager.getPlayableUrl(url);
+      
+      final Uri uri = Uri.parse(playableUrl);
+      _controller = VideoPlayerController.networkUrl(uri);
+      
       await _controller!.initialize();
-      if (mounted) {
-        setState(() {
-          _isPlayerInitialized = true;
-          _totalDuration = _controller!.value.duration;
-        });
-        _controller!.addListener(_videoListener);
-      }
+      _controller!.addListener(_videoListener);
+      _totalDuration = _controller!.value.duration;
+      _isPlayerInitialized = true;
+      _hasPlayerError = false;
     } catch (e) {
       debugPrint('[PublicReviewScreen] Video player init failed: $e');
-      if (mounted) {
-        setState(() {
-          _hasPlayerError = true;
-        });
-      }
+      _isPlayerInitialized = false;
+      _hasPlayerError = true;
+    }
+
+    if (mounted) {
+      setState(() {});
     }
   }
 
   void _videoListener() {
-    if (!mounted || _controller == null) return;
-    if (_controller!.value.isInitialized) {
-      if (!_isDragging) {
-        _currentPositionNotifier.value = _controller!.value.position;
-      }
+    if (_controller != null && !_isDragging) {
+      _currentPositionNotifier.value = _controller!.value.position;
       final playing = _controller!.value.isPlaying;
       if (playing != _isPlaying) {
         setState(() {
@@ -183,39 +180,28 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     }
   }
 
-  Future<void> _seekTo(Duration position) async {
+  Future<void> _seekTo(Duration duration) async {
     if (_controller != null && _isPlayerInitialized) {
-      final wasPlaying = _controller!.value.isPlaying;
       try {
-        await _controller!.seekTo(position);
-        await Future.delayed(const Duration(milliseconds: 50));
-        if (wasPlaying && !_controller!.value.isPlaying) {
-          await _controller!.play();
-        }
+        await _controller!.seekTo(duration);
+        _currentPositionNotifier.value = duration;
       } catch (e) {
         debugPrint('[PublicReviewScreen] _seekTo failed: $e');
-      }
-      if (mounted) {
-        _currentPositionNotifier.value = position;
       }
     }
   }
 
   Future<void> _togglePlay() async {
-    if (_controller == null || !_isPlayerInitialized) return;
-    try {
-      if (_controller!.value.isPlaying) {
-        await _controller!.pause();
-      } else {
-        await _controller!.play();
+    if (_controller != null && _isPlayerInitialized) {
+      try {
+        if (_isPlaying) {
+          await _controller!.pause();
+        } else {
+          await _controller!.play();
+        }
+      } catch (e) {
+        debugPrint('[PublicReviewScreen] _togglePlay failed: $e');
       }
-      if (mounted) {
-        setState(() {
-          _isPlaying = _controller!.value.isPlaying;
-        });
-      }
-    } catch (e) {
-      debugPrint('[PublicReviewScreen] _togglePlay failed: $e');
     }
   }
 
@@ -264,7 +250,13 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
 
     try {
       final repo = ref.read(reviewRepositoryProvider);
-      await repo.addReviewCommentByShareToken(widget.shareToken, comment);
+      final newComment = await repo.addReviewCommentByShareToken(widget.shareToken, comment);
+      
+      final prefs = await SharedPreferences.getInstance();
+      _myGuestCommentIds.add(newComment.id);
+      await prefs.setStringList('my_guest_comment_ids_${widget.shareToken}', _myGuestCommentIds);
+      
+      setState(() {});
       _commentInputController.clear();
       _commentFocusNode.unfocus();
     } catch (e) {
@@ -339,8 +331,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(CupertinoIcons.person_crop_circle_badge_checkmark,
-                          size: 40, color: AppColors.primary),
+                      const EfLogo(size: 48),
                       const SizedBox(height: 16),
                       const Text(
                         'Join Project Review',
@@ -403,16 +394,22 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Text(
-              'Shared Review Player',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-            ),
-            Text(
-              'Logged in as: $_guestName (Guest)',
-              style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.normal),
+            const EfLogo(size: 24),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'EditFlow Review',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                ),
+                Text(
+                  'Guest: $_guestName',
+                  style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.normal),
+                ),
+              ],
             ),
           ],
         ),
@@ -818,10 +815,11 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                       );
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
-                itemCount: comments.length,
-                itemBuilder: (context, index) {
+              return RepaintBoundary(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
+                  itemCount: comments.length,
+                  itemBuilder: (context, index) {
                   final comment = comments[index];
                   final duration = Duration(milliseconds: comment.timestampMs);
 
@@ -921,15 +919,195 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                             ],
                           ),
                         ),
+                        if (_myGuestCommentIds.contains(comment.id)) ...[
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert_rounded, size: 18, color: Colors.grey),
+                            padding: EdgeInsets.zero,
+                            onSelected: (action) {
+                              if (action == 'edit') {
+                                _editComment(comment);
+                              } else if (action == 'delete') {
+                                _confirmDeleteComment(comment);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_rounded, size: 16, color: Colors.grey),
+                                    SizedBox(width: 8),
+                                    Text('Edit', style: TextStyle(fontSize: 13)),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete_rounded, size: 16, color: Colors.red),
+                                    SizedBox(width: 8),
+                                    Text('Delete', style: TextStyle(fontSize: 13, color: Colors.red)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   );
                 },
-              );
+              ),
+            );
             },
           ),
         ),
+        if (!keyboardOpen)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0),
+                  width: 0.8,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const EfLogo(size: 14),
+                const SizedBox(width: 6),
+                Text(
+                  'Powered by EditFlow',
+                  style: TextStyle(
+                    fontSize: 10, 
+                    fontWeight: FontWeight.w600, 
+                    color: isDark ? Colors.white38 : Colors.black38
+                  ),
+                ),
+                Text(
+                  ' | editflow.acsoft.online',
+                  style: TextStyle(
+                    fontSize: 10, 
+                    color: isDark ? AppColors.primary.withOpacity(0.5) : AppColors.primary.withOpacity(0.7)
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
+    );
+  }
+
+  Future<void> _editComment(ReviewComment comment) async {
+    final TextEditingController editController = TextEditingController(
+      text: comment.comment.split(' (Guest): ').length > 1 
+          ? comment.comment.split(' (Guest): ')[1] 
+          : comment.comment
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF111625) : Colors.white,
+          title: const Text('Edit Comment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: editController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: 'Enter new comment text...',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final newText = editController.text.trim();
+                if (newText.isEmpty) return;
+                Navigator.pop(context);
+
+                final guestFormattedComment = '$_guestName (Guest): $newText';
+                try {
+                  final repo = ref.read(reviewRepositoryProvider);
+                  await repo.updateReviewCommentByShareToken(
+                    widget.shareToken,
+                    comment.id,
+                    guestFormattedComment,
+                  );
+                  ref.invalidate(publicReviewCommentsProvider);
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to update comment: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmDeleteComment(ReviewComment comment) async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF111625) : Colors.white,
+          title: const Text('Delete Comment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          content: const Text('Are you sure you want to delete this comment?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  final repo = ref.read(reviewRepositoryProvider);
+                  await repo.deleteReviewCommentByShareToken(widget.shareToken, comment.id);
+                  
+                  _myGuestCommentIds.remove(comment.id);
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setStringList('my_guest_comment_ids_${widget.shareToken}', _myGuestCommentIds);
+                  
+                  ref.invalidate(publicReviewCommentsProvider);
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to delete comment: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
   }
 

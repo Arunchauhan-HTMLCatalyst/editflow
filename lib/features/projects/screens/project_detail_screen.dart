@@ -2077,7 +2077,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                   controller: item['url'],
                                   style: const TextStyle(fontSize: 13),
                                   decoration: InputDecoration(
-                                    labelText: 'Video URL (Direct link or Dropbox)',
+                                    labelText: 'Video URL (e.g. Dropbox, GDrive, OneDrive, or Direct)',
                                     labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                                     prefixIcon: const Icon(CupertinoIcons.link, size: 16),
                                     filled: true,
@@ -2088,6 +2088,20 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(Icons.info_outline_rounded, size: 12, color: Colors.amber),
+                                    SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Tip: Use Dropbox or direct links for the best interactive playback. Google Drive & OneDrive are supported but may load slower.',
+                                        style: TextStyle(fontSize: 10, color: Colors.grey, height: 1.2),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -2150,18 +2164,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                             }
                             
                             final urlLower = url.toLowerCase();
-                            final isDropbox = urlLower.contains('dropbox.com');
-                            final isDirectVideo = urlLower.endsWith('.mp4') ||
-                                urlLower.endsWith('.mov') ||
-                                urlLower.endsWith('.m4v') ||
-                                urlLower.endsWith('.webm') ||
-                                urlLower.contains('/mp4/') ||
-                                urlLower.contains('.mp4?');
+                            final isValidUrl = urlLower.startsWith('http://') || urlLower.startsWith('https://');
                                 
-                            if (!isDropbox && !isDirectVideo) {
+                            if (!isValidUrl) {
                               ScaffoldMessenger.of(ctx).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Strictly Dropbox links or Direct Video URLs (MP4) are supported for reviews.'),
+                                  content: Text('Please enter a valid video web URL starting with http:// or https://'),
                                 ),
                               );
                               return;
