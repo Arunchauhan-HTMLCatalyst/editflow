@@ -82,7 +82,8 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
     });
 
     if (_hasLoadedOnce) {
-      debugPrint('[PROJECT BUILD] returning CACHED ${_lastValidData.length} projects');
+      debugPrint('[PROJECT BUILD] returning CACHED ${_lastValidData.length} projects and triggering background refresh');
+      _backgroundRefresh(cacheKey, repo);
       return _lastValidData;
     }
 

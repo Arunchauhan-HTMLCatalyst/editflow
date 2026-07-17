@@ -1,15 +1,21 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../../clients/providers/client_provider.dart';
+import '../../projects/providers/project_provider.dart';
+import '../../../services/supabase_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../shared/widgets/app_logo.dart';
 import '../../../shared/widgets/ambient_glow_container.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  final String? inviteCode;
+
+  const LoginScreen({super.key, this.inviteCode});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -33,12 +39,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
     final isLoading = authState.status == AuthStatus.loading;
 
-    // ✅ Navigate to dashboard as soon as auth becomes authenticated
-    // This fires when Google OAuth deep link returns and session is established
     ref.listen<AuthState>(authProvider, (previous, next) {
       debugPrint('[LOGIN SCREEN] AuthState listener fired: status=${next.status}, error=${next.error}, user=${next.user?.id}');
       if (next.status == AuthStatus.authenticated && context.mounted) {
         debugPrint('[LOGIN SCREEN] AuthStatus is authenticated. Navigating to /dashboard');
+        
+        final inviteCode = widget.inviteCode;
+        if (inviteCode != null && inviteCode.isNotEmpty) {
+          debugPrint('[LOGIN SCREEN] Auto-linking client workspace using invite code: $inviteCode');
+          unawaited(() async {
+            try {
+              final uid = next.user?.id ?? SupabaseService.userId;
+              await SupabaseService.instance
+                  .from('clients')
+                  .update({'client_user_id': uid})
+                  .eq('id', inviteCode);
+              
+              ref.invalidate(clientProvider);
+              ref.invalidate(projectProvider);
+            } catch (e) {
+              debugPrint('[LOGIN SCREEN] Auto-linking failed: $e');
+            }
+          }());
+        }
+
         context.go('/dashboard');
       }
     });

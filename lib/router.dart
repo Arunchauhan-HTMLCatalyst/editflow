@@ -52,17 +52,18 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: refreshListenable,
     redirect: (context, state) {
       final loc = state.uri.toString();
+      final path = state.uri.path;
       if (loc.contains('io.supabase.flutter') ||
           loc.contains('/callback?code=')) {
         return '/splash';
       }
 
-      final isPublicRoute = loc.startsWith('/share/review/');
+      final isPublicRoute = path.startsWith('/share/review/');
 
-      final isAuthRoute = loc == '/login' ||
-          loc == '/register' ||
-          loc == '/forgot-password' ||
-          loc == '/splash' ||
+      final isAuthRoute = path == '/login' ||
+          path == '/register' ||
+          path == '/forgot-password' ||
+          path == '/splash' ||
           isPublicRoute;
 
       final authState = ref.read(authProvider);
@@ -70,15 +71,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthenticated = authState.status == AuthStatus.authenticated;
 
       if (isUnauthenticated && !isAuthRoute) {
+        final code = state.uri.queryParameters['code'];
+        if (code != null && code.isNotEmpty) {
+          return '/login?code=$code';
+        }
         return '/login';
       }
 
-      if (isAuthenticated && isAuthRoute && loc != '/splash' && !isPublicRoute) {
+      if (isAuthenticated && isAuthRoute && path != '/splash' && !isPublicRoute) {
+        final code = state.uri.queryParameters['code'];
+        if (code != null && code.isNotEmpty) {
+          return '/dashboard?code=$code';
+        }
         return '/dashboard';
       }
 
       // Admin panel guard
-      if (loc.startsWith('/admin')) {
+      if (path.startsWith('/admin')) {
         if (!isAuthenticated || !authState.isAdmin) {
           return '/dashboard';
         }
@@ -97,7 +106,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/login',
-        pageBuilder: (context, state) => slideUpPage(const LoginScreen(), key: state.pageKey),
+        pageBuilder: (context, state) {
+          final code = state.uri.queryParameters['code'];
+          return slideUpPage(LoginScreen(inviteCode: code), key: state.pageKey);
+        },
       ),
       GoRoute(
         path: '/register',
@@ -195,7 +207,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Bottom-nav tabs → fade only (no slide)
           GoRoute(
             path: '/dashboard',
-            pageBuilder: (context, state) => fadeTabPage(const DashboardScreen(), key: state.pageKey),
+            pageBuilder: (context, state) {
+              final code = state.uri.queryParameters['code'];
+              return fadeTabPage(DashboardScreen(inviteCode: code), key: state.pageKey);
+            },
           ),
           GoRoute(
             path: '/clients',

@@ -76,7 +76,8 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
     });
 
     if (_hasLoadedOnce) {
-      debugPrint('[CLIENT BUILD] returning CACHED ${_lastValidData.length} clients');
+      debugPrint('[CLIENT BUILD] returning CACHED ${_lastValidData.length} clients and triggering background refresh');
+      _backgroundRefresh(cacheKey, repo);
       return _lastValidData;
     }
 

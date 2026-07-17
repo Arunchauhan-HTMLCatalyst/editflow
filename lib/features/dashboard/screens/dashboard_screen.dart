@@ -23,6 +23,7 @@ import '../../../shared/widgets/shimmer_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/ambient_glow_container.dart';
 import '../../projects/repositories/comment_repository.dart';
+import '../../../services/supabase_service.dart';
 
 String _getTimeBasedGreeting() {
   final hour = DateTime.now().hour;
@@ -36,7 +37,9 @@ String _getTimeBasedGreeting() {
 }
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  const DashboardScreen({super.key});
+  final String? inviteCode;
+
+  const DashboardScreen({super.key, this.inviteCode});
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -53,7 +56,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         debugPrint('[DASHBOARD] Background voice note cleanup error: $e');
       });
       ref.read(authProvider.notifier).syncProfileData();
+      
+      final inviteCode = widget.inviteCode;
+      if (inviteCode != null && inviteCode.isNotEmpty) {
+        _autoLinkInviteCode(inviteCode);
+      }
     });
+  }
+
+  Future<void> _autoLinkInviteCode(String inviteCode) async {
+    debugPrint('[DASHBOARD] Auto-linking client workspace using invite code: $inviteCode');
+    try {
+      final messenger = ScaffoldMessenger.of(context);
+      final uid = ref.read(authProvider).user?.id ?? SupabaseService.userId;
+      final response = await SupabaseService.instance
+          .from('clients')
+          .update({'client_user_id': uid})
+          .eq('id', inviteCode)
+          .select();
+
+      if ((response as List).isNotEmpty) {
+        ref.invalidate(clientProvider);
+        ref.invalidate(projectProvider);
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Connected to workspace successfully!')),
+        );
+      }
+    } catch (e) {
+      debugPrint('[DASHBOARD] Auto-linking failed: $e');
+    }
   }
 
   @override
