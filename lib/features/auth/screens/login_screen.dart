@@ -42,7 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ref.listen<AuthState>(authProvider, (previous, next) {
       debugPrint('[LOGIN SCREEN] AuthState listener fired: status=${next.status}, error=${next.error}, user=${next.user?.id}');
       if (next.status == AuthStatus.authenticated && context.mounted) {
-        debugPrint('[LOGIN SCREEN] AuthStatus is authenticated. Navigating to /dashboard');
+        debugPrint('[LOGIN SCREEN] AuthStatus is authenticated. Checking query parameters...');
         
         final inviteCode = widget.inviteCode;
         if (inviteCode != null && inviteCode.isNotEmpty) {
@@ -61,9 +61,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               debugPrint('[LOGIN SCREEN] Auto-linking failed: $e');
             }
           }());
+          
+          context.go('/connection-success?code=$inviteCode');
+        } else {
+          context.go('/dashboard');
         }
-
-        context.go('/dashboard');
       }
     });
 

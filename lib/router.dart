@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'features/auth/screens/splash_screen.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/auth/screens/connection_success_screen.dart';
 import 'features/auth/screens/register_screen.dart';
 import 'features/auth/screens/forgot_password_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
@@ -81,7 +82,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (isAuthenticated && isAuthRoute && path != '/splash' && !isPublicRoute) {
         final code = state.uri.queryParameters['code'];
         if (code != null && code.isNotEmpty) {
-          return '/dashboard?code=$code';
+          return '/connection-success?code=$code';
         }
         return '/dashboard';
       }
@@ -109,6 +110,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) {
           final code = state.uri.queryParameters['code'];
           return slideUpPage(LoginScreen(inviteCode: code), key: state.pageKey);
+        },
+      ),
+      GoRoute(
+        path: '/connection-success',
+        pageBuilder: (context, state) {
+          final code = state.uri.queryParameters['code'] ?? '';
+          return slideUpPage(ConnectionSuccessScreen(inviteCode: code), key: state.pageKey);
         },
       ),
       GoRoute(
