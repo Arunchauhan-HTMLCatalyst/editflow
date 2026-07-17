@@ -1061,7 +1061,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           'clientName': client.name,
           'freelancerName': freelancerName,
           'inviteCode': client.id,
-          'inviteUrl': 'https://editflow.acsoft.online/login',
+          'inviteUrl': 'https://editflow.acsoft.online/app/#/login',
         },
       );
 
@@ -1082,7 +1082,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
   }
 
   void _shareInviteLink(Client client) {
-    final inviteUrl = 'https://editflow.acsoft.online/login?code=${client.id}';
+    final inviteUrl = 'https://editflow.acsoft.online/app/#/login?code=${client.id}';
     final user = ref.read(authProvider).user;
     final freelancerName = user?.userMetadata?['full_name'] as String? ?? 'Freelancer';
     Share.share(
