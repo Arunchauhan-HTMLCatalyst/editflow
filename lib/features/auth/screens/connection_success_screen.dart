@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/auth_provider.dart';
 import '../../../services/supabase_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/ambient_glow_container.dart';
@@ -157,7 +158,7 @@ class _ConnectionSuccessScreenState extends ConsumerState<ConnectionSuccessScree
                                 const SizedBox(height: 12),
                                 Text(
                                   'We couldn\'t load the connection details. The invite code may be invalid.',
-                                  textAlign: Center,
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                     fontSize: 14,
