@@ -4,6 +4,7 @@ import '../core/constants/app_constants.dart';
 
 class SupabaseService {
   static late SupabaseClient client;
+  static String? pendingInviteCode;
 
   static Future<void> initialize() async {
     debugPrint('[SUPABASE SERVICE] Initializing Supabase...');

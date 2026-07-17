@@ -22,6 +22,7 @@ import 'features/calendar/screens/calendar_screen.dart';
 import 'features/dashboard/screens/notification_center_screen.dart';
 import 'features/dashboard/screens/client_reviews_screen.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'services/supabase_service.dart';
 import 'app_shell.dart';
 import 'core/theme/app_transitions.dart';
 
@@ -59,6 +60,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/splash';
       }
 
+      // Pre-emptively capture any invite code in query parameters
+      final queryCode = state.uri.queryParameters['code'];
+      if (queryCode != null && queryCode.isNotEmpty) {
+        SupabaseService.pendingInviteCode = queryCode;
+      }
+
       final isPublicRoute = path.startsWith('/share/review/');
 
       final isAuthRoute = path == '/login' ||
@@ -72,7 +79,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthenticated = authState.status == AuthStatus.authenticated;
 
       if (isUnauthenticated && !isAuthRoute) {
-        final code = state.uri.queryParameters['code'];
+        final code = state.uri.queryParameters['code'] ?? SupabaseService.pendingInviteCode;
         if (code != null && code.isNotEmpty) {
           return '/login?code=$code';
         }
@@ -80,8 +87,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isAuthenticated && isAuthRoute && path != '/splash' && !isPublicRoute) {
-        final code = state.uri.queryParameters['code'];
+        final code = state.uri.queryParameters['code'] ?? SupabaseService.pendingInviteCode;
         if (code != null && code.isNotEmpty) {
+          SupabaseService.pendingInviteCode = null; // Clear cached code once consumed
           return '/connection-success?code=$code';
         }
         return '/dashboard';
