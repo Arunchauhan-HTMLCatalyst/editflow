@@ -68,32 +68,6 @@ class ClientProvider extends AsyncNotifier<List<Client>> {
       });
     }
 
-    // Auto-link client record by email if authenticated
-    final email = authState.user?.email;
-    if (email != null && email.isNotEmpty) {
-      unawaited(() async {
-        try {
-          final clientRows = await SupabaseService.instance
-              .from('clients')
-              .select('id, client_user_id')
-              .eq('email', email);
-          if (clientRows.isNotEmpty) {
-            for (final row in clientRows) {
-              if (row['client_user_id'] != uid) {
-                await SupabaseService.instance
-                    .from('clients')
-                    .update({'client_user_id': uid})
-                    .eq('id', row['id']);
-                debugPrint('[CLIENT SYNC] Linked client ${row['id']} to user $uid');
-              }
-            }
-          }
-        } catch (e) {
-          debugPrint('[CLIENT SYNC] Failed to sync client: $e');
-        }
-      }());
-    }
-
     ref.onDispose(() {
       debugPrint('[CLIENT DISPOSED]');
       _subscription?.cancel();
