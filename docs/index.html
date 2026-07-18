@@ -504,33 +504,9 @@
                     </div>
                     
                     <div class="network-container">
-                        <!-- Stressed editor human SVG avatar (Stressed Editor holding phone) -->
+                        <!-- Stressed editor (sadface.png) in center -->
                         <div class="editor-node-circle stressed">
-                            <svg viewBox="0 0 100 100" class="editor-svg-avatar">
-                                <!-- Background -->
-                                <circle cx="50" cy="50" r="48" fill="#180c0d" stroke="#7f1d1d" stroke-width="2" />
-                                <!-- Stressed Body -->
-                                <path d="M 20 80 Q 40 62 70 80 Z" fill="#7f1d1d" />
-                                <!-- Stressed Human Head -->
-                                <circle cx="44" cy="32" r="14" fill="#fca5a5" />
-                                <!-- Messy hair squiggles -->
-                                <path d="M 32 23 C 35 11 58 12 62 23" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" />
-                                <path d="M 36 17 L 41 24" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" />
-                                <!-- Stressed Eyes (X X) -->
-                                <path d="M 37 30 L 41 34 M 41 30 L 37 34" stroke="#7f1d1d" stroke-width="1.5" stroke-linecap="round" />
-                                <path d="M 45 30 L 49 34 M 49 30 L 45 34" stroke="#7f1d1d" stroke-width="1.5" stroke-linecap="round" />
-                                <!-- Mouth -->
-                                <path d="M 40 42 Q 44 38 48 42" fill="none" stroke="#7f1d1d" stroke-width="1.5" stroke-linecap="round" />
-                                <!-- Left Arm holding head in stress -->
-                                <path d="M 24 56 Q 30 38 35 38" fill="none" stroke="#fca5a5" stroke-width="3" stroke-linecap="round" />
-                                <!-- Right Arm holding phone in hand -->
-                                <path d="M 58 68 Q 66 52 54 48" fill="none" stroke="#fca5a5" stroke-width="3" stroke-linecap="round" />
-                                <!-- Phone (tilted, red alert screen) -->
-                                <rect x="47" y="38" width="10" height="18" rx="2" fill="#ef4444" transform="rotate(-15 52 47)" stroke="#fff" stroke-width="0.8" />
-                                <line x1="49" y1="41" x2="54" y2="39" stroke="#fff" stroke-width="1" />
-                                <!-- Red alert rays from phone -->
-                                <path d="M 41 39 L 36 36 M 42 50 L 37 52 M 58 37 L 63 35" stroke="#ef4444" stroke-width="1.2" stroke-linecap="round" />
-                            </svg>
+                            <img src="sadface.png" alt="Sad Face Editor" class="editor-png-avatar">
                             <span class="editor-label-node">Stressed Editor</span>
                         </div>
                         
@@ -583,7 +559,7 @@
 
                 <!-- Separator vs Badge -->
                 <div class="visual-separator">
-                    <span class="vs-badge">VS</span>
+                    <span class="vs-text-animate">VS</span>
                 </div>
 
                 <!-- Serene Flow Panel -->
@@ -594,31 +570,9 @@
                     </div>
                     
                     <div class="network-container">
-                        <!-- Serene editor human SVG avatar + EditFlow overlay logo (Serene holding phone with checkmark screen) -->
+                        <!-- Serene editor (happyface.png) + EditFlow overlay logo -->
                         <div class="editor-node-circle serene">
-                            <svg viewBox="0 0 100 100" class="editor-svg-avatar">
-                                <!-- Background -->
-                                <circle cx="50" cy="50" r="48" fill="#06201e" stroke="#0f766e" stroke-width="2" />
-                                <!-- Calm Body -->
-                                <path d="M 22 80 C 22 66 78 66 78 80 Z" fill="#0f766e" />
-                                <!-- Focused Human Head -->
-                                <circle cx="50" cy="32" r="14" fill="#a7f3d0" />
-                                <!-- Headphones -->
-                                <path d="M 34 32 C 34 16 66 16 66 32" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" />
-                                <rect x="32" y="28" width="4" height="10" rx="1.5" fill="#10b981" />
-                                <rect x="64" y="28" width="4" height="10" rx="1.5" fill="#10b981" />
-                                <!-- Focused eyes closed with smile -->
-                                <path d="M 43 32 Q 46 35 48 32" fill="none" stroke="#042f2e" stroke-width="1.5" stroke-linecap="round" />
-                                <path d="M 52 32 Q 55 35 57 32" fill="none" stroke="#042f2e" stroke-width="1.5" stroke-linecap="round" />
-                                <path d="M 46 41 Q 50 44 54 41" fill="none" stroke="#042f2e" stroke-width="1.5" stroke-linecap="round" />
-                                <!-- Hands holding phone in front -->
-                                <path d="M 32 72 Q 50 56 68 72" fill="none" stroke="#a7f3d0" stroke-width="3" stroke-linecap="round" />
-                                <!-- Phone held upright with green/teal screen -->
-                                <rect x="44" y="50" width="12" height="20" rx="2" fill="#10b981" stroke="#fff" stroke-width="0.8" />
-                                <!-- Phone screen clean check/glowing lines -->
-                                <circle cx="50" cy="56" r="2" fill="#fff" />
-                                <line x1="47" y1="61" x2="53" y2="61" stroke="#fff" stroke-width="0.8" />
-                            </svg>
+                            <img src="happyface.png" alt="Happy Face Editor" class="editor-png-avatar">
                             <!-- Mini EditFlow monogram badge overlay -->
                             <div class="mini-logo-badge">
                                 <img src="logo.svg" alt="ef badge">
@@ -655,12 +609,20 @@
                             </div>
                         </div>
 
+                        <div class="flow-node node-tc">
+                            <div class="node-text">
+                                <span class="node-name text-success">Deadline Calendar</span>
+                                <span class="node-msg">Auto deadline sync</span>
+                            </div>
+                        </div>
+
                         <!-- Clean laser lines -->
                         <svg class="network-lines" viewBox="0 0 400 300">
                             <line x1="70" y1="100" x2="200" y2="150" class="line-flow line-pulse-1" />
                             <line x1="330" y1="100" x2="200" y2="150" class="line-flow line-pulse-2" />
                             <line x1="70" y1="240" x2="200" y2="150" class="line-flow line-pulse-3" />
                             <line x1="330" y1="240" x2="200" y2="150" class="line-flow line-pulse-4" />
+                            <line x1="200" y1="35" x2="200" y2="150" class="line-flow line-pulse-1" />
                         </svg>
                     </div>
                 </div>
