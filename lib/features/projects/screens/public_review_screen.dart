@@ -833,9 +833,12 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                   final commentBody = isGuest ? parts[1] : comment.comment;
 
                   String timeAgo(DateTime dateTime) {
-                    final difference = DateTime.now().difference(dateTime);
+                    final difference = DateTime.now().toUtc().difference(dateTime.toUtc());
+                    if (difference.isNegative) {
+                      return 'Just now';
+                    }
                     if (difference.inDays >= 7) {
-                      return DateFormat('MMM d').format(dateTime);
+                      return DateFormat('MMM d').format(dateTime.toLocal());
                     } else if (difference.inDays >= 1) {
                       return '${difference.inDays}d ago';
                     } else if (difference.inHours >= 1) {
