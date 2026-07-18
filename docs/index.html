@@ -47,35 +47,73 @@
 
     <!-- Schema.org Structured Data (JSON-LD) for Rich Google Search Snippets -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "EditFlow",
-      "operatingSystem": "Android, Web Browser",
-      "applicationCategory": "BusinessApplication, MultimediaApplication",
-      "description": "Unified workspace for video editors and clients. Offers frame-accurate review links, timecode-level feedback comments, project tracking, and client billing features.",
-      "url": "https://editflow.acsoft.online/",
-      "image": "https://editflow.acsoft.online/acsoft.png",
-      "publisher": {
-        "@type": "Organization",
-        "name": "AC Soft Solutions",
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "EditFlow",
+        "operatingSystem": "Android, Web Browser",
+        "applicationCategory": "BusinessApplication, MultimediaApplication",
+        "description": "EditFlow is the unified OS and freelance workspace for video editors and clients. Collect frame-accurate comments, share reviews, track earnings, and send invoices.",
+        "url": "https://editflow.acsoft.online/",
+        "image": "https://editflow.acsoft.online/acsoft.png",
+        "publisher": {
+          "@type": "Organization",
+          "name": "AC Soft Solutions",
+          "url": "https://editflow.acsoft.online/"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "INR",
+          "lowPrice": "99",
+          "highPrice": "999",
+          "offerCount": "2"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "EditFlow",
         "url": "https://editflow.acsoft.online/"
       },
-      "offers": {
-        "@type": "AggregateOffer",
-        "priceCurrency": "INR",
-        "lowPrice": "99",
-        "highPrice": "999",
-        "offerCount": "2"
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do frame-accurate timestamp reviews work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "When a client views a review video, typing a comment automatically logs it at the current video playhead timecode. When you tap their comment, the player jumps straight to that frame, making revisions incredibly precise."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are guest review links secure?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Guest links utilize cryptographically secure, random 128-bit UUID strings. They are impossible to guess or crawl, ensuring only clients you share the link with can view your video assets."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does UPI QR Code generation work on invoices?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You configure your personal UPI ID in the app settings. When generating an invoice PDF, EditFlow dynamically creates a scanning-compliant QR code for that exact invoice balance, enabling instant client checkouts."
+            }
+          }
+        ]
       }
-    }
+    ]
     </script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.0.8">
+    <link rel="stylesheet" href="styles.css?v=1.0.9">
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="logo.svg">
 </head>
@@ -564,7 +602,7 @@
                     <div class="network-container">
                         <!-- Stressed editor (sadface.png) in center -->
                         <div class="editor-node-circle stressed">
-                            <img src="sadface.png" alt="Sad Face Editor" class="editor-png-avatar">
+                            <img src="sadface.png" alt="Sad Stressed Video Editor Juggling Cluttered Client Feeds" class="editor-png-avatar">
                             <span class="editor-label-node">Stressed Editor</span>
                         </div>
                         
@@ -630,7 +668,7 @@
                     <div class="network-container">
                         <!-- Serene editor (happyface.png) + EditFlow overlay logo -->
                         <div class="editor-node-circle serene">
-                            <img src="happyface.png" alt="Happy Face Editor" class="editor-png-avatar">
+                            <img src="happyface.png" alt="Happy Calm Video Editor Working in Flow on EditFlow OS" class="editor-png-avatar">
                             <!-- Mini EditFlow monogram badge overlay -->
                             <div class="mini-logo-badge">
                                 <img src="logo.svg" alt="ef badge">
