@@ -25,12 +25,10 @@ STEP 1: Copy the Extension Folder
 STEP 2: Enable Unsigned Extensions (Registry Fix)
 ------------------------------------------------------------------------
 By default, Adobe Premiere Pro blocks custom unsigned extensions. To fix this:
-1. Double-click the file named "enable-debug-mode.reg" located inside 
-   this folder.
-2. A security prompt will pop up asking for confirmation. Click "Yes".
-3. Click "OK" on the success prompt.
-   (This automatically adds the necessary "PlayerDebugMode" registry 
-   entries for Premiere Pro versions 2019 to 2025+).
+1. Right-click the file named "enable-debug.bat" located inside this folder and select "Run as administrator".
+2. Click "Yes" on the security prompt if Windows asks for permission.
+3. Once the black command prompt window says "Success! Debug mode has been enabled", press any key to close.
+   (This automatically adds the necessary registry keys across all user and system locations for Premiere Pro versions 2019 to 2025+).
 
 ------------------------------------------------------------------------
 STEP 3: Open the Panel in Premiere Pro
