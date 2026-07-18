@@ -11,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../shared/widgets/app_logo.dart';
 import '../../../shared/widgets/ambient_glow_container.dart';
+import '../../../shared/utils/web_helper.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? inviteCode;
@@ -285,6 +286,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Text(
                       authState.error!,
                       style: const TextStyle(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        if (isInAppBrowser())
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20.0),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3), width: 0.8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 20, color: Colors.amber),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'In-App Browser Detected',
+                          style: TextStyle(
+                            color: Colors.amber,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Google Sign-In is blocked in embedded browsers (Instagram/Facebook). Please tap the menu button (•••) and select "Open in Browser" (Safari/Chrome) to log in.',
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : Colors.black87,
+                            fontSize: 11.5,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

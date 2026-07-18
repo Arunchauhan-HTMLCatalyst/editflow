@@ -5,3 +5,7 @@ void downloadFileWebImpl({
 }) {
   // Stub for non-web platforms
 }
+
+bool isInAppBrowserImpl() {
+  return false;
+}
