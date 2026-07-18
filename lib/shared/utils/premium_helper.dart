@@ -452,7 +452,7 @@ class _UpiPaymentSheetState extends ConsumerState<_UpiPaymentSheet> {
 
             // Promo Code Section
             Padding(
-              padding: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.only(top: 18, bottom: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -479,11 +479,11 @@ class _UpiPaymentSheetState extends ConsumerState<_UpiPaymentSheet> {
                   Container(
                     height: 48,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
+                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.border,
-                        width: 0.8,
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                        width: 1.0,
                       ),
                     ),
                     child: Row(
@@ -499,44 +499,50 @@ class _UpiPaymentSheetState extends ConsumerState<_UpiPaymentSheet> {
                               border: InputBorder.none,
                               focusedBorder: InputBorder.none,
                               enabledBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
+                              contentPadding: EdgeInsets.symmetric(vertical: 12),
                             ),
                             textCapitalization: TextCapitalization.characters,
                           ),
                         ),
                         Container(
                           margin: const EdgeInsets.all(4),
-                          height: double.infinity,
-                          child: InkWell(
-                            onTap: _isRedeeming ? null : _redeemPromoCode,
+                          child: ClipRRect(
                             borderRadius: BorderRadius.circular(6),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [AppColors.primary, AppColors.primaryNeon],
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _isRedeeming ? null : _redeemPromoCode,
+                                child: Ink(
+                                  decoration: const BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [AppColors.primary, AppColors.primaryNeon],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
+                                  child: Container(
+                                    height: double.infinity,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    alignment: Alignment.center,
+                                    child: _isRedeeming
+                                        ? const SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Apply',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                  ),
                                 ),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                alignment: Alignment.center,
-                                child: _isRedeeming
-                                    ? const SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text(
-                                        'Apply',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
                               ),
                             ),
                           ),
