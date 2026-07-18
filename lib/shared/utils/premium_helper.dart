@@ -111,17 +111,83 @@ class PremiumHelper {
   }
 }
 
-class _UpiPaymentSheet extends StatefulWidget {
+class _UpiPaymentSheet extends ConsumerStatefulWidget {
   const _UpiPaymentSheet();
 
   @override
-  State<_UpiPaymentSheet> createState() => _UpiPaymentSheetState();
+  ConsumerState<_UpiPaymentSheet> createState() => _UpiPaymentSheetState();
 }
 
-class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
+class _UpiPaymentSheetState extends ConsumerState<_UpiPaymentSheet> {
   String _selectedPlan = 'monthly';
   bool _isSubmitting = false;
   String? _errorMessage;
+
+  final _promoController = TextEditingController();
+  bool _isRedeeming = false;
+  String? _promoFeedback;
+  bool _promoSuccess = false;
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _redeemPromoCode() async {
+    final code = _promoController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() {
+      _isRedeeming = true;
+      _promoFeedback = null;
+      _promoSuccess = false;
+    });
+
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) throw Exception('User not logged in');
+
+      // Call database RPC function
+      final response = await Supabase.instance.client.rpc(
+        'redeem_promo_code',
+        params: {
+          'p_user_id': user.id,
+          'p_code': code,
+        },
+      );
+
+      if (response == null) {
+        throw Exception('Redemption failed (no response)');
+      }
+
+      final res = Map<String, dynamic>.from(response as Map);
+      final success = res['success'] as bool? ?? false;
+      final message = res['message'] as String? ?? 'Redemption failed';
+
+      if (!success) {
+        throw Exception(message);
+      }
+
+      // Success! Invalidate auth provider to refresh user profile premium status
+      ref.invalidate(authProvider);
+
+      setState(() {
+        _promoSuccess = true;
+        _promoFeedback = 'Code redeemed successfully! Extended Premium active.';
+        _promoController.clear();
+      });
+    } catch (e) {
+      setState(() {
+        _promoSuccess = false;
+        _promoFeedback = e.toString().replaceAll('Exception:', '').trim();
+      });
+    } finally {
+      setState(() {
+        _isRedeeming = false;
+      });
+    }
+  }
 
   Future<void> _submitRequest() async {
     setState(() {
@@ -179,6 +245,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.only(
         left: 24.0,
@@ -382,6 +449,112 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                 ),
               ),
             ],
+
+            // Promo Code Section
+            Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border, width: 0.8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'PROMO CODE',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textMuted,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 38,
+                          child: TextField(
+                            controller: _promoController,
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            decoration: InputDecoration(
+                              hintText: 'Enter code (e.g. FREE30DAYS)',
+                              hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF0D121F) : const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: const BorderSide(color: AppColors.border, width: 0.8),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: const BorderSide(color: AppColors.border, width: 0.8),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: const BorderSide(color: AppColors.primaryNeon, width: 0.8),
+                              ),
+                            ),
+                            textCapitalization: TextCapitalization.characters,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 38,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryNeon,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            elevation: 0,
+                          ),
+                          onPressed: _isRedeeming ? null : _redeemPromoCode,
+                          child: _isRedeeming
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text(
+                                  'Apply',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_promoFeedback != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          _promoSuccess ? Icons.check_circle_outline : Icons.error_outline,
+                          size: 14,
+                          color: _promoSuccess ? AppColors.success : AppColors.error,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _promoFeedback!,
+                            style: TextStyle(
+                              color: _promoSuccess ? AppColors.success : AppColors.error,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
 
             // Submit Button
             ElevatedButton(
