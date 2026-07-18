@@ -412,21 +412,27 @@ class ReviewRepository {
     }
   }
 
-  Future<void> updateReviewCommentResolvedStatus(String commentId, bool isResolved) async {
+  Future<void> updateReviewCommentTaskStatus(String commentId, String status) async {
     await SupabaseService.instance
         .from('review_comments')
-        .update({'is_resolved': isResolved})
+        .update({
+          'task_status': status,
+          'is_resolved': status == 'resolved',
+        })
         .eq('id', commentId)
         .timeout(const Duration(seconds: 10));
   }
 
-  Future<void> updateReviewCommentResolvedStatusByShareToken(String token, String commentId, bool isResolved) async {
+  Future<void> updateReviewCommentTaskStatusByShareToken(String token, String commentId, String status) async {
     final client = SupabaseService.instance;
     try {
       client.rest.headers['x-share-token'] = token;
       await client
           .from('review_comments')
-          .update({'is_resolved': isResolved})
+          .update({
+            'task_status': status,
+            'is_resolved': status == 'resolved',
+          })
           .eq('id', commentId)
           .timeout(const Duration(seconds: 10));
     } finally {

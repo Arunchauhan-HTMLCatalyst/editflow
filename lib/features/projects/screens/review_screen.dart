@@ -268,12 +268,21 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     }
   }
 
-  Future<void> _toggleResolved(ReviewComment comment) async {
+  Future<void> _cycleTaskStatus(ReviewComment comment) async {
+    String nextStatus;
+    if (comment.taskStatus == 'pending') {
+      nextStatus = 'in_progress';
+    } else if (comment.taskStatus == 'in_progress') {
+      nextStatus = 'resolved';
+    } else {
+      nextStatus = 'pending';
+    }
+
     try {
-      await ref.read(reviewRepositoryProvider).updateReviewCommentResolvedStatus(comment.id, !comment.isResolved);
+      await ref.read(reviewRepositoryProvider).updateReviewCommentTaskStatus(comment.id, nextStatus);
       ref.invalidate(reviewCommentsProvider(widget.videoId));
     } catch (e) {
-      debugPrint('[RESOLVED ERROR] $e');
+      debugPrint('[STATUS CYCLE ERROR] $e');
     }
   }
 
@@ -1190,15 +1199,21 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                 if (!isReply) ...[
                   IconButton(
                     icon: Icon(
-                      comment.isResolved
+                      comment.taskStatus == 'resolved'
                           ? Icons.check_circle_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      color: comment.isResolved ? AppColors.success : AppColors.textMuted,
+                          : (comment.taskStatus == 'in_progress'
+                              ? Icons.play_circle_outline_rounded
+                              : Icons.radio_button_unchecked_rounded),
+                      color: comment.taskStatus == 'resolved'
+                          ? AppColors.success
+                          : (comment.taskStatus == 'in_progress'
+                              ? Colors.orange
+                              : AppColors.textMuted),
                       size: 20,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    onPressed: () => _toggleResolved(comment),
+                    onPressed: () => _cycleTaskStatus(comment),
                   ),
                   const SizedBox(width: 8),
                 ],

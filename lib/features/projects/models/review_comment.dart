@@ -7,7 +7,7 @@ class ReviewComment {
   final DateTime createdAt;
   final String? parentId;
   final Map<String, dynamic> reactions;
-  final bool isResolved;
+  final String taskStatus; // 'pending', 'in_progress', 'resolved'
 
   const ReviewComment({
     required this.id,
@@ -18,8 +18,10 @@ class ReviewComment {
     required this.createdAt,
     this.parentId,
     this.reactions = const {},
-    this.isResolved = false,
+    this.taskStatus = 'pending',
   });
+
+  bool get isResolved => taskStatus == 'resolved';
 
   factory ReviewComment.fromJson(Map<String, dynamic> json) => ReviewComment(
         id: json['id'] as String,
@@ -30,7 +32,7 @@ class ReviewComment {
         createdAt: DateTime.parse(json['created_at'] as String),
         parentId: json['parent_id'] as String?,
         reactions: json['reactions'] as Map<String, dynamic>? ?? const {},
-        isResolved: json['is_resolved'] as bool? ?? false,
+        taskStatus: json['task_status'] as String? ?? 'pending',
       );
 
   Map<String, dynamic> toJson() => {
@@ -42,7 +44,7 @@ class ReviewComment {
         'created_at': createdAt.toIso8601String(),
         'parent_id': parentId,
         'reactions': reactions,
-        'is_resolved': isResolved,
+        'task_status': taskStatus,
       };
 
   ReviewComment copyWith({
@@ -54,7 +56,7 @@ class ReviewComment {
     DateTime? createdAt,
     String? parentId,
     Map<String, dynamic>? reactions,
-    bool? isResolved,
+    String? taskStatus,
   }) =>
       ReviewComment(
         id: id ?? this.id,
@@ -65,7 +67,7 @@ class ReviewComment {
         createdAt: createdAt ?? this.createdAt,
         parentId: parentId ?? this.parentId,
         reactions: reactions ?? this.reactions,
-        isResolved: isResolved ?? this.isResolved,
+        taskStatus: taskStatus ?? this.taskStatus,
       );
 
   String get formattedTimestamp {
