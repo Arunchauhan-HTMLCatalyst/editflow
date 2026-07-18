@@ -113,7 +113,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.2.3">
+    <link rel="stylesheet" href="styles.css?v=1.2.4">
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="logo.svg">
 </head>
@@ -163,14 +163,6 @@
                         <a href="https://play.google.com/store/apps/details?id=online.acsoft.editflow" target="_blank">
                             <span class="dd-title">Google Play Store</span>
                             <span class="dd-desc">Download for Android</span>
-                        </a>
-                        <a href="#" id="trigger-premiere-modal">
-                            <span class="dd-title">Premiere Pro Extension</span>
-                            <span class="dd-desc">Windows plugin installer</span>
-                        </a>
-                        <a href="https://editflow.acsoft.online/EditFlow-OS-Setup.exe" download>
-                            <span class="dd-title">Windows Desktop App</span>
-                            <span class="dd-desc">Standalone setup (.exe)</span>
                         </a>
                     </div>
                 </div>
@@ -1090,12 +1082,9 @@
                 <a href="https://play.google.com/store/apps/details?id=online.acsoft.editflow" target="_blank" style="display: inline-flex; vertical-align: middle; transition: transform 0.2s ease-in-out; width: 220px; height: 56px; background-color: #000000; border-radius: 12px; border: 1px solid var(--border-color); align-items: center; justify-content: center;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1.0)'">
                     <img src="google-play-badge.svg" alt="Get it on Google Play" style="height: 100%; width: auto; display: block; object-fit: contain;">
                 </a>
-                <a href="https://editflow.acsoft.online/app/" target="_blank" class="btn btn-primary btn-lg" style="display: inline-flex; vertical-align: middle; width: 220px; height: 56px; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; border-radius: 12px;">
+                <a href="https://editflow.acsoft.online/app/" target="_blank" class="btn btn-secondary btn-lg" style="display: inline-flex; vertical-align: middle; width: 220px; height: 56px; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; border-radius: 12px;">
                     <svg width="20" height="20" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M 49.5 54 A 15.5 15.5 0 1 0 42.6 66.8" /><line x1="18.5" y1="54" x2="79.34" y2="54" /><line x1="63.5" y1="22" x2="63.5" y2="82" /><path d="M 63.5 22 Q 63.5 14 79 14" /></svg>
                     Web Dashboard
-                </a>
-                <a href="https://editflow.acsoft.online/EditFlow-OS-Setup.exe" download class="btn btn-secondary btn-lg" style="display: inline-flex; vertical-align: middle; width: 220px; height: 56px; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--border-color);">
-                    <span style="font-size: 14px; margin-right: 8px;">💻</span> Windows Desktop App
                 </a>
             </div>
             <p class="apk-meta">Available for Android 8.0+ devices</p>
@@ -1147,75 +1136,7 @@
 
 
 
-    <!-- Premiere Pro Extension Download/Installation Modal -->
-    <div class="video-modal" id="premiere-extension-modal">
-        <div class="modal-overlay"></div>
-        <div class="modal-card" style="max-width: 600px; padding: 40px; background-color: #0c1214;">
-            <button class="modal-close" id="ext-modal-close-btn">&times;</button>
-            <div class="ext-modal-content" style="text-align: left;">
-                <h3 style="font-family: var(--font-heading); font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
-                    <span>🎬</span> Premiere Pro Extension
-                </h3>
-                <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-                    Integrate your entire EditFlow workspace natively inside Adobe Premiere Pro (Windows). Follow these steps to install the extension.
-                </p>
-                
-                <!-- Step List -->
-                <div class="installation-steps" style="margin-bottom: 30px; display: flex; flex-direction: column; gap: 18px; max-height: 280px; overflow-y: auto; padding-right: 10px;">
-                    <div style="display: flex; gap: 12px;">
-                        <span style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">1</span>
-                        <div>
-                            <h4 style="color: #fff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">Download & Extract</h4>
-                            <p style="color: var(--text-muted); font-size: 12px; margin: 0;">Click the download button below to get the <code>editflow-premiere-extension.zip</code> file and unzip it.</p>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 12px;">
-                        <span style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">2</span>
-                        <div>
-                            <h4 style="color: #fff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">Copy to Extensions Folder</h4>
-                            <p style="color: var(--text-muted); font-size: 12px; margin: 0; line-height: 1.6;">
-                                Copy the unzipped folder <code>online.acsoft.editflow.premiere</code> and paste it into:<br>
-                                <strong style="color: #fff;">Path A:</strong> <code style="word-break: break-all; background-color: rgba(255,255,255,0.03); padding: 2px 4px; border-radius: 4px;">C:\Users\&lt;Username&gt;\AppData\Roaming\Adobe\CEP\extensions\</code><br>
-                                <strong style="color: #fff;">Path B (Recommended if A fails):</strong> <code style="word-break: break-all; background-color: rgba(255,255,255,0.03); padding: 2px 4px; border-radius: 4px;">C:\Program Files\Common Files\Adobe\CEP\extensions\</code>
-                            </p>
-                        </div>
-                    </div>
 
-                    <div style="display: flex; gap: 12px;">
-                        <span style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">3</span>
-                        <div>
-                            <h4 style="color: #fff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">Enable Unsigned Extensions</h4>
-                            <p style="color: var(--text-muted); font-size: 12px; margin: 0; line-height: 1.5;">
-                                Right-click the <strong><code>enable-debug.bat</code></strong> script file inside the folder and select <strong>"Run as administrator"</strong>, then press any key once finished.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 12px;">
-                        <span style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">4</span>
-                        <div>
-                            <h4 style="color: #fff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">Launch Panel & Troubleshoot</h4>
-                            <p style="color: var(--text-muted); font-size: 12px; margin: 0; line-height: 1.5;">
-                                Open Premiere Pro -> Go to <strong>Window > Extensions > EditFlow OS</strong>.<br>
-                                <strong style="color: #fff;">Tip:</strong> If other extensions show up but EditFlow doesn't, make sure to <strong>restart your PC</strong> or end all <code>CEP HTML Engine</code> background processes in Task Manager, then restart Premiere Pro to force a directory re-scan.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- CTA buttons inside Modal -->
-                <div style="display: flex; gap: 12px;">
-                    <a href="https://editflow.acsoft.online/editflow-premiere-extension.zip" download class="btn btn-primary" style="flex: 1; height: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; font-size: 13px; text-decoration: none;">
-                        📥 Download Extension (.zip)
-                    </a>
-                    <button class="btn btn-secondary" id="ext-modal-close-action" style="flex: 1; height: 46px; border: 1px solid var(--border-color); border-radius: 10px; font-weight: 700; font-size: 13px;">
-                        Got It
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="app.js"></script>
 </body>

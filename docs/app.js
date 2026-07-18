@@ -366,30 +366,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // 8. Premiere Pro Extension Modal Controller
-    const triggerExtNav = document.getElementById('trigger-premiere-modal');
-    const triggerExtFooter = document.getElementById('trigger-premiere-modal-footer');
-    const extModal = document.getElementById('premiere-extension-modal');
-    const extCloseBtn = document.getElementById('ext-modal-close-btn');
-    const extCloseAction = document.getElementById('ext-modal-close-action');
-    const extOverlay = extModal ? extModal.querySelector('.modal-overlay') : null;
 
-    if (extModal) {
-        const openExtModal = (e) => {
-            e.preventDefault();
-            extModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        };
-
-        const closeExtModal = () => {
-            extModal.classList.remove('active');
-            document.body.style.overflow = '';
-        };
-
-        if (triggerExtNav) triggerExtNav.addEventListener('click', openExtModal);
-        if (triggerExtFooter) triggerExtFooter.addEventListener('click', openExtModal);
-        if (extCloseBtn) extCloseBtn.addEventListener('click', closeExtModal);
-        if (extCloseAction) extCloseAction.addEventListener('click', closeExtModal);
-        if (extOverlay) extOverlay.addEventListener('click', closeExtModal);
-    }
 });
