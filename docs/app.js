@@ -68,221 +68,165 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // GSAP ANIMATIONS (Safe Guarded & Responsive)
+    // PURE CSS SCROLL REVEAL & PRELOADER SYSTEM
     // ==========================================
-    let gsapSuccess = false;
-    try {
-        if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-            gsap.registerPlugin(ScrollTrigger);
-            gsapSuccess = true;
 
-            // Hero Entrance Animations (Paused initially)
-            const heroTl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out', duration: 1 } });
-            
-            heroTl.from('.navbar', {
-                y: -100,
-                opacity: 0,
-                duration: 0.8
-            })
-            .from('.hero-content .badge', {
-                y: 20,
-                opacity: 0,
-            }, '-=0.4')
-            .from('.hero-content h1', {
-                y: 30,
-                opacity: 0,
-            }, '-=0.6')
-            .from('.hero-content p', {
-                y: 20,
-                opacity: 0,
-            }, '-=0.6')
-            .from('.hero-actions a', {
-                y: 20,
-                opacity: 0,
-                stagger: 0.15
-            }, '-=0.6')
-            .from('.hero-meta span', {
-                x: -20,
-                opacity: 0,
-                stagger: 0.1
-            }, '-=0.6')
-            .from('.hero-visual', {
-                scale: 0.95,
-                opacity: 0,
-                duration: 1.2
-            }, '-=1.0');
+    // 1. Setup Hero Reveal Classes & Delays
+    const heroContentBadge = document.querySelector('.hero-content .badge');
+    const heroContentTitle = document.querySelector('.hero-content h1');
+    const heroContentDesc = document.querySelector('.hero-content p');
+    const heroContentActions = document.querySelector('.hero-actions');
+    const heroMetaSpans = document.querySelectorAll('.hero-meta span');
+    const heroVisual = document.querySelector('.hero-visual');
 
-            // Preloader Simulated Progress Bar Count
-            const progressFill = document.querySelector('.preloader-progress-fill');
-            const percentText = document.getElementById('preloader-percent');
-            let progress = 0;
-
-            const updateProgress = () => {
-                progress += Math.floor(Math.random() * 12) + 6;
-                if (progress > 100) progress = 100;
-                
-                if (progressFill) progressFill.style.width = `${progress}%`;
-                if (percentText) percentText.textContent = `${progress}%`;
-                
-                if (progress < 100) {
-                    setTimeout(updateProgress, Math.floor(Math.random() * 40) + 15);
-                } else {
-                    // Preloader Complete: slide/fade out overlay
-                    setTimeout(() => {
-                        gsap.to('#preloader', {
-                            opacity: 0,
-                            duration: 0.5,
-                            ease: 'power3.inOut',
-                            onComplete: () => {
-                                const preloaderEl = document.getElementById('preloader');
-                                if (preloaderEl) {
-                                    preloaderEl.style.display = 'none';
-                                    preloaderEl.style.visibility = 'hidden';
-                                }
-                                // Play main entrance animations
-                                heroTl.play();
-                                // Refresh ScrollTrigger to recalculate viewport positions
-                                ScrollTrigger.refresh();
-                            }
-                        });
-                    }, 100);
-                }
-            };
-
-            // Start preloader loading simulation
-            updateProgress();
-
-            // Stats progress tracker radial animation
-            const radialFill = document.querySelector('.radial-fill');
-            if (radialFill) {
-                radialFill.style.strokeDashoffset = '251.2';
-                
-                gsap.to(radialFill, {
-                    strokeDashoffset: '65.3',
-                    duration: 1.8,
-                    ease: 'power2.out',
-                    scrollTrigger: {
-                        trigger: '.mock-radial-container',
-                        start: 'top bottom',
-                        once: true
-                    }
-                });
-            }
-
-            // ScrollTrigger Animation for Freelancer Features Cards
-            gsap.from('.feature-card', {
-                scrollTrigger: {
-                    trigger: '#freelancer',
-                    start: 'top bottom',
-                    once: true
-                },
-                y: 35,
-                opacity: 0,
-                stagger: 0.05,
-                duration: 0.7,
-                ease: 'power2.out'
-            });
-
-            // ScrollTrigger Animation for Client Portal Section
-            gsap.from('#client .portal-feature-item', {
-                scrollTrigger: {
-                    trigger: '#client',
-                    start: 'top bottom',
-                    once: true
-                },
-                x: -30,
-                opacity: 0,
-                stagger: 0.06,
-                duration: 0.7,
-                ease: 'power2.out'
-            });
-
-            gsap.from('#client .portal-mockup-wrapper', {
-                scrollTrigger: {
-                    trigger: '#client',
-                    start: 'top bottom',
-                    once: true
-                },
-                scale: 0.95,
-                opacity: 0,
-                duration: 0.8,
-                ease: 'power3.out'
-            });
-
-            // ScrollTrigger Animation for Video Review System Section
-            gsap.from('#reviews-system .portal-feature-item', {
-                scrollTrigger: {
-                    trigger: '#reviews-system',
-                    start: 'top bottom',
-                    once: true
-                },
-                x: 30,
-                opacity: 0,
-                stagger: 0.06,
-                duration: 0.7,
-                ease: 'power2.out'
-            });
-
-            gsap.from('#reviews-system .portal-mockup-wrapper', {
-                scrollTrigger: {
-                    trigger: '#reviews-system',
-                    start: 'top bottom',
-                    once: true
-                },
-                scale: 0.95,
-                opacity: 0,
-                duration: 0.8,
-                ease: 'power3.out'
-            });
-
-            // ScrollTrigger Animation for Why Us Section (Comparison boxes)
-            gsap.from('#why-us .comp-box', {
-                scrollTrigger: {
-                    trigger: '#why-us',
-                    start: 'top bottom',
-                    once: true
-                },
-                y: 35,
-                opacity: 0,
-                stagger: 0.1,
-                duration: 0.7,
-                ease: 'power2.out'
-            });
-
-            // ScrollTrigger Animation for Pricing Section
-            gsap.from('.pricing-card', {
-                scrollTrigger: {
-                    trigger: '#pricing',
-                    start: 'top bottom',
-                    once: true
-                },
-                y: 35,
-                opacity: 0,
-                stagger: 0.08,
-                duration: 0.7,
-                ease: 'power2.out'
-            });
-            
-            // Refresh ScrollTrigger to recalculate layout dimensions
-            ScrollTrigger.refresh();
-        }
-    } catch (e) {
-        console.warn('GSAP initialization failed, using CSS animations fallback:', e);
+    // Add classes and animation delays programmatically
+    if (heroContentBadge) {
+        heroContentBadge.classList.add('reveal-on-scroll');
+        heroContentBadge.style.transitionDelay = '0.05s';
+    }
+    if (heroContentTitle) {
+        heroContentTitle.classList.add('reveal-on-scroll');
+        heroContentTitle.style.transitionDelay = '0.15s';
+    }
+    if (heroContentDesc) {
+        heroContentDesc.classList.add('reveal-on-scroll');
+        heroContentDesc.style.transitionDelay = '0.25s';
+    }
+    if (heroContentActions) {
+        heroContentActions.classList.add('reveal-on-scroll');
+        heroContentActions.style.transitionDelay = '0.35s';
+    }
+    heroMetaSpans.forEach((span, idx) => {
+        span.classList.add('reveal-on-scroll');
+        span.style.transitionDelay = `${0.45 + idx * 0.08}s`;
+    });
+    if (heroVisual) {
+        heroVisual.classList.add('reveal-on-scroll', 'reveal-scale');
+        heroVisual.style.transitionDelay = '0.35s';
     }
 
-    // Double check: if GSAP fails, make sure preloader is hidden and everything is visible
-    if (!gsapSuccess) {
+    // 2. Setup Scroll Reveal Elements & Delays
+    const featureCards = document.querySelectorAll('.feature-card');
+    featureCards.forEach((card, idx) => {
+        card.classList.add('reveal-on-scroll');
+        // Reset delay every 4 items (assuming grid has 4 items in a row on desktop)
+        const delay = (idx % 4) * 0.08;
+        card.style.transitionDelay = `${delay}s`;
+    });
+
+    const portalItemsLeft = document.querySelectorAll('#client .portal-feature-item');
+    portalItemsLeft.forEach((item, idx) => {
+        item.classList.add('reveal-on-scroll', 'reveal-left');
+        item.style.transitionDelay = `${idx * 0.1}s`;
+    });
+
+    const portalItemsRight = document.querySelectorAll('#reviews-system .portal-feature-item');
+    portalItemsRight.forEach((item, idx) => {
+        item.classList.add('reveal-on-scroll', 'reveal-right');
+        item.style.transitionDelay = `${idx * 0.1}s`;
+    });
+
+    const portalMockupLeft = document.querySelector('#client .portal-mockup-wrapper');
+    if (portalMockupLeft) {
+        portalMockupLeft.classList.add('reveal-on-scroll', 'reveal-scale');
+        portalMockupLeft.style.transitionDelay = '0.2s';
+    }
+
+    const portalMockupRight = document.querySelector('#reviews-system .portal-mockup-wrapper');
+    if (portalMockupRight) {
+        portalMockupRight.classList.add('reveal-on-scroll', 'reveal-scale');
+        portalMockupRight.style.transitionDelay = '0.2s';
+    }
+
+    const compBoxes = document.querySelectorAll('#why-us .comp-box');
+    compBoxes.forEach((box, idx) => {
+        box.classList.add('reveal-on-scroll');
+        box.style.transitionDelay = `${idx * 0.15}s`;
+    });
+
+    const pricingCards = document.querySelectorAll('.pricing-card');
+    pricingCards.forEach((card, idx) => {
+        card.classList.add('reveal-on-scroll');
+        card.style.transitionDelay = `${idx * 0.12}s`;
+    });
+
+    // 3. Preloader Simulated Progress Bar Count
+    const progressFill = document.querySelector('.preloader-progress-fill');
+    const percentText = document.getElementById('preloader-percent');
+    let progress = 0;
+
+    const startAppEntrance = () => {
+        // Fade out preloader overlay
         const preloaderEl = document.getElementById('preloader');
         if (preloaderEl) {
-            preloaderEl.style.display = 'none';
+            preloaderEl.style.opacity = '0';
             preloaderEl.style.visibility = 'hidden';
+            setTimeout(() => {
+                preloaderEl.style.display = 'none';
+            }, 600);
         }
-    }
 
-    // Refresh triggers again when the page is fully loaded
-    window.addEventListener('load', () => {
-        if (typeof ScrollTrigger !== 'undefined') {
-            ScrollTrigger.refresh();
+        // Trigger Hero entry animations immediately
+        const heroElements = [
+            heroContentBadge,
+            heroContentTitle,
+            heroContentDesc,
+            heroContentActions,
+            heroVisual
+        ];
+        heroElements.forEach(el => {
+            if (el) el.classList.add('active');
+        });
+        heroMetaSpans.forEach(span => span.classList.add('active'));
+
+        // Play radial goal tracker fill
+        const radialFill = document.querySelector('.radial-fill');
+        if (radialFill) {
+            radialFill.style.transition = 'stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1)';
+            radialFill.style.strokeDashoffset = '251.2';
+            setTimeout(() => {
+                radialFill.style.strokeDashoffset = '65.3';
+            }, 400);
         }
+    };
+
+    const updateProgress = () => {
+        progress += Math.floor(Math.random() * 14) + 6;
+        if (progress > 100) progress = 100;
+        
+        if (progressFill) progressFill.style.width = `${progress}%`;
+        if (percentText) percentText.textContent = `${progress}%`;
+        
+        if (progress < 100) {
+            setTimeout(updateProgress, Math.floor(Math.random() * 30) + 10);
+        } else {
+            setTimeout(startAppEntrance, 100);
+        }
+    };
+
+    // Trigger preloader counting
+    updateProgress();
+
+    // 4. Intersection Observer for Scroll Reveals
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px 0px -60px 0px', // triggers slightly before entering view
+        threshold: 0.05
+    };
+
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target); // trigger animation only once
+            }
+        });
+    }, observerOptions);
+
+    // Observe all scroll reveal elements
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => {
+        // Skip hero items as they are triggered immediately after preloader fades out
+        if (el.closest('.hero')) return;
+        revealObserver.observe(el);
     });
 });

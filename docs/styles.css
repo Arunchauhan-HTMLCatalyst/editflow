@@ -2161,3 +2161,34 @@ img {
     0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(0.9); }
     50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.15); }
 }
+
+/* CSS Scroll Reveal System */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.reveal-on-scroll.reveal-left {
+    transform: translateX(-40px);
+}
+
+.reveal-on-scroll.reveal-right {
+    transform: translateX(40px);
+}
+
+.reveal-on-scroll.reveal-scale {
+    transform: scale(0.95);
+}
+
+.reveal-on-scroll.active {
+    opacity: 1;
+    transform: translate(0) scale(1) !important;
+}
+
+/* Disable hover transforms if not revealed yet */
+.feature-card.reveal-on-scroll:not(.active),
+.pricing-card.reveal-on-scroll:not(.active) {
+    pointer-events: none;
+}
