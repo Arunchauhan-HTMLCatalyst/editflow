@@ -16,6 +16,7 @@ import '../models/review_video.dart';
 import '../models/review_comment.dart';
 import '../models/review_share.dart';
 import '../providers/review_provider.dart';
+import '../../../services/supabase_service.dart';
 
 class PublicReviewScreen extends ConsumerStatefulWidget {
   final String shareToken;
@@ -262,6 +263,25 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
       setState(() {});
       _commentInputController.clear();
       _commentFocusNode.unfocus();
+
+      // Fire-and-forget push notification to the freelancer
+      unawaited(() async {
+        try {
+          final freelancerUserId = _shareInfo!.createdBy;
+          final truncated = text.length > 50 ? '${text.substring(0, 50)}...' : text;
+          await SupabaseService.instance.functions.invoke(
+            'send-push',
+            body: {
+              'recipientUserId': freelancerUserId,
+              'title': '💬 New Review Comment',
+              'body': '$_guestName (Guest): "$truncated"',
+              'route': '/dashboard',
+            },
+          );
+        } catch (e) {
+          debugPrint('[REVIEW PUSH ERROR] $e');
+        }
+      }());
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -299,6 +319,25 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
         _replyingToCommentId = null;
         _replyInputController.clear();
       });
+
+      // Fire-and-forget push notification to the freelancer
+      unawaited(() async {
+        try {
+          final freelancerUserId = _shareInfo!.createdBy;
+          final truncated = text.length > 50 ? '${text.substring(0, 50)}...' : text;
+          await SupabaseService.instance.functions.invoke(
+            'send-push',
+            body: {
+              'recipientUserId': freelancerUserId,
+              'title': '💬 Review Reply',
+              'body': '$_guestName (Guest): "$truncated"',
+              'route': '/dashboard',
+            },
+          );
+        } catch (e) {
+          debugPrint('[REVIEW PUSH ERROR] $e');
+        }
+      }());
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -879,14 +918,8 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     final authorName = isGuest ? parts[0] : 'Freelancer';
     final commentBody = isGuest ? parts[1] : comment.comment;
 
-    String timeAgo(DateTime dateTime) {
-      final difference = DateTime.now().toUtc().difference(dateTime.toUtc());
-      if (difference.isNegative) return 'Just now';
-      if (difference.inDays >= 7) return DateFormat('MMM d').format(dateTime.toLocal());
-      if (difference.inDays >= 1) return '${difference.inDays}d ago';
-      if (difference.inHours >= 1) return '${difference.inHours}h ago';
-      if (difference.inMinutes >= 1) return '${difference.inMinutes}m ago';
-      return 'Just now';
+    String formatExactTime(DateTime dateTime) {
+      return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime.toLocal());
     }
 
     return Opacity(
@@ -927,7 +960,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    onPressed: () => _cycleTaskStatus(comment),
+                    onPressed: null, // Guests cannot change task status
                   ),
                   const SizedBox(width: 8),
                 ],
@@ -968,7 +1001,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                       Row(
                         children: [
                           Text(
-                            '$authorName • ${timeAgo(comment.createdAt)}',
+                            '$authorName • ${formatExactTime(comment.createdAt)}',
                             style: TextStyle(
                               fontSize: 10.5,
                               color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
@@ -1035,7 +1068,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: _buildReactions(comment)),
+                const Spacer(),
                 if (!isReply) ...[
                   TextButton.icon(
                     style: TextButton.styleFrom(

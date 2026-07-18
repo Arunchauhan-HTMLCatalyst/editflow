@@ -204,6 +204,34 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       _commentInputController.clear();
       FocusScope.of(context).unfocus();
       ref.invalidate(reviewCommentsProvider(widget.videoId));
+
+      // If I'm the client, notify the freelancer
+      if (widget.isClient) {
+        unawaited(() async {
+          try {
+            final projRes = await SupabaseService.instance
+                .from('projects')
+                .select('name, user_id')
+                .eq('id', widget.projectId)
+                .single()
+                .timeout(const Duration(seconds: 10));
+            final freelancerUserId = projRes['user_id'] as String;
+            final projectName = projRes['name'] as String? ?? 'Project';
+            final truncated = text.length > 50 ? '${text.substring(0, 50)}...' : text;
+            await SupabaseService.instance.functions.invoke(
+              'send-push',
+              body: {
+                'recipientUserId': freelancerUserId,
+                'title': '💬 Review Comment on $projectName',
+                'body': 'Client: "$truncated"',
+                'route': '/projects/${widget.projectId}',
+              },
+            );
+          } catch (e) {
+            debugPrint('[REVIEW PUSH ERROR] $e');
+          }
+        }());
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -234,6 +262,34 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         _replyInputController.clear();
       });
       ref.invalidate(reviewCommentsProvider(widget.videoId));
+
+      // If I'm the client, notify the freelancer
+      if (widget.isClient) {
+        unawaited(() async {
+          try {
+            final projRes = await SupabaseService.instance
+                .from('projects')
+                .select('name, user_id')
+                .eq('id', widget.projectId)
+                .single()
+                .timeout(const Duration(seconds: 10));
+            final freelancerUserId = projRes['user_id'] as String;
+            final projectName = projRes['name'] as String? ?? 'Project';
+            final truncated = text.length > 50 ? '${text.substring(0, 50)}...' : text;
+            await SupabaseService.instance.functions.invoke(
+              'send-push',
+              body: {
+                'recipientUserId': freelancerUserId,
+                'title': '💬 Review Reply on $projectName',
+                'body': 'Client: "$truncated"',
+                'route': '/projects/${widget.projectId}',
+              },
+            );
+          } catch (e) {
+            debugPrint('[REVIEW PUSH ERROR] $e');
+          }
+        }());
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1165,14 +1221,8 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     final authorNameAsync = ref.watch(profileNameProvider(comment.authorId));
     final isOwnComment = comment.authorId == SupabaseService.userId;
 
-    String timeAgo(DateTime dateTime) {
-      final difference = DateTime.now().toUtc().difference(dateTime.toUtc());
-      if (difference.isNegative) return 'Just now';
-      if (difference.inDays >= 7) return DateFormat('MMM d').format(dateTime.toLocal());
-      if (difference.inDays >= 1) return '${difference.inDays}d ago';
-      if (difference.inHours >= 1) return '${difference.inHours}h ago';
-      if (difference.inMinutes >= 1) return '${difference.inMinutes}m ago';
-      return 'Just now';
+    String formatExactTime(DateTime dateTime) {
+      return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime.toLocal());
     }
 
     return Opacity(
@@ -1213,7 +1263,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    onPressed: () => _cycleTaskStatus(comment),
+                    onPressed: widget.isClient ? null : () => _cycleTaskStatus(comment),
                   ),
                   const SizedBox(width: 8),
                 ],
@@ -1264,7 +1314,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                         loading: () => const SizedBox.shrink(),
                         error: (_, __) => const SizedBox.shrink(),
                         data: (name) => Text(
-                          '$name • ${timeAgo(comment.createdAt)}',
+                          '$name • ${formatExactTime(comment.createdAt)}',
                           style: TextStyle(
                             fontSize: 10.5,
                             color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
@@ -1314,7 +1364,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: _buildReactions(comment)),
+                const Spacer(),
                 if (!isReply) ...[
                   TextButton.icon(
                     style: TextButton.styleFrom(
