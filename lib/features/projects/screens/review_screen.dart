@@ -1133,10 +1133,17 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                   final replies = comments.where((c) => c.parentId == parent.id).toList();
                   replies.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _buildCommentCard(parent, false, comments),
+                      if (_replyingToCommentId == parent.id)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 34.0, right: 6.0, top: 4.0, bottom: 4.0),
+                          child: _buildReplyInputBox(parent, isDark),
+                        ),
                       if (replies.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(left: 28.0),
@@ -1216,6 +1223,92 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     );
   }
 
+  Widget _buildAvatar(String name, bool isDark) {
+    final firstLetter = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    final colors = [
+      const Color(0xFF3B82F6), // Blue
+      const Color(0xFF10B981), // Emerald
+      const Color(0xFF8B5CF6), // Purple
+      const Color(0xFFEC4899), // Pink
+      const Color(0xFFF59E0B), // Amber
+      const Color(0xFFEF4444), // Red
+      const Color(0xFF06B6D4), // Cyan
+    ];
+    final colorIndex = name.hashCode.abs() % colors.length;
+    final bgColor = colors[colorIndex];
+
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: bgColor,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        firstLetter,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyInputBox(ReviewComment parent, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(top: 2.0, bottom: 6.0),
+      height: 36,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF161A1D) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? const Color(0xFF22262B) : const Color(0xFFE2E8F0),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 10),
+          const Icon(Icons.subdirectory_arrow_right_rounded, size: 14, color: AppColors.primaryNeon),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _replyInputController,
+              style: TextStyle(fontSize: 12.5, color: isDark ? Colors.white : Colors.black87),
+              decoration: InputDecoration(
+                hintText: 'Reply to this thread...',
+                hintStyle: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () {
+              setState(() {
+                _replyingToCommentId = null;
+              });
+            },
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.send_rounded, size: 16, color: AppColors.primaryNeon),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => _addReply(parent.id, parent.timestampMs),
+          ),
+          const SizedBox(width: 10),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCommentCard(ReviewComment comment, bool isReply, List<ReviewComment> allComments) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authorNameAsync = ref.watch(profileNameProvider(comment.authorId));
@@ -1225,225 +1318,197 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime.toLocal());
     }
 
+    final authorName = authorNameAsync.value ?? 'User';
+
     return Opacity(
-      opacity: comment.isResolved ? 0.6 : 1.0,
+      opacity: comment.isResolved ? 0.65 : 1.0,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 2.0),
+        margin: const EdgeInsets.symmetric(vertical: 4.0),
         padding: const EdgeInsets.all(12.0),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF161A1D) : Colors.white,
+          color: isDark ? const Color(0xFF13171B) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: comment.isResolved
-                ? AppColors.success.withValues(alpha: 0.3)
-                : (isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0)),
-            width: 1.0,
+                ? AppColors.success.withValues(alpha: 0.2)
+                : (isDark ? const Color(0xFF22262B) : const Color(0xFFE2E8F0)),
+            width: 0.8,
           ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+          ],
         ),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!isReply) ...[
-                  IconButton(
-                    icon: Icon(
-                      comment.taskStatus == 'resolved'
-                          ? Icons.check_circle_rounded
-                          : (comment.taskStatus == 'in_progress'
-                              ? Icons.play_circle_outline_rounded
-                              : Icons.radio_button_unchecked_rounded),
-                      color: comment.taskStatus == 'resolved'
-                          ? AppColors.success
-                          : (comment.taskStatus == 'in_progress'
-                              ? Colors.orange
-                              : AppColors.textMuted),
-                      size: 20,
-                    ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: widget.isClient ? null : () => _cycleTaskStatus(comment),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                if (!isReply) ...[
-                  InkWell(
-                    onTap: () {
-                      final target = Duration(milliseconds: comment.timestampMs);
-                      _currentPositionNotifier.value = target;
-                      if (_controller != null && _isPlayerInitialized) {
-                        _seekTo(target);
-                        if (!_controller!.value.isPlaying) {
-                          _controller!.play();
-                        }
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00C7A5).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        comment.formattedTimestamp,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF00D7B5),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            _buildAvatar(authorName, isDark),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
                       Text(
-                        comment.comment,
+                        authorName,
                         style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                          decoration: comment.isResolved ? TextDecoration.lineThrough : null,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: authorNameAsync.when(
-                              loading: () => const SizedBox.shrink(),
-                              error: (_, __) => const SizedBox.shrink(),
-                              data: (name) => Text(
-                                '$name • ${formatExactTime(comment.createdAt)}',
-                                style: TextStyle(
-                                  fontSize: 10.5,
-                                  color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                                ),
+                      const SizedBox(width: 8),
+                      if (!isReply)
+                        InkWell(
+                          onTap: () {
+                            final target = Duration(milliseconds: comment.timestampMs);
+                            _currentPositionNotifier.value = target;
+                            if (_controller != null && _isPlayerInitialized) {
+                              _seekTo(target);
+                              if (!_controller!.value.isPlaying) {
+                                _controller!.play();
+                              }
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00C7A5).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              comment.formattedTimestamp,
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF00D7B5),
                               ),
                             ),
                           ),
-                          if (!isReply)
-                            InkWell(
-                              onTap: () {
-                                setState(() {
-                                  if (_replyingToCommentId == comment.id) {
-                                    _replyingToCommentId = null;
-                                  } else {
-                                    _replyingToCommentId = comment.id;
-                                    _replyInputController.clear();
-                                  }
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(4),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.reply_rounded, size: 13, color: AppColors.primaryNeon),
-                                    SizedBox(width: 3),
-                                    Text('Reply', style: TextStyle(fontSize: 10, color: AppColors.primaryNeon, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
+                        ),
+                      const Spacer(),
+                      if (!isReply) ...[
+                        IconButton(
+                          icon: Icon(
+                            comment.taskStatus == 'resolved'
+                                ? Icons.check_circle_rounded
+                                : (comment.taskStatus == 'in_progress'
+                                    ? Icons.play_circle_outline_rounded
+                                    : Icons.radio_button_unchecked_rounded),
+                            color: comment.taskStatus == 'resolved'
+                                ? AppColors.success
+                                : (comment.taskStatus == 'in_progress'
+                                    ? Colors.orange
+                                    : AppColors.textMuted),
+                            size: 18,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: widget.isClient ? null : () => _cycleTaskStatus(comment),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      if (isOwnComment)
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert_rounded, size: 14, color: AppColors.textMuted),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit_rounded, size: 13),
+                                  SizedBox(width: 8),
+                                  Text('Edit', style: TextStyle(fontSize: 12)),
+                                ],
                               ),
                             ),
-                        ],
-                      ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_rounded, size: 13, color: Colors.red),
+                                  SizedBox(width: 8),
+                                  Text('Delete', style: TextStyle(fontSize: 12, color: Colors.red)),
+                                ],
+                              ),
+                            ),
+                          ],
+                          onSelected: (val) {
+                            if (val == 'edit') {
+                              _showEditCommentDialog(comment);
+                            } else if (val == 'delete') {
+                              _confirmDeleteComment(comment);
+                            }
+                          },
+                        ),
                     ],
                   ),
-                ),
-                if (isOwnComment)
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, size: 16, color: AppColors.textMuted),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit_rounded, size: 14),
-                            SizedBox(width: 8),
-                            Text('Edit', style: TextStyle(fontSize: 12)),
-                          ],
+                  const SizedBox(height: 6),
+                  Text(
+                    comment.comment,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.4,
+                      color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                      decoration: comment.isResolved ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        formatExactTime(comment.createdAt),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
                         ),
                       ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete_rounded, size: 14, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(fontSize: 12, color: Colors.red)),
-                          ],
+                      if (!isReply)
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              if (_replyingToCommentId == comment.id) {
+                                _replyingToCommentId = null;
+                              } else {
+                                _replyingToCommentId = comment.id;
+                                _replyInputController.clear();
+                              }
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(4),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.reply_rounded, size: 12, color: AppColors.primaryNeon),
+                                SizedBox(width: 2),
+                                Text(
+                                  'Reply',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.primaryNeon,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
                     ],
-                    onSelected: (val) {
-                      if (val == 'edit') {
-                        _showEditCommentDialog(comment);
-                      } else if (val == 'delete') {
-                        _confirmDeleteComment(comment);
-                      }
-                    },
                   ),
-              ],
-            ),
-            if (_replyingToCommentId == comment.id) ...[
-              const SizedBox(height: 8),
-              Container(
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E2429) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0),
-                    width: 0.8,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 8),
-                    const Icon(Icons.subdirectory_arrow_right_rounded, size: 14, color: AppColors.primaryNeon),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: TextField(
-                        controller: _replyInputController,
-                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black87),
-                        decoration: InputDecoration(
-                          hintText: 'Reply to this thread...',
-                          hintStyle: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 14, color: AppColors.textMuted),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        setState(() {
-                          _replyingToCommentId = null;
-                        });
-                      },
-                    ),
-                    const SizedBox(width: 6),
-                    IconButton(
-                      icon: const Icon(Icons.send_rounded, size: 14, color: AppColors.primaryNeon),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => _addReply(comment.id, comment.timestampMs),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                ),
+                ],
               ),
-            ],
+            ),
           ],
         ),
       ),
