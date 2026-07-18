@@ -3,5 +3,18 @@
   "version": "1.0.0",
   "main": "main.js",
   "description": "Desktop wrapper for EditFlow Workspace",
-  "author": "AC Soft Solutions"
+  "author": "AC Soft Solutions",
+  "build": {
+    "appId": "online.acsoft.editflow.desktop",
+    "productName": "EditFlow OS",
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
 }
