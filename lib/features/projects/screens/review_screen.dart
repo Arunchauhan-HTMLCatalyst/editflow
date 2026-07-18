@@ -1310,16 +1310,47 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      authorNameAsync.when(
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
-                        data: (name) => Text(
-                          '$name • ${formatExactTime(comment.createdAt)}',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: authorNameAsync.when(
+                              loading: () => const SizedBox.shrink(),
+                              error: (_, __) => const SizedBox.shrink(),
+                              data: (name) => Text(
+                                '$name • ${formatExactTime(comment.createdAt)}',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          if (!isReply)
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  if (_replyingToCommentId == comment.id) {
+                                    _replyingToCommentId = null;
+                                  } else {
+                                    _replyingToCommentId = comment.id;
+                                    _replyInputController.clear();
+                                  }
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(4),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.reply_rounded, size: 13, color: AppColors.primaryNeon),
+                                    SizedBox(width: 3),
+                                    Text('Reply', style: TextStyle(fontSize: 10, color: AppColors.primaryNeon, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
@@ -1361,50 +1392,21 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Spacer(),
-                if (!isReply) ...[
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    icon: const Icon(Icons.reply_rounded, size: 14, color: AppColors.primaryNeon),
-                    label: const Text(
-                      'Reply',
-                      style: TextStyle(fontSize: 11, color: AppColors.primaryNeon, fontWeight: FontWeight.bold),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        if (_replyingToCommentId == comment.id) {
-                          _replyingToCommentId = null;
-                        } else {
-                          _replyingToCommentId = comment.id;
-                          _replyInputController.clear();
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ],
-            ),
             if (_replyingToCommentId == comment.id) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
               Row(
                 children: [
                   Expanded(
                     child: SizedBox(
-                      height: 36,
+                      height: 30,
                       child: TextField(
                         controller: _replyInputController,
                         style: const TextStyle(fontSize: 12, color: Colors.white),
                         decoration: InputDecoration(
                           hintText: 'Write a reply...',
                           hintStyle: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          isDense: true,
                           filled: true,
                           fillColor: isDark ? const Color(0xFF0D121F) : const Color(0xFFF8FAFC),
                           border: OutlineInputBorder(
