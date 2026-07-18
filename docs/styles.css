@@ -2196,7 +2196,7 @@ img {
 /* Workflow Visualizer Panel */
 .workflow-visualizer {
     display: grid;
-    grid-template-columns: 1fr 80px 1fr;
+    grid-template-columns: 1fr 2px 1fr;
     align-items: stretch;
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -2439,25 +2439,38 @@ img {
     align-items: center;
     justify-content: center;
     position: relative;
-    background-color: rgba(255, 255, 255, 0.02);
-    border-left: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
+    background: none;
+    border: none;
+}
+
+.visual-separator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--border-color), transparent);
 }
 
 .vs-badge {
     background-color: #171d1f;
     border: 1px solid var(--border-color);
-    color: var(--text-muted);
+    color: #ffffff;
     font-family: var(--font-heading);
     font-weight: 800;
-    font-size: 11px;
-    width: 36px;
-    height: 36px;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+    animation: vs-badge-pulse 2.2s infinite ease-in-out;
 }
 
 /* Animations */
@@ -2479,6 +2492,11 @@ img {
 @keyframes serene-pulse {
     0%, 100% { filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.35)); }
     50% { filter: drop-shadow(0 0 28px rgba(16, 185, 129, 0.7)); }
+}
+
+@keyframes vs-badge-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 255, 255, 0.05); border-color: var(--border-color); }
+    50% { transform: scale(1.08); box-shadow: 0 0 20px rgba(16, 185, 129, 0.25); border-color: var(--secondary); }
 }
 
 /* Line dash movement animations */
@@ -2531,10 +2549,17 @@ img {
     
     .visual-separator {
         height: 60px;
-        border-left: none;
-        border-right: none;
-        border-top: 1px solid var(--border-color);
-        border-bottom: 1px solid var(--border-color);
+        width: 100%;
+        border: none;
+    }
+    
+    .visual-separator::before {
+        width: 100%;
+        height: 1px;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: linear-gradient(to right, transparent, var(--border-color), transparent);
     }
     
     .flow-panel {
