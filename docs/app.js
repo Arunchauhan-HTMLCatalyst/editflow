@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Register GSAP plugins
+    gsap.registerPlugin(ScrollTrigger);
+
     // Mobile menu toggle
     const menuToggle = document.querySelector('.mobile-menu-toggle');
     const navLinks = document.querySelector('.nav-links');
@@ -19,52 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 spans[2].style.transform = 'none';
             }
         });
-    }
-
-    // Scroll reveal micro-animations
-    const revealElements = document.querySelectorAll('.feature-card, .portal-feature-item, .comp-box');
-    
-    const revealOnScroll = () => {
-        const triggerBottom = window.innerHeight * 0.85;
-        
-        revealElements.forEach(el => {
-            const elTop = el.getBoundingClientRect().top;
-            
-            if (elTop < triggerBottom) {
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-            }
-        });
-    };
-
-    // Initialize animation properties
-    revealElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-    });
-
-    window.addEventListener('scroll', revealOnScroll);
-    revealOnScroll(); // Trigger once on load
-
-    // --- Mockup Dashboard Radial Progress Animation ---
-    const radialFill = document.querySelector('.radial-fill');
-    if (radialFill) {
-        // Set transition property
-        radialFill.style.transition = 'stroke-dashoffset 1.8s cubic-bezier(0.4, 0, 0.2, 1)';
-        radialFill.style.strokeDashoffset = '251.2'; // start empty
-        
-        // Trigger fill animation when header section is visible
-        const animateRadial = () => {
-            const rect = radialFill.getBoundingClientRect();
-            if (rect.top < window.innerHeight && rect.bottom > 0) {
-                // 74% progress = 251.2 - (251.2 * 0.74) = 65.3
-                radialFill.style.strokeDashoffset = '65.3';
-                window.removeEventListener('scroll', animateRadial);
-            }
-        };
-        window.addEventListener('scroll', animateRadial);
-        setTimeout(animateRadial, 300); // trigger on load
     }
 
     // Dropdown click toggle
@@ -111,5 +68,156 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+    });
+
+    // ==========================================
+    // GSAP ANIMATIONS
+    // ==========================================
+
+    // Hero Entrance Animations
+    const heroTl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 1 } });
+    
+    heroTl.from('.navbar', {
+        y: -100,
+        opacity: 0,
+        duration: 0.8
+    })
+    .from('.hero-content .badge', {
+        y: 20,
+        opacity: 0,
+    }, '-=0.4')
+    .from('.hero-content h1', {
+        y: 30,
+        opacity: 0,
+    }, '-=0.6')
+    .from('.hero-content p', {
+        y: 20,
+        opacity: 0,
+    }, '-=0.6')
+    .from('.hero-actions a', {
+        y: 20,
+        opacity: 0,
+        stagger: 0.15
+    }, '-=0.6')
+    .from('.hero-meta span', {
+        x: -20,
+        opacity: 0,
+        stagger: 0.1
+    }, '-=0.6')
+    .from('.hero-visual', {
+        scale: 0.95,
+        opacity: 0,
+        duration: 1.2
+    }, '-=1.0');
+
+    // Stats progress tracker radial animation
+    const radialFill = document.querySelector('.radial-fill');
+    if (radialFill) {
+        radialFill.style.strokeDashoffset = '251.2';
+        
+        gsap.to(radialFill, {
+            strokeDashoffset: '65.3',
+            duration: 2,
+            ease: 'power2.out',
+            scrollTrigger: {
+                trigger: '.mock-radial-container',
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+            }
+        });
+    }
+
+    // ScrollTrigger Animation for Freelancer Features Cards
+    gsap.from('.feature-card', {
+        scrollTrigger: {
+            trigger: '#freelancer .features-grid',
+            start: 'top 80%',
+            toggleActions: 'play none none none'
+        },
+        y: 50,
+        opacity: 0,
+        stagger: 0.08,
+        duration: 0.8,
+        ease: 'power2.out'
+    });
+
+    // ScrollTrigger Animation for Client Portal Section
+    gsap.from('#client .portal-feature-item', {
+        scrollTrigger: {
+            trigger: '#client .portal-text',
+            start: 'top 80%',
+            toggleActions: 'play none none none'
+        },
+        x: -40,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.8,
+        ease: 'power2.out'
+    });
+
+    gsap.from('#client .portal-mockup-wrapper', {
+        scrollTrigger: {
+            trigger: '#client .portal-mockup-wrapper',
+            start: 'top 80%',
+            toggleActions: 'play none none none'
+        },
+        scale: 0.9,
+        opacity: 0,
+        duration: 1,
+        ease: 'power3.out'
+    });
+
+    // ScrollTrigger Animation for Video Review System Section
+    gsap.from('#reviews-system .portal-feature-item', {
+        scrollTrigger: {
+            trigger: '#reviews-system .portal-text',
+            start: 'top 80%',
+            toggleActions: 'play none none none'
+        },
+        x: 40,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.8,
+        ease: 'power2.out'
+    });
+
+    gsap.from('#reviews-system .portal-mockup-wrapper', {
+        scrollTrigger: {
+            trigger: '#reviews-system .portal-mockup-wrapper',
+            start: 'top 80%',
+            toggleActions: 'play none none none'
+        },
+        scale: 0.9,
+        opacity: 0,
+        duration: 1,
+        ease: 'power3.out'
+    });
+
+    // ScrollTrigger Animation for Why Us Section (Comparison boxes)
+    gsap.from('#why-us .comp-box', {
+        scrollTrigger: {
+            trigger: '#why-us .comparison-container',
+            start: 'top 80%',
+            toggleActions: 'play none none none'
+        },
+        y: 40,
+        opacity: 0,
+        stagger: 0.2,
+        duration: 0.8,
+        ease: 'power2.out'
+    });
+
+    // ScrollTrigger Animation for Pricing Section
+    gsap.from('.pricing-card', {
+        scrollTrigger: {
+            trigger: '.pricing-grid',
+            start: 'top 80%',
+            toggleActions: 'play none none none'
+        },
+        y: 50,
+        opacity: 0,
+        stagger: 0.15,
+        duration: 0.8,
+        ease: 'power2.out'
     });
 });
