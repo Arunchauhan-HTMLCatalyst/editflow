@@ -504,59 +504,72 @@
                     </div>
                     
                     <div class="network-container">
-                        <!-- Stressed editor avatar in center -->
-                        <div class="editor-node stressed">
-                            <span class="editor-emoji">🤯</span>
-                            <span class="editor-label">Stressed Editor</span>
+                        <!-- Stressed editor human SVG avatar in center -->
+                        <div class="editor-node-circle stressed">
+                            <svg viewBox="0 0 100 100" class="editor-svg-avatar">
+                                <!-- Background -->
+                                <circle cx="50" cy="50" r="48" fill="#180c0d" stroke="#7f1d1d" stroke-width="2" />
+                                <!-- Stressed Body -->
+                                <path d="M 22 82 C 22 66 78 66 78 82 Z" fill="#7f1d1d" />
+                                <!-- Stressed Human Head -->
+                                <circle cx="50" cy="38" r="16" fill="#fca5a5" />
+                                <!-- Messy hair squiggles -->
+                                <path d="M 32 24 C 36 12 64 12 68 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" />
+                                <path d="M 38 18 L 44 26 M 62 18 L 56 26" stroke="#ef4444" stroke-width="2" stroke-linecap="round" />
+                                <!-- Stressed Eyes (X X) -->
+                                <path d="M 42 34 L 47 39 M 47 34 L 42 39" stroke="#7f1d1d" stroke-width="1.8" stroke-linecap="round" />
+                                <path d="M 53 34 L 58 39 M 58 34 L 53 39" stroke="#7f1d1d" stroke-width="1.8" stroke-linecap="round" />
+                                <!-- Disappointed mouth -->
+                                <path d="M 44 47 Q 50 43 56 47" fill="none" stroke="#7f1d1d" stroke-width="1.8" stroke-linecap="round" />
+                                <!-- Stressed hands holding head -->
+                                <path d="M 28 58 Q 30 35 34 38" fill="none" stroke="#fca5a5" stroke-width="3" stroke-linecap="round" />
+                                <path d="M 72 58 Q 70 35 66 38" fill="none" stroke="#fca5a5" stroke-width="3" stroke-linecap="round" />
+                            </svg>
+                            <span class="editor-label-node">Stressed Editor</span>
                         </div>
                         
-                        <!-- Messy surrounding nodes -->
+                        <!-- Messy surrounding nodes (No emoji icons, clean names) -->
                         <div class="service-node node-tl">
-                            <span class="node-icon">💬</span>
                             <div class="node-text">
-                                <span class="node-name">WhatsApp</span>
+                                <span class="node-name text-danger">WhatsApp</span>
                                 <span class="node-msg">"Correction at 0:15... wait, 0:18"</span>
                             </div>
                         </div>
                         
                         <div class="service-node node-tr">
-                            <span class="node-icon">🎬</span>
                             <div class="node-text">
-                                <span class="node-name">Frame.io</span>
+                                <span class="node-name text-danger">Frame.io</span>
                                 <span class="node-msg">"Open another browser link"</span>
                             </div>
                         </div>
                         
                         <div class="service-node node-bl">
-                            <span class="node-icon">📋</span>
                             <div class="node-text">
-                                <span class="node-name">Trello</span>
+                                <span class="node-name text-danger">Trello</span>
                                 <span class="node-msg">"Check revision column cards"</span>
                             </div>
                         </div>
                         
                         <div class="service-node node-br">
-                            <span class="node-icon">💰</span>
                             <div class="node-text">
-                                <span class="node-name">GPay/UPI</span>
+                                <span class="node-name text-danger">GPay/UPI</span>
                                 <span class="node-msg">"Chase payments manually"</span>
                             </div>
                         </div>
                         
                         <div class="service-node node-tc">
-                            <span class="node-icon">📈</span>
                             <div class="node-text">
-                                <span class="node-name">ClickUp</span>
+                                <span class="node-name text-danger">ClickUp</span>
                                 <span class="node-msg">"Log project details"</span>
                             </div>
                         </div>
 
                         <!-- Chaotic connecting lines -->
                         <svg class="network-lines" viewBox="0 0 400 300">
-                            <path d="M 60,60 L 200,150" class="line-chaos line-vibrate-1" />
-                            <path d="M 340,60 L 200,150" class="line-chaos line-vibrate-2" />
-                            <path d="M 60,240 L 200,150" class="line-chaos line-vibrate-3" />
-                            <path d="M 340,240 L 200,150" class="line-chaos line-vibrate-1" />
+                            <path d="M 80,70 L 200,150" class="line-chaos line-vibrate-1" />
+                            <path d="M 320,70 L 200,150" class="line-chaos line-vibrate-2" />
+                            <path d="M 80,230 L 200,150" class="line-chaos line-vibrate-3" />
+                            <path d="M 320,230 L 200,150" class="line-chaos line-vibrate-1" />
                             <path d="M 200,45 L 200,150" class="line-chaos line-vibrate-2" />
                         </svg>
                     </div>
@@ -575,41 +588,56 @@
                     </div>
                     
                     <div class="network-container">
-                        <!-- Serene editor logo in center -->
-                        <div class="editor-node serene">
-                            <img src="logo.svg" alt="EditFlow Symbol" class="serene-logo">
-                            <span class="editor-label">EditFlow OS</span>
+                        <!-- Serene editor human SVG avatar + EditFlow overlay logo -->
+                        <div class="editor-node-circle serene">
+                            <svg viewBox="0 0 100 100" class="editor-svg-avatar">
+                                <!-- Background -->
+                                <circle cx="50" cy="50" r="48" fill="#06201e" stroke="#0f766e" stroke-width="2" />
+                                <!-- Calm Body -->
+                                <path d="M 22 82 C 22 66 78 66 78 82 Z" fill="#0f766e" />
+                                <!-- Focused Human Head -->
+                                <circle cx="50" cy="38" r="16" fill="#a7f3d0" />
+                                <!-- Headphones -->
+                                <path d="M 30 38 C 30 18 70 18 70 38" fill="none" stroke="#10b981" stroke-width="4.5" stroke-linecap="round" />
+                                <rect x="28" y="32" width="5" height="12" rx="2" fill="#10b981" />
+                                <rect x="67" y="32" width="5" height="12" rx="2" fill="#10b981" />
+                                <!-- Focused eyes closed with smile -->
+                                <path d="M 41 38 Q 45 41 47 38" fill="none" stroke="#042f2e" stroke-width="2" stroke-linecap="round" />
+                                <path d="M 53 38 Q 55 41 59 38" fill="none" stroke="#042f2e" stroke-width="2" stroke-linecap="round" />
+                                <path d="M 45 48 Q 50 51 55 48" fill="none" stroke="#042f2e" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                            <!-- Mini EditFlow monogram badge overlay -->
+                            <div class="mini-logo-badge">
+                                <img src="logo.svg" alt="ef badge">
+                            </div>
+                            <span class="editor-label-node">EditFlow OS</span>
                         </div>
                         
-                        <!-- Clean surrounding nodes -->
+                        <!-- Clean surrounding nodes (No emoji icons, clean names) -->
                         <div class="flow-node node-tl">
-                            <span class="node-icon">🎬</span>
                             <div class="node-text">
-                                <span class="node-name">Frame Reviews</span>
+                                <span class="node-name text-success">Frame Reviews</span>
                                 <span class="node-msg">Accurate comments</span>
                             </div>
                         </div>
                         
                         <div class="flow-node node-tr">
-                            <span class="node-icon">👥</span>
                             <div class="node-text">
-                                <span class="node-name">Client Portal</span>
+                                <span class="node-name text-success">Client Portal</span>
                                 <span class="node-msg">Shared pipeline logs</span>
                             </div>
                         </div>
                         
                         <div class="flow-node node-bl">
-                            <span class="node-icon">💳</span>
                             <div class="node-text">
-                                <span class="node-name">UPI QR Invoices</span>
+                                <span class="node-name text-success">UPI QR Invoices</span>
                                 <span class="node-msg">1-click direct pay</span>
                             </div>
                         </div>
                         
                         <div class="flow-node node-br">
-                            <span class="node-icon">🔋</span>
                             <div class="node-text">
-                                <span class="node-name">Foreground Sync</span>
+                                <span class="node-name text-success">Foreground Sync</span>
                                 <span class="node-msg">24/7 push updates</span>
                             </div>
                         </div>
