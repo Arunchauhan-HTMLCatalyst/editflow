@@ -210,8 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Intersection Observer for Scroll Reveals
     const observerOptions = {
         root: null,
-        rootMargin: '0px 0px -60px 0px', // triggers slightly before entering view
-        threshold: 0.05
+        rootMargin: '0px 0px 150px 0px', // Pre-trigger elements 150px before entering screen
+        threshold: 0.01
     };
 
     const revealObserver = new IntersectionObserver((entries, observer) => {

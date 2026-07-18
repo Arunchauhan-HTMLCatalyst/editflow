@@ -777,7 +777,7 @@ img {
     border: 1px solid var(--border-color);
     border-radius: 20px;
     padding: 40px 30px;
-    transition: all var(--transition-speed) ease;
+    transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, transform var(--transition-speed) ease;
 }
 
 .feature-card:hover {
@@ -1853,7 +1853,7 @@ img {
     display: flex;
     flex-direction: column;
     position: relative;
-    transition: all var(--transition-speed) ease;
+    transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, transform var(--transition-speed) ease;
 }
 
 .pricing-card:hover {
