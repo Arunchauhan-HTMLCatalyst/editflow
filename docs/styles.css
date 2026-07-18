@@ -2398,11 +2398,11 @@ img {
 }
 
 /* Specific Placements */
-.node-tl { top: 15px; left: 10px; }
-.node-tr { top: 15px; right: 10px; }
-.node-bl { bottom: 15px; left: 10px; }
-.node-br { bottom: 15px; right: 10px; }
-.node-tc { top: 5px; left: 50%; transform: translateX(-50%); }
+.node-tl { top: 28%; left: 2%; }
+.node-tr { top: 28%; right: 2%; }
+.node-bl { bottom: 12%; left: 2%; }
+.node-br { bottom: 12%; right: 2%; }
+.node-tc { top: 5%; left: 50%; transform: translateX(-50%); }
 
 /* Chaotic red squiggly lines styling */
 .line-chaos {
