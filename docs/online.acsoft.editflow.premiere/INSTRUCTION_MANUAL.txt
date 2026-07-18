@@ -8,7 +8,7 @@ Adobe Premiere Pro on Windows.
 ------------------------------------------------------------------------
 STEP 1: Copy the Extension Folder
 ------------------------------------------------------------------------
-1. Copy the entire folder named "editflow-premiere-extension" (which 
+1. Copy the entire folder named "online.acsoft.editflow.premiere" (which 
    contains this manual).
 2. Open Windows File Explorer and paste it into the following path:
    
@@ -29,7 +29,7 @@ By default, Adobe Premiere Pro blocks custom unsigned extensions. To fix this:
 2. A security prompt will pop up asking for confirmation. Click "Yes".
 3. Click "OK" on the success prompt.
    (This automatically adds the necessary "PlayerDebugMode" registry 
-   entries for Premiere Pro versions 2019 to 2024+).
+   entries for Premiere Pro versions 2019 to 2025+).
 
 ------------------------------------------------------------------------
 STEP 3: Open the Panel in Premiere Pro
@@ -45,5 +45,5 @@ STEP 3: Open the Panel in Premiere Pro
 NEED HELP?
 ------------------------------------------------------------------------
 If the extension still does not appear in your menu, make sure you have:
-1. Copied the entire "editflow-premiere-extension" folder, not just individual files.
+1. Copied the entire "online.acsoft.editflow.premiere" folder, not just individual files.
 2. Fully restarted Adobe Premiere Pro after copying the files and running the .reg script.
