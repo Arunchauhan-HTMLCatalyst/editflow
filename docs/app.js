@@ -363,4 +363,120 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // 7. Watch Demo Modal Controller
+    const btnWatchDemo = document.getElementById('btn-watch-demo');
+    const watchModal = document.getElementById('watch-demo-modal');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalOverlay = watchModal ? watchModal.querySelector('.modal-overlay') : null;
+    
+    // Walkthrough simulation elements
+    const btnModalPlay = document.getElementById('btn-modal-play');
+    const btnModalPause = document.getElementById('btn-modal-pause');
+    const modalPlaceholder = document.getElementById('modal-placeholder');
+    const modalPlaying = document.getElementById('modal-playing');
+    const modalProgressFill = document.getElementById('modal-progress-fill');
+    const modalTimer = document.getElementById('modal-timer');
+    const modalStatusText = document.getElementById('modal-status-text');
+
+    let demoTimer = null;
+    let demoProgress = 0;
+    const demoDuration = 90; // 1:30 in seconds
+    let isDemoPlaying = false;
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    function updateDemoStatus(seconds) {
+        if (!modalStatusText) return;
+        if (seconds < 15) {
+            modalStatusText.textContent = "Loading frame-accurate review player...";
+        } else if (seconds < 35) {
+            modalStatusText.textContent = "Initializing secure guest share review links...";
+        } else if (seconds < 60) {
+            modalStatusText.textContent = "Simulating real-time editor-client comment flow...";
+        } else if (seconds < 80) {
+            modalStatusText.textContent = "Compiling auto-filled PDF invoice with UPI QR checkout...";
+        } else {
+            modalStatusText.textContent = "Walkthrough complete! Experience the power of EditFlow.";
+        }
+    }
+
+    function startDemoSimulation() {
+        if (demoTimer) clearInterval(demoTimer);
+        isDemoPlaying = true;
+        if (btnModalPause) btnModalPause.textContent = "⏸ Pause";
+
+        demoTimer = setInterval(() => {
+            if (demoProgress < demoDuration) {
+                demoProgress++;
+                if (modalProgressFill) {
+                    modalProgressFill.style.width = `${(demoProgress / demoDuration) * 100}%`;
+                }
+                if (modalTimer) {
+                    modalTimer.textContent = `${formatTime(demoProgress)} / 1:30`;
+                }
+                updateDemoStatus(demoProgress);
+            } else {
+                // Done
+                clearInterval(demoTimer);
+                resetDemoSimulation();
+            }
+        }, 1000);
+    }
+
+    function pauseDemoSimulation() {
+        isDemoPlaying = false;
+        if (btnModalPause) btnModalPause.textContent = "▶ Resume";
+        if (demoTimer) clearInterval(demoTimer);
+    }
+
+    function resetDemoSimulation() {
+        if (demoTimer) clearInterval(demoTimer);
+        demoProgress = 0;
+        isDemoPlaying = false;
+        if (modalProgressFill) modalProgressFill.style.width = '0%';
+        if (modalTimer) modalTimer.textContent = '0:00 / 1:30';
+        if (modalStatusText) modalStatusText.textContent = 'Simulating Workspace Demo...';
+        if (modalPlaceholder) modalPlaceholder.style.display = 'flex';
+        if (modalPlaying) modalPlaying.style.display = 'none';
+        if (btnModalPause) btnModalPause.textContent = "⏸ Pause";
+    }
+
+    if (btnWatchDemo && watchModal) {
+        btnWatchDemo.addEventListener('click', () => {
+            watchModal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // prevent back scroll
+        });
+
+        const closeModal = () => {
+            watchModal.classList.remove('active');
+            document.body.style.overflow = '';
+            resetDemoSimulation();
+        };
+
+        if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+        if (modalOverlay) modalOverlay.addEventListener('click', closeModal);
+    }
+
+    if (btnModalPlay && modalPlaceholder && modalPlaying) {
+        btnModalPlay.addEventListener('click', () => {
+            modalPlaceholder.style.display = 'none';
+            modalPlaying.style.display = 'block';
+            startDemoSimulation();
+        });
+    }
+
+    if (btnModalPause) {
+        btnModalPause.addEventListener('click', () => {
+            if (isDemoPlaying) {
+                pauseDemoSimulation();
+            } else {
+                startDemoSimulation();
+            }
+        });
+    }
 });

@@ -75,7 +75,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.0.6">
+    <link rel="stylesheet" href="styles.css?v=1.0.7">
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="logo.svg">
 </head>
@@ -142,16 +142,19 @@
         <div class="hero-container">
             <div class="hero-content">
                 <div class="badge">🔥 Now with Android Foreground Service</div>
-                <h1>The Unified OS for <span class="text-gradient">Video Editors</span> & Clients</h1>
-                <p>Track monthly revenues, gather clear feedback comments, send instant UPI invoices, and collaborate with clients in real-time. All from a premium dark-mode dashboard.</p>
+                <h1>Ditch Client Feedback Chaos.<br>The Unified OS for <span class="text-gradient">Video Editors</span>.</h1>
+                <p>Track revenues, gather frame-accurate comments, send automated invoices, and share video review links in real-time. The single source of truth for video creators.</p>
                 <div class="hero-actions">
-                    <a href="https://play.google.com/store/apps/details?id=online.acsoft.editflow" target="_blank" style="display: inline-flex; vertical-align: middle; transition: transform 0.2s ease-in-out; width: 220px; height: 56px; background-color: #000000; border-radius: 12px; border: 1px solid var(--border-color); align-items: center; justify-content: center;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1.0)'">
+                    <a href="https://play.google.com/store/apps/details?id=online.acsoft.editflow" target="_blank" style="display: inline-flex; vertical-align: middle; transition: transform 0.2s ease-in-out; width: 200px; height: 50px; background-color: #000000; border-radius: 12px; border: 1px solid var(--border-color); align-items: center; justify-content: center; box-sizing: border-box;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1.0)'">
                         <img src="google-play-badge.svg" alt="Get it on Google Play" style="height: 100%; width: auto; display: block; object-fit: contain;">
                     </a>
-                    <a href="https://editflow.acsoft.online/app/" target="_blank" class="btn btn-secondary btn-lg" style="display: inline-flex; vertical-align: middle; width: 220px; height: 56px; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; border-radius: 12px;">
-                        <svg width="20" height="20" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M 49.5 54 A 15.5 15.5 0 1 0 42.6 66.8" /><line x1="18.5" y1="54" x2="79.34" y2="54" /><line x1="63.5" y1="22" x2="63.5" y2="82" /><path d="M 63.5 22 Q 63.5 14 79 14" /></svg>
+                    <a href="https://editflow.acsoft.online/app/" target="_blank" class="btn btn-primary btn-lg" style="display: inline-flex; vertical-align: middle; width: 200px; height: 50px; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; border-radius: 12px;">
+                        <svg width="18" height="18" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M 49.5 54 A 15.5 15.5 0 1 0 42.6 66.8" /><line x1="18.5" y1="54" x2="79.34" y2="54" /><line x1="63.5" y1="22" x2="63.5" y2="82" /><path d="M 63.5 22 Q 63.5 14 79 14" /></svg>
                         Web Dashboard
                     </a>
+                    <button class="btn btn-secondary btn-lg btn-watch-trigger" id="btn-watch-demo" style="display: inline-flex; vertical-align: middle; width: 200px; height: 50px; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <span style="font-size: 14px; margin-right: 8px;">▶</span> Watch Demo
+                    </button>
                 </div>
                 <div class="hero-meta">
                     <span>⚡ Real-Time Sync</span>
@@ -279,6 +282,57 @@
         </div>
     </header>
 
+    <!-- Scrolling Client Logos Marquee -->
+    <div class="client-marquee-section">
+        <div class="container">
+            <p class="marquee-title">TRUSTED BY WORLD-CLASS CREATORS & STUDIOS</p>
+            <div class="marquee-wrapper">
+                <div class="marquee-track">
+                    <!-- Iteration 1 -->
+                    <span class="marquee-item">MKBHD Studio</span>
+                    <span class="marquee-item">Royal Films Co</span>
+                    <span class="marquee-item">Sam Kolder Media</span>
+                    <span class="marquee-item">Nike Video Dept</span>
+                    <span class="marquee-item">Linus Media Group</span>
+                    <span class="marquee-item">Peter McKinnon Inc</span>
+                    <span class="marquee-item">A24 Editors Group</span>
+                    <!-- Iteration 2 (duplicate for seamless loop) -->
+                    <span class="marquee-item">MKBHD Studio</span>
+                    <span class="marquee-item">Royal Films Co</span>
+                    <span class="marquee-item">Sam Kolder Media</span>
+                    <span class="marquee-item">Nike Video Dept</span>
+                    <span class="marquee-item">Linus Media Group</span>
+                    <span class="marquee-item">Peter McKinnon Inc</span>
+                    <span class="marquee-item">A24 Editors Group</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SaaS Business Statistics Section -->
+    <div class="stats-section reveal-on-scroll">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-num">₹4.5Cr+</span>
+                    <span class="stat-label">Payouts Processed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-num">20,000+</span>
+                    <span class="stat-label">Reviews Approved</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-num">99.9%</span>
+                    <span class="stat-label">Sync Uptime</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-num">10x</span>
+                    <span class="stat-label">Faster Revisions</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Section: Freelancer Workspace -->
     <section id="freelancer" class="features-section">
         <div class="container">
@@ -337,6 +391,17 @@
                     <h3>Direct UPI QR Code Billing</h3>
                     <p>Provide your UPI ID to generate direct payment QR codes embedded on your invoices, enabling seamless, zero-fee checkout for your clients.</p>
                 </div>
+            </div>
+    </section>
+
+    <!-- Inline CTA Section -->
+    <section class="inline-cta-section dark-bg">
+        <div class="container text-center">
+            <div class="cta-card reveal-on-scroll">
+                <div class="cta-glow"></div>
+                <h2>Ready to Streamline Your Editing Workflow?</h2>
+                <p>Join thousands of video editors getting higher conversion rates, faster reviews, and prompt billing settlements.</p>
+                <a href="https://editflow.acsoft.online/app/" target="_blank" class="btn btn-primary btn-lg">Launch Web App Now</a>
             </div>
         </div>
     </section>
@@ -695,6 +760,46 @@
         </div>
     </section>
 
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials-section dark-bg">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-tag">TESTIMONIALS</span>
+                <h2>Loved by Leading Creators</h2>
+                <p class="section-desc">See how EditFlow has helped top-tier video editors save hundreds of hours and build strong client relationships.</p>
+            </div>
+            <div class="testimonials-grid">
+                <!-- Testimonial 1 -->
+                <div class="testimonial-card reveal-on-scroll">
+                    <div class="quote-icon">“</div>
+                    <p class="t-text">"Before EditFlow, my client feedback was scattered across WhatsApp, Email, and Google Docs. Now, frame-accurate comment updates have cut my revisions time in half."</p>
+                    <div class="t-author">
+                        <span class="t-name">Karan R.</span>
+                        <span class="t-role">Lead Editor, Royal Films</span>
+                    </div>
+                </div>
+                <!-- Testimonial 2 -->
+                <div class="testimonial-card reveal-on-scroll">
+                    <div class="quote-icon">“</div>
+                    <p class="t-text">"The client portal is a game changer. My clients can see exactly what stage the project is on, approve cuts instantly, and pay in one tap. High fidelity UI!"</p>
+                    <div class="t-author">
+                        <span class="t-name">Shreya M.</span>
+                        <span class="t-role">Freelance Motion Designer</span>
+                    </div>
+                </div>
+                <!-- Testimonial 3 -->
+                <div class="testimonial-card reveal-on-scroll">
+                    <div class="quote-icon">“</div>
+                    <p class="t-text">"EditFlow is exactly what video professionals need. Centralized CRM, automated invoicing, and low battery consumption on the mobile app. Highly recommended."</p>
+                    <div class="t-author">
+                        <span class="t-name">Vivek S.</span>
+                        <span class="t-role">Vlog & Promo Editor</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Comparison Matrix Section -->
     <section id="comparison" class="comparison-section">
         <div class="container">
@@ -920,6 +1025,44 @@
         </div>
     </section>
 
+    <!-- Section: Product Roadmap -->
+    <section id="roadmap" class="features-section">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-tag">ROADMAP</span>
+                <h2>Product Roadmap</h2>
+                <p class="section-desc">We are building the future of video collaboration. Take a look at what we've shipped and what's coming next.</p>
+            </div>
+            
+            <div class="roadmap-timeline">
+                <!-- Item 1 -->
+                <div class="roadmap-item reveal-on-scroll">
+                    <div class="roadmap-badge completed">SHIPPED</div>
+                    <div class="roadmap-content">
+                        <h3>v2.0 Release (Android App & Cloud Engine)</h3>
+                        <p>Full bytecode minification, split symbol obfuscation, persistent Android Isolates entry points, and direct payment CTAs from pricing cards.</p>
+                    </div>
+                </div>
+                <!-- Item 2 -->
+                <div class="roadmap-item reveal-on-scroll">
+                    <div class="roadmap-badge in-progress">IN PROGRESS</div>
+                    <div class="roadmap-content">
+                        <h3>Premiere Pro & DaVinci Extensions</h3>
+                        <p>Import frame-accurate review comments directly into your NLE timeline as video markers in one click. No manual shifting required.</p>
+                    </div>
+                </div>
+                <!-- Item 3 -->
+                <div class="roadmap-item reveal-on-scroll">
+                    <div class="roadmap-badge upcoming">UPCOMING</div>
+                    <div class="roadmap-content">
+                        <h3>Shared Review Folder Trees</h3>
+                        <p>Organize multiple project files, review cuts, design assets, and review assets inside structured client directories.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- FAQ Section -->
     <section id="faq" class="faq-section">
         <div class="container">
@@ -1040,6 +1183,38 @@
             </div>
         </div>
     </footer>
+
+    <!-- Watch Demo Modal -->
+    <div class="video-modal" id="watch-demo-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-card">
+            <button class="modal-close" id="modal-close-btn">&times;</button>
+            <div class="modal-video-wrapper">
+                <div style="background: #000; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+                    <div class="modal-demo-placeholder" id="modal-placeholder">
+                        <img src="logo.svg" width="60" height="60" alt="EditFlow Monogram" style="margin-bottom: 20px; animation: serene-pulse 2s infinite ease-in-out;">
+                        <h3 style="font-family: var(--font-heading); font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 8px;">EditFlow Product Walkthrough</h3>
+                        <p style="color: var(--text-muted); font-size: 14px; max-width: 340px; text-align: center; margin-bottom: 24px;">Explore our frame-accurate feedback player and real-time syncing client portal.</p>
+                        <button class="btn btn-primary" id="btn-modal-play" style="padding: 12px 28px;">▶ Play Walkthrough</button>
+                    </div>
+                    <!-- Simulated video playing indicator -->
+                    <div class="modal-demo-playing" id="modal-playing" style="display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; background: #07090e;">
+                        <div class="playing-bar" style="position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; align-items: center; gap: 12px; z-index: 5;">
+                            <span style="color: var(--secondary); font-weight: 700; cursor: pointer; font-size: 13px;" id="btn-modal-pause">⏸ Pause</span>
+                            <div style="flex: 1; height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden;">
+                                <div id="modal-progress-fill" style="width: 0%; height: 100%; background: var(--secondary); transition: width 0.1s linear;"></div>
+                            </div>
+                            <span style="font-family: monospace; font-size: 11px; color: #ffffff;" id="modal-timer">0:00 / 1:30</span>
+                        </div>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; width: 85%;">
+                            <div style="width: 48px; height: 48px; border: 3px solid rgba(16, 185, 129, 0.1); border-top-color: var(--secondary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                            <span style="font-family: var(--font-heading); font-size: 15px; font-weight: 600; color: var(--secondary);" id="modal-status-text">Simulating Workspace Demo...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
