@@ -57,3 +57,14 @@ final adminUpgradeRequestsProvider = FutureProvider.autoDispose<List<Map<String,
   }
   return [];
 });
+
+final adminPromoCodesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final res = await AdminService.invokeAdminAction('get_promo_codes');
+  if (res['promos'] is List) {
+    return List<Map<String, dynamic>>.from(
+      (res['promos'] as List).map((e) => Map<String, dynamic>.from(e as Map)),
+    );
+  }
+  return [];
+});
+

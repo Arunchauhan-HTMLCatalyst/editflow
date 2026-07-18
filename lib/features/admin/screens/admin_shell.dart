@@ -26,6 +26,7 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/notifications')) return 5;
     if (location.startsWith('/admin/logs')) return 6;
     if (location.startsWith('/admin/settings')) return 7;
+    if (location.startsWith('/admin/promos')) return 8;
     return 0;
   }
 
@@ -55,6 +56,9 @@ class AdminShell extends ConsumerWidget {
       case 7:
         context.go('/admin/settings');
         break;
+      case 8:
+        context.go('/admin/promos');
+        break;
     }
   }
 
@@ -67,6 +71,7 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/notifications')) return 'Targeted Announcements';
     if (location.startsWith('/admin/logs')) return 'System Audit Logs';
     if (location.startsWith('/admin/settings')) return 'Global App Settings';
+    if (location.startsWith('/admin/promos')) return 'Promo Codes Management';
     return 'Super Admin Panel';
   }
 
@@ -77,6 +82,7 @@ class AdminShell extends ConsumerWidget {
     ref.invalidate(adminStorageProvider);
     ref.invalidate(adminSettingsProvider);
     ref.invalidate(adminAnalyticsProvider);
+    ref.invalidate(adminPromoCodesProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Refreshing admin data...', style: TextStyle(fontWeight: FontWeight.bold)),

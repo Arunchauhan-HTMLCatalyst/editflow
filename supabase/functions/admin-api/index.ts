@@ -1367,6 +1367,93 @@ serve(async (req) => {
         })
       }
 
+      case 'get_promo_codes': {
+        const { data: promos, error } = await adminClient
+          .from('promo_codes')
+          .select('*')
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        return new Response(JSON.stringify({ promos }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      case 'create_promo_code': {
+        const { code, maxUses, durationDays, expiresAt } = payload
+        if (!code) throw new Error('Missing code')
+        const { data: newPromo, error } = await adminClient
+          .from('promo_codes')
+          .insert({
+            code: code.trim(),
+            max_uses: maxUses,
+            duration_days: durationDays || 30,
+            expires_at: expiresAt || null,
+          })
+          .select()
+          .single()
+        if (error) throw error
+        
+        await adminClient.from('activities').insert({
+          user_id: user?.id,
+          type: 'admin_log',
+          description: `Created new promo code: "${code}" (${durationDays} days)`,
+        })
+
+        return new Response(JSON.stringify({ success: true, promo: newPromo }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      case 'toggle_promo_code': {
+        const { promoId, isActive } = payload
+        if (!promoId) throw new Error('Missing promoId')
+        const { data: updatedPromo, error } = await adminClient
+          .from('promo_codes')
+          .update({ is_active: isActive })
+          .eq('id', promoId)
+          .select()
+          .single()
+        if (error) throw error
+
+        await adminClient.from('activities').insert({
+          user_id: user?.id,
+          type: 'admin_log',
+          description: `Toggled promo code "${updatedPromo.code}" active status to ${isActive}`,
+        })
+
+        return new Response(JSON.stringify({ success: true, promo: updatedPromo }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      case 'delete_promo_code': {
+        const { promoId } = payload
+        if (!promoId) throw new Error('Missing promoId')
+        const { data: existing } = await adminClient
+          .from('promo_codes')
+          .select('code')
+          .eq('id', promoId)
+          .maybeSingle()
+
+        const { error } = await adminClient
+          .from('promo_codes')
+          .delete()
+          .eq('id', promoId)
+        if (error) throw error
+
+        if (existing) {
+          await adminClient.from('activities').insert({
+            user_id: user?.id,
+            type: 'admin_log',
+            description: `Deleted promo code "${existing.code}"`,
+          })
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       default:
         return new Response(JSON.stringify({ error: 'Unknown action: ' + action }), {
           status: 400,

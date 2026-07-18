@@ -699,6 +699,10 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              if (authState.role != 'admin') ...[
+                const SizedBox(height: 16),
+                const _PromoCodeRedemptionCard(),
+              ],
               const SizedBox(height: 24),
 
               // PREFERENCES SECTION
@@ -2551,6 +2555,212 @@ class _SupportRequestFormState extends State<_SupportRequestForm> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+}
+
+class _PromoCodeRedemptionCard extends ConsumerStatefulWidget {
+  const _PromoCodeRedemptionCard({super.key});
+
+  @override
+  ConsumerState<_PromoCodeRedemptionCard> createState() => _PromoCodeRedemptionCardState();
+}
+
+class _PromoCodeRedemptionCardState extends ConsumerState<_PromoCodeRedemptionCard> {
+  final _controller = TextEditingController();
+  bool _isRedeeming = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _redeem() async {
+    final code = _controller.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() => _isRedeeming = true);
+
+    try {
+      final user = SupabaseService.instance.auth.currentUser;
+      if (user == null) throw Exception('User not logged in');
+
+      // Call database RPC function
+      final response = await SupabaseService.instance.rpc(
+        'redeem_promo_code',
+        params: {
+          'p_user_id': user.id,
+          'p_code': code,
+        },
+      );
+
+      if (response == null) {
+        throw Exception('Redemption failed (no response)');
+      }
+
+      final res = Map<String, dynamic>.from(response as Map);
+      final success = res['success'] as bool? ?? false;
+      final message = res['message'] as String? ?? 'Redemption failed';
+
+      if (!success) {
+        throw Exception(message);
+      }
+
+      // Success! Invalidate auth provider to refresh user profile premium status
+      ref.invalidate(authProvider);
+
+      if (mounted) {
+        _controller.clear();
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.card,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppColors.border, width: 0.8),
+            ),
+            title: Row(
+              children: const [
+                Icon(Icons.stars_rounded, color: AppColors.success, size: 24),
+                SizedBox(width: 8),
+                Text('Success!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(
+              message,
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Great', style: TextStyle(color: AppColors.primaryNeon, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.card,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppColors.border, width: 0.8),
+            ),
+            title: Row(
+              children: const [
+                Icon(Icons.error_outline_rounded, color: AppColors.error, size: 24),
+                SizedBox(width: 8),
+                Text('Redemption Failed', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(
+              e.toString().replaceAll('Exception:', '').trim(),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Close', style: TextStyle(color: AppColors.textMuted)),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRedeeming = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'REDEEM PROMO CODE',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textMuted,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 42,
+                  child: TextField(
+                    controller: _controller,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Enter code (e.g. FREE30DAYS)',
+                      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF0D121F) : const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.border, width: 0.8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.border, width: 0.8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.primaryNeon, width: 0.8),
+                      ),
+                    ),
+                    textCapitalization: TextCapitalization.characters,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 42,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryNeon,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    elevation: 0,
+                  ),
+                  onPressed: _isRedeeming ? null : _redeem,
+                  child: _isRedeeming
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text(
+                          'Redeem',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 
