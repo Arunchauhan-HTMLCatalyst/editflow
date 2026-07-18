@@ -229,4 +229,138 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el.closest('.hero')) return;
         revealObserver.observe(el);
     });
+
+    // 5. Interactive Client Portal Showcase (Morphing Card)
+    const btnFreelancer = document.getElementById('view-freelancer');
+    const btnClient = document.getElementById('view-client');
+    const freelancerFields = document.getElementById('freelancer-fields');
+    const clientFields = document.getElementById('client-fields');
+    const morphingTitle = document.getElementById('morphing-title');
+    const morphingBadge = document.getElementById('morphing-badge');
+    const morphingStatus = document.getElementById('morphing-status');
+
+    if (btnFreelancer && btnClient) {
+        btnFreelancer.addEventListener('click', () => {
+            btnFreelancer.classList.add('active');
+            btnClient.classList.remove('active');
+            
+            // Morph fields
+            if (freelancerFields && clientFields) {
+                clientFields.style.display = 'none';
+                freelancerFields.style.display = 'block';
+                setTimeout(() => {
+                    freelancerFields.classList.add('active');
+                    clientFields.classList.remove('active');
+                }, 20);
+            }
+            
+            // Update labels
+            if (morphingTitle) morphingTitle.textContent = 'Editor Workspace';
+            if (morphingBadge) {
+                morphingBadge.textContent = 'Active Project';
+                morphingBadge.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                morphingBadge.style.color = 'var(--text-muted)';
+            }
+            if (morphingStatus) {
+                morphingStatus.textContent = 'In Review';
+                morphingStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+                morphingStatus.style.color = '#f59e0b';
+            }
+        });
+
+        btnClient.addEventListener('click', () => {
+            btnClient.classList.add('active');
+            btnFreelancer.classList.remove('active');
+            
+            // Morph fields
+            if (freelancerFields && clientFields) {
+                freelancerFields.style.display = 'none';
+                clientFields.style.display = 'block';
+                setTimeout(() => {
+                    clientFields.classList.add('active');
+                    freelancerFields.classList.remove('active');
+                }, 20);
+            }
+            
+            // Update labels
+            if (morphingTitle) morphingTitle.textContent = 'Client Portal';
+            if (morphingBadge) {
+                morphingBadge.textContent = 'Client: Alex K.';
+                morphingBadge.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                morphingBadge.style.color = 'var(--secondary)';
+            }
+            if (morphingStatus) {
+                morphingStatus.textContent = 'Awaiting Pay';
+                morphingStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                morphingStatus.style.color = '#ef4444';
+            }
+        });
+    }
+
+    // 6. Interactive Video Review Player (Scrubbing Dots)
+    const commentDots = document.querySelectorAll('.comment-dot');
+    const playerFill = document.getElementById('player-fill');
+    const playerTimecode = document.getElementById('player-timecode');
+    const reviewAuthor = document.getElementById('review-author');
+    const reviewText = document.getElementById('review-text');
+    const reviewStatus = document.getElementById('review-status');
+
+    if (commentDots.length > 0) {
+        commentDots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                // Set active dot
+                commentDots.forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                
+                // Get data attributes
+                const time = dot.getAttribute('data-time');
+                const text = dot.getAttribute('data-comment');
+                const author = dot.getAttribute('data-author');
+                const left = dot.style.left;
+                
+                // Update player progress bar width
+                if (playerFill) {
+                    playerFill.style.width = left;
+                }
+                
+                // Update timecode
+                if (playerTimecode) {
+                    playerTimecode.textContent = `${time} / 02:30`;
+                }
+                
+                // Update review comment card with a smooth animation
+                const bubbleCard = document.getElementById('review-bubble-card');
+                if (bubbleCard) {
+                    bubbleCard.style.opacity = '0';
+                    bubbleCard.style.transform = 'translateY(10px)';
+                    bubbleCard.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                    
+                    setTimeout(() => {
+                        if (reviewAuthor) {
+                            reviewAuthor.innerHTML = `${author} <span style="font-family: monospace; font-size: 10px; color: var(--text-muted);">@${time}</span>`;
+                        }
+                        if (reviewText) {
+                            reviewText.textContent = text;
+                        }
+                        
+                        // Dynamic status badge updates
+                        if (reviewStatus) {
+                            if (time === '00:45') {
+                                reviewStatus.textContent = 'Approved';
+                                reviewStatus.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                                reviewStatus.style.color = 'var(--secondary)';
+                            } else {
+                                reviewStatus.textContent = 'Feedback';
+                                reviewStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                                reviewStatus.style.color = '#ef4444';
+                            }
+                        }
+                        
+                        bubbleCard.style.opacity = '1';
+                        bubbleCard.style.transform = 'translateY(0)';
+                    }, 200);
+                }
+            });
+        });
+    }
 });

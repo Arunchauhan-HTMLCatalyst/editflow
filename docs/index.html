@@ -75,7 +75,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.0.5">
+    <link rel="stylesheet" href="styles.css?v=1.0.6">
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="logo.svg">
 </head>
@@ -388,28 +388,59 @@
                         </div>
                     </div>
                 </div>
-                <div class="portal-mockup-wrapper">
+                <div class="portal-mockup-wrapper reveal-on-scroll reveal-right">
+                    <!-- Toggle Switcher -->
+                    <div class="portal-view-switcher">
+                        <button class="switcher-btn active" id="view-freelancer">Editor Dashboard</button>
+                        <button class="switcher-btn" id="view-client">Client Portal</button>
+                    </div>
                     <!-- Glass card representation of portal -->
-                    <div class="glass-portal-card">
+                    <div class="glass-portal-card" id="morphing-portal-card">
                         <div class="portal-header">
-                            <span class="portal-title">Client Workspace</span>
-                            <span class="portal-badge">Client: Alex K.</span>
+                            <span class="portal-title" id="morphing-title">Editor Workspace</span>
+                            <span class="portal-badge" id="morphing-badge">Active Project</span>
                         </div>
                         <div class="project-strip">
                             <div class="project-info">
                                 <span class="project-name">Commercial Ad Edit v2</span>
-                                <span class="project-status in-review">In Review</span>
+                                <span class="project-status" id="morphing-status" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">In Review</span>
                             </div>
-                            <span class="project-price">₹35,000</span>
+                            <span class="project-price" id="morphing-price">₹35,000</span>
                         </div>
-                        <div class="comment-bubbles">
-                            <div class="bubble client">
-                                <span class="author">Alex K. (Client)</span>
-                                <p>Please adjust the music track volume between 0:15 and 0:30, it is drowning the voiceover.</p>
+                        
+                        <!-- Morphing metrics / actions -->
+                        <div class="morphing-container">
+                            <div class="morph-section active" id="freelancer-fields">
+                                <div class="metric-row">
+                                    <div class="metric-box">
+                                        <span class="label">Total Earnings</span>
+                                        <span class="val">₹1,45,000</span>
+                                    </div>
+                                    <div class="metric-box">
+                                        <span class="label">Pending Balance</span>
+                                        <span class="val">₹35,000</span>
+                                    </div>
+                                </div>
+                                <div class="action-row">
+                                    <button class="action-pill primary-glow">Create Invoice</button>
+                                    <button class="action-pill secondary-outline">Upload Cut v3</button>
+                                </div>
                             </div>
-                            <div class="bubble freelancer">
-                                <span class="author">Freelancer (You)</span>
-                                <p>Sure, working on the sound balance. Will upload updated cut in 10 mins.</p>
+                            <div class="morph-section" id="client-fields" style="display: none;">
+                                <div class="metric-row">
+                                    <div class="metric-box">
+                                        <span class="label">Total Expenditures</span>
+                                        <span class="val" style="color: var(--secondary);">₹1,45,000</span>
+                                    </div>
+                                    <div class="metric-box">
+                                        <span class="label">Outstanding Due</span>
+                                        <span class="val" style="color: #ef4444;">₹35,000</span>
+                                    </div>
+                                </div>
+                                <div class="action-row">
+                                    <button class="action-pill success-glow">Pay UPI (Zero Fee)</button>
+                                    <button class="action-pill secondary-outline">Approve Draft</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -452,7 +483,7 @@
                     </div>
                 </div>
                 
-                <div class="portal-mockup-wrapper">
+                <div class="portal-mockup-wrapper reveal-on-scroll reveal-right">
                     <!-- High fidelity representation of Video Review Suite -->
                     <div class="glass-portal-card" style="border-color: rgba(16, 185, 129, 0.2);">
                         <div class="portal-header">
@@ -460,23 +491,34 @@
                             <span class="portal-badge" style="background-color: rgba(16, 185, 129, 0.1); color: var(--secondary);">Cut v2.mp4</span>
                         </div>
                         <!-- Video Player Graphic -->
-                        <div style="background: #000; height: 160px; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; margin: 12px 0;">
-                            <div style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.2); border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <span style="color: var(--secondary); font-size: 20px; margin-left: 2px;">▶</span>
+                        <div class="mock-video-player">
+                            <div class="play-btn-overlay">
+                                <span class="play-arrow">▶</span>
                             </div>
                             <!-- Time indicator -->
-                            <span style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: monospace; color: #fff;">00:45 / 02:30</span>
+                            <span class="player-timecode" id="player-timecode">00:45 / 02:30</span>
+                            
+                            <!-- Interactive Progress Bar with comment dots -->
+                            <div class="video-progress-container">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" id="player-fill" style="width: 30%;"></div>
+                                </div>
+                                <!-- Comment markers/dots -->
+                                <div class="comment-dot" style="left: 10%;" data-time="00:15" data-comment="Please adjust the intro volume here, it is a bit too loud." data-author="Alex K. (Client)"></div>
+                                <div class="comment-dot active" style="left: 30%;" data-time="00:45" data-comment="This color grading is perfect! Let's lock this version." data-author="MKBHD (Client)"></div>
+                                <div class="comment-dot" style="left: 65%;" data-time="01:30" data-comment="Excellent sound design in the transition here." data-author="Royal Films (Client)"></div>
+                            </div>
                         </div>
                         <div class="project-strip">
                             <div class="project-info">
                                 <span class="project-name">Timeline Comments</span>
                             </div>
-                            <span class="project-status" style="background-color: rgba(16, 185, 129, 0.1); color: var(--secondary);">Approved</span>
+                            <span class="project-status" style="background-color: rgba(16, 185, 129, 0.1); color: var(--secondary);" id="review-status">Approved</span>
                         </div>
                         <div class="comment-bubbles">
-                            <div class="bubble client" style="border-left-color: var(--secondary);">
-                                <span class="author" style="color: var(--secondary);">MKBHD (Client) <span style="font-family: monospace; font-size: 10px; color: var(--text-muted);">@00:45</span></span>
-                                <p>This color grading is perfect! Let's lock this version.</p>
+                            <div class="bubble client" style="border-left-color: var(--secondary);" id="review-bubble-card">
+                                <span class="author" style="color: var(--secondary);" id="review-author">MKBHD (Client) <span style="font-family: monospace; font-size: 10px; color: var(--text-muted);" id="review-time">@00:45</span></span>
+                                <p id="review-text">This color grading is perfect! Let's lock this version.</p>
                             </div>
                         </div>
                     </div>
