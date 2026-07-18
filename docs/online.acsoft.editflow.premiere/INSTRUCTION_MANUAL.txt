@@ -8,17 +8,18 @@ Adobe Premiere Pro on Windows.
 ------------------------------------------------------------------------
 STEP 1: Copy the Extension Folder
 ------------------------------------------------------------------------
-1. Copy the entire folder named "online.acsoft.editflow.premiere" (which 
-   contains this manual).
-2. Open Windows File Explorer and paste it into the following path:
-   
+1. Copy the entire folder named "online.acsoft.editflow.premiere" (which contains this manual).
+2. Open Windows File Explorer and paste it into ONE of these two folders:
+
+   PATH A (User-Specific - AppData):
    C:\Users\<Your-Username>\AppData\Roaming\Adobe\CEP\extensions\
+   
+   PATH B (System-Wide - Program Files - RECOMMENDED IF PATH A FAILS):
+   C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
 
    * Note: Replace "<Your-Username>" with your actual Windows username.
-   * Note: The "AppData" folder is hidden by default. If you cannot see it,
-     click on "View" at the top of File Explorer and check "Hidden items".
-   * Note: If the "CEP" or "extensions" folders do not exist under Adobe,
-     simply right-click and create them manually.
+   * Note: AppData is hidden by default. Check "Hidden items" under the View menu in File Explorer to see it.
+   * Note: If the "CEP" or "extensions" folders do not exist under Adobe, right-click and create them manually.
 
 ------------------------------------------------------------------------
 STEP 2: Enable Unsigned Extensions (Registry Fix)
