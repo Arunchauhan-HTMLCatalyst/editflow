@@ -113,7 +113,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.1.0">
+    <link rel="stylesheet" href="styles.css?v=1.1.1">
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="logo.svg">
 </head>
@@ -164,7 +164,7 @@
                             <span class="dd-title">Google Play Store</span>
                             <span class="dd-desc">Download Android application</span>
                         </a>
-                        <a href="https://editflow.acsoft.online/editflow-premiere-extension.zip" download>
+                        <a href="#" id="trigger-premiere-modal">
                             <span class="dd-title">Premiere Pro Extension</span>
                             <span class="dd-desc">Download plugin installer zip (Windows)</span>
                         </a>
@@ -1093,7 +1093,7 @@
                     <svg width="20" height="20" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M 49.5 54 A 15.5 15.5 0 1 0 42.6 66.8" /><line x1="18.5" y1="54" x2="79.34" y2="54" /><line x1="63.5" y1="22" x2="63.5" y2="82" /><path d="M 63.5 22 Q 63.5 14 79 14" /></svg>
                     Web Dashboard
                 </a>
-                <a href="https://editflow.acsoft.online/editflow-premiere-extension.zip" download class="btn btn-secondary btn-lg" style="display: inline-flex; vertical-align: middle; width: 220px; height: 56px; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--border-color);">
+                <a href="#" id="trigger-premiere-modal-footer" class="btn btn-secondary btn-lg" style="display: inline-flex; vertical-align: middle; width: 220px; height: 56px; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--border-color);">
                     <span style="font-size: 14px; margin-right: 8px;">🎬</span> Premiere Extension
                 </a>
             </div>
@@ -1171,6 +1171,69 @@
                             <span style="font-family: var(--font-heading); font-size: 15px; font-weight: 600; color: var(--secondary);" id="modal-status-text">Simulating Workspace Demo...</span>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premiere Pro Extension Download/Installation Modal -->
+    <div class="video-modal" id="premiere-extension-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-card" style="max-width: 600px; padding: 40px; background-color: #0c1214;">
+            <button class="modal-close" id="ext-modal-close-btn">&times;</button>
+            <div class="ext-modal-content" style="text-align: left;">
+                <h3 style="font-family: var(--font-heading); font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                    <span>🎬</span> Premiere Pro Extension
+                </h3>
+                <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+                    Integrate your entire EditFlow workspace natively inside Adobe Premiere Pro (Windows). Follow these steps to install the extension.
+                </p>
+                
+                <!-- Step List -->
+                <div class="installation-steps" style="margin-bottom: 30px; display: flex; flex-direction: column; gap: 18px; max-height: 280px; overflow-y: auto; padding-right: 10px;">
+                    <div style="display: flex; gap: 12px;">
+                        <span style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">1</span>
+                        <div>
+                            <h4 style="color: #fff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">Download & Extract</h4>
+                            <p style="color: var(--text-muted); font-size: 12px; margin: 0;">Click the download button below to get the <code>editflow-premiere-extension.zip</code> file and unzip it.</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <span style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">2</span>
+                        <div>
+                            <h4 style="color: #fff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">Copy to Extensions Folder</h4>
+                            <p style="color: var(--text-muted); font-size: 12px; margin: 0;">Copy the unzipped folder and paste it into:<br><code style="word-break: break-all; background-color: rgba(255,255,255,0.03); padding: 2px 4px; border-radius: 4px;">C:\Users\&lt;Username&gt;\AppData\Roaming\Adobe\CEP\extensions\</code></p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px;">
+                        <span style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">3</span>
+                        <div>
+                            <h4 style="color: #fff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">Enable Debug Mode (Mandatory)</h4>
+                            <p style="color: var(--text-muted); font-size: 12px; margin: 0; line-height: 1.5;">
+                                Open <strong>Registry Editor</strong> (Win+R -> <code>regedit</code>) -> Navigate to <code>HKEY_CURRENT_USER\Software\Adobe\CSXS.12</code> (or your Premiere CSXS version folder) -> Create a new <strong>String Value</strong> named <code>PlayerDebugMode</code> and set its value to <code>1</code>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px;">
+                        <span style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">4</span>
+                        <div>
+                            <h4 style="color: #fff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">Launch Panel</h4>
+                            <p style="color: var(--text-muted); font-size: 12px; margin: 0;">Open Premiere Pro -> Go to <strong>Window > Extensions > EditFlow OS</strong>. Dock the browser workspace panel anywhere you like!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CTA buttons inside Modal -->
+                <div style="display: flex; gap: 12px;">
+                    <a href="https://editflow.acsoft.online/editflow-premiere-extension.zip" download class="btn btn-primary" style="flex: 1; height: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; font-size: 13px; text-decoration: none;">
+                        📥 Download Extension (.zip)
+                    </a>
+                    <button class="btn btn-secondary" id="ext-modal-close-action" style="flex: 1; height: 46px; border: 1px solid var(--border-color); border-radius: 10px; font-weight: 700; font-size: 13px;">
+                        Got It
+                    </button>
                 </div>
             </div>
         </div>
