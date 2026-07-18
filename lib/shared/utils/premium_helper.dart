@@ -500,6 +500,8 @@ class _UpiPaymentSheetState extends ConsumerState<_UpiPaymentSheet> {
                               focusedBorder: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               contentPadding: EdgeInsets.symmetric(vertical: 12),
+                              filled: true,
+                              fillColor: Colors.transparent,
                             ),
                             textCapitalization: TextCapitalization.characters,
                           ),
