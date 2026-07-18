@@ -68,11 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // GSAP ANIMATIONS (Safe Guarded)
+    // GSAP ANIMATIONS (Safe Guarded & Responsive)
     // ==========================================
+    let gsapSuccess = false;
     try {
         if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
             gsap.registerPlugin(ScrollTrigger);
+            gsapSuccess = true;
 
             // Hero Entrance Animations (Paused initially)
             const heroTl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out', duration: 1 } });
@@ -116,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let progress = 0;
 
             const updateProgress = () => {
-                // Advance progress randomly
                 progress += Math.floor(Math.random() * 12) + 6;
                 if (progress > 100) progress = 100;
                 
@@ -124,13 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (percentText) percentText.textContent = `${progress}%`;
                 
                 if (progress < 100) {
-                    setTimeout(updateProgress, Math.floor(Math.random() * 60) + 20);
+                    setTimeout(updateProgress, Math.floor(Math.random() * 40) + 15);
                 } else {
-                    // Preloader Complete: slide up or fade out overlay
+                    // Preloader Complete: slide/fade out overlay
                     setTimeout(() => {
                         gsap.to('#preloader', {
                             opacity: 0,
-                            duration: 0.6,
+                            duration: 0.5,
                             ease: 'power3.inOut',
                             onComplete: () => {
                                 const preloaderEl = document.getElementById('preloader');
@@ -138,13 +139,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                     preloaderEl.style.display = 'none';
                                     preloaderEl.style.visibility = 'hidden';
                                 }
-                                // Start the main Hero page animation!
+                                // Play main entrance animations
                                 heroTl.play();
-                                // Refresh ScrollTrigger elements now that heights are calculated
+                                // Refresh ScrollTrigger to recalculate viewport positions
                                 ScrollTrigger.refresh();
                             }
                         });
-                    }, 150);
+                    }, 100);
                 }
             };
 
@@ -158,11 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 gsap.to(radialFill, {
                     strokeDashoffset: '65.3',
-                    duration: 2,
+                    duration: 1.8,
                     ease: 'power2.out',
                     scrollTrigger: {
                         trigger: '.mock-radial-container',
-                        start: 'top 85%',
+                        start: 'top bottom',
                         once: true
                     }
                 });
@@ -172,13 +173,13 @@ document.addEventListener('DOMContentLoaded', () => {
             gsap.from('.feature-card', {
                 scrollTrigger: {
                     trigger: '#freelancer',
-                    start: 'top 85%',
+                    start: 'top bottom',
                     once: true
                 },
-                y: 40,
+                y: 35,
                 opacity: 0,
                 stagger: 0.05,
-                duration: 0.8,
+                duration: 0.7,
                 ease: 'power2.out'
             });
 
@@ -186,25 +187,25 @@ document.addEventListener('DOMContentLoaded', () => {
             gsap.from('#client .portal-feature-item', {
                 scrollTrigger: {
                     trigger: '#client',
-                    start: 'top 85%',
+                    start: 'top bottom',
                     once: true
                 },
-                x: -40,
+                x: -30,
                 opacity: 0,
-                stagger: 0.08,
-                duration: 0.8,
+                stagger: 0.06,
+                duration: 0.7,
                 ease: 'power2.out'
             });
 
             gsap.from('#client .portal-mockup-wrapper', {
                 scrollTrigger: {
                     trigger: '#client',
-                    start: 'top 80%',
+                    start: 'top bottom',
                     once: true
                 },
-                scale: 0.9,
+                scale: 0.95,
                 opacity: 0,
-                duration: 1,
+                duration: 0.8,
                 ease: 'power3.out'
             });
 
@@ -212,25 +213,25 @@ document.addEventListener('DOMContentLoaded', () => {
             gsap.from('#reviews-system .portal-feature-item', {
                 scrollTrigger: {
                     trigger: '#reviews-system',
-                    start: 'top 85%',
+                    start: 'top bottom',
                     once: true
                 },
-                x: 40,
+                x: 30,
                 opacity: 0,
-                stagger: 0.08,
-                duration: 0.8,
+                stagger: 0.06,
+                duration: 0.7,
                 ease: 'power2.out'
             });
 
             gsap.from('#reviews-system .portal-mockup-wrapper', {
                 scrollTrigger: {
                     trigger: '#reviews-system',
-                    start: 'top 80%',
+                    start: 'top bottom',
                     once: true
                 },
-                scale: 0.9,
+                scale: 0.95,
                 opacity: 0,
-                duration: 1,
+                duration: 0.8,
                 ease: 'power3.out'
             });
 
@@ -238,13 +239,13 @@ document.addEventListener('DOMContentLoaded', () => {
             gsap.from('#why-us .comp-box', {
                 scrollTrigger: {
                     trigger: '#why-us',
-                    start: 'top 85%',
+                    start: 'top bottom',
                     once: true
                 },
-                y: 40,
+                y: 35,
                 opacity: 0,
-                stagger: 0.15,
-                duration: 0.8,
+                stagger: 0.1,
+                duration: 0.7,
                 ease: 'power2.out'
             });
 
@@ -252,13 +253,13 @@ document.addEventListener('DOMContentLoaded', () => {
             gsap.from('.pricing-card', {
                 scrollTrigger: {
                     trigger: '#pricing',
-                    start: 'top 85%',
+                    start: 'top bottom',
                     once: true
                 },
-                y: 40,
+                y: 35,
                 opacity: 0,
-                stagger: 0.1,
-                duration: 0.8,
+                stagger: 0.08,
+                duration: 0.7,
                 ease: 'power2.out'
             });
             
@@ -267,6 +268,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } catch (e) {
         console.warn('GSAP initialization failed, using CSS animations fallback:', e);
-        // Reset any properties set to hidden by default in CSS if applicable
     }
+
+    // Double check: if GSAP fails, make sure preloader is hidden and everything is visible
+    if (!gsapSuccess) {
+        const preloaderEl = document.getElementById('preloader');
+        if (preloaderEl) {
+            preloaderEl.style.display = 'none';
+            preloaderEl.style.visibility = 'hidden';
+        }
+    }
+
+    // Refresh triggers again when the page is fully loaded
+    window.addEventListener('load', () => {
+        if (typeof ScrollTrigger !== 'undefined') {
+            ScrollTrigger.refresh();
+        }
+    });
 });
