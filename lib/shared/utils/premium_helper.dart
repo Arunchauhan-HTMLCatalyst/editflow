@@ -451,105 +451,123 @@ class _UpiPaymentSheetState extends ConsumerState<_UpiPaymentSheet> {
             ],
 
             // Promo Code Section
-            Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.card,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.border, width: 0.8),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'PROMO CODE',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textMuted,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 38,
-                          child: TextField(
-                            controller: _promoController,
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
-                            decoration: InputDecoration(
-                              hintText: 'Enter code (e.g. FREE30DAYS)',
-                              hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              filled: true,
-                              fillColor: isDark ? const Color(0xFF0D121F) : const Color(0xFFF8FAFC),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(6),
-                                borderSide: const BorderSide(color: AppColors.border, width: 0.8),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(6),
-                                borderSide: const BorderSide(color: AppColors.border, width: 0.8),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(6),
-                                borderSide: const BorderSide(color: AppColors.primaryNeon, width: 0.8),
-                              ),
-                            ),
-                            textCapitalization: TextCapitalization.characters,
-                          ),
-                        ),
+                      Icon(
+                        Icons.local_offer_rounded,
+                        size: 13,
+                        color: AppColors.primaryNeon,
                       ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 38,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryNeon,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            elevation: 0,
-                          ),
-                          onPressed: _isRedeeming ? null : _redeemPromoCode,
-                          child: _isRedeeming
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Text(
-                                  'Apply',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                                ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'PROMO CODE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textMuted,
+                          letterSpacing: 0.8,
                         ),
                       ),
                     ],
                   ),
-                  if (_promoFeedback != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.border,
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
                       children: [
-                        Icon(
-                          _promoSuccess ? Icons.check_circle_outline : Icons.error_outline,
-                          size: 14,
-                          color: _promoSuccess ? AppColors.success : AppColors.error,
-                        ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            _promoFeedback!,
-                            style: TextStyle(
-                              color: _promoSuccess ? AppColors.success : AppColors.error,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
+                          child: TextField(
+                            controller: _promoController,
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                            decoration: const InputDecoration(
+                              hintText: 'Enter code (e.g. FREE30DAYS)',
+                              hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+                              border: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            textCapitalization: TextCapitalization.characters,
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.all(4),
+                          height: double.infinity,
+                          child: InkWell(
+                            onTap: _isRedeeming ? null : _redeemPromoCode,
+                            borderRadius: BorderRadius.circular(6),
+                            child: Ink(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [AppColors.primary, AppColors.primaryNeon],
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                alignment: Alignment.center,
+                                child: _isRedeeming
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Apply',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              ),
                             ),
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  if (_promoFeedback != null) ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _promoSuccess ? Icons.check_circle_rounded : Icons.error_rounded,
+                            size: 14,
+                            color: _promoSuccess ? AppColors.success : AppColors.error,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              _promoFeedback!,
+                              style: TextStyle(
+                                color: _promoSuccess ? AppColors.success : AppColors.error,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ],
