@@ -2537,12 +2537,15 @@ img {
 @media (max-width: 992px) {
     .workflow-visualizer {
         grid-template-columns: 1fr;
+        padding: 30px 20px;
+        margin: 35px 0;
     }
     
     .visual-separator {
-        height: 60px;
+        height: 40px;
         width: 100%;
         border: none;
+        margin: 25px 0;
     }
     
     .visual-separator::before {
@@ -2557,19 +2560,58 @@ img {
     .flow-panel {
         border-left: none;
     }
+    
+    .visual-panel {
+        padding: 20px;
+    }
 }
 
-@media (max-width: 576px) {
+@media (max-width: 768px) {
     .network-container {
-        height: 380px;
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 0;
     }
+    
+    .network-lines {
+        display: none;
+    }
+    
+    .editor-node-circle {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none !important;
+        margin: 15px 0;
+        order: -1; /* Place the editor avatar at the top of the stacked list */
+    }
+    
     .service-node, .flow-node {
-        max-width: 140px;
+        position: relative;
+        top: auto;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        transform: none !important;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        animation: none !important;
     }
+    
     .node-text {
-        display: none; /* Hide node descriptions on very small phones to prevent overlaps */
+        display: flex;
     }
-    .service-node, .flow-node {
-        padding: 8px 10px;
+    
+    .node-msg {
+        max-width: 100%;
+        white-space: normal;
+    }
+    
+    .vs-text-animate {
+        font-size: 28px;
     }
 }
