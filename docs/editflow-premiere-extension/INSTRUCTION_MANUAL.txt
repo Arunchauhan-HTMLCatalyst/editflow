@@ -1,0 +1,49 @@
+========================================================================
+             EDITFLOW PREMIERE PRO EXTENSION INSTALLATION MANUAL
+========================================================================
+
+Follow these quick steps to install and open the EditFlow panel inside 
+Adobe Premiere Pro on Windows.
+
+------------------------------------------------------------------------
+STEP 1: Copy the Extension Folder
+------------------------------------------------------------------------
+1. Copy the entire folder named "editflow-premiere-extension" (which 
+   contains this manual).
+2. Open Windows File Explorer and paste it into the following path:
+   
+   C:\Users\<Your-Username>\AppData\Roaming\Adobe\CEP\extensions\
+
+   * Note: Replace "<Your-Username>" with your actual Windows username.
+   * Note: The "AppData" folder is hidden by default. If you cannot see it,
+     click on "View" at the top of File Explorer and check "Hidden items".
+   * Note: If the "CEP" or "extensions" folders do not exist under Adobe,
+     simply right-click and create them manually.
+
+------------------------------------------------------------------------
+STEP 2: Enable Unsigned Extensions (Registry Fix)
+------------------------------------------------------------------------
+By default, Adobe Premiere Pro blocks custom unsigned extensions. To fix this:
+1. Double-click the file named "enable-debug-mode.reg" located inside 
+   this folder.
+2. A security prompt will pop up asking for confirmation. Click "Yes".
+3. Click "OK" on the success prompt.
+   (This automatically adds the necessary "PlayerDebugMode" registry 
+   entries for Premiere Pro versions 2019 to 2024+).
+
+------------------------------------------------------------------------
+STEP 3: Open the Panel in Premiere Pro
+------------------------------------------------------------------------
+1. Start (or restart) Adobe Premiere Pro.
+2. Open any project sequence.
+3. In the top menu, go to:
+   Window > Extensions > EditFlow OS
+4. The EditFlow Workspace browser window will open! You can drag and dock 
+   it next to your Timeline, Effects, or Media Pool panels.
+
+------------------------------------------------------------------------
+NEED HELP?
+------------------------------------------------------------------------
+If the extension still does not appear in your menu, make sure you have:
+1. Copied the entire "editflow-premiere-extension" folder, not just individual files.
+2. Fully restarted Adobe Premiere Pro after copying the files and running the .reg script.
