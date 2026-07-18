@@ -165,6 +165,7 @@ class AdminShell extends ConsumerWidget {
       _AdminMenuItem('Dashboard', Icons.dashboard_rounded, 0),
       _AdminMenuItem('Users', Icons.people_alt_rounded, 1),
       _AdminMenuItem('Support Tickets', Icons.support_agent_rounded, 3),
+      _AdminMenuItem('Promo Codes', Icons.card_membership_rounded, 8),
       _AdminMenuItem('Notifications', Icons.campaign_rounded, 5),
       _AdminMenuItem('Audit Logs', Icons.receipt_long_rounded, 6),
       _AdminMenuItem('App Settings', Icons.settings_rounded, 7),
