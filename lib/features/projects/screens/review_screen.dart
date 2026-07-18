@@ -50,6 +50,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   final FocusNode _commentFocusNode = FocusNode();
   String? _replyingToCommentId;
   final TextEditingController _replyInputController = TextEditingController();
+  final Set<String> _expandedCommentIds = {};
 
   @override
   void initState() {
@@ -1134,6 +1135,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                   replies.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
                   final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final isExpanded = _expandedCommentIds.contains(parent.id);
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1144,14 +1146,38 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                           padding: const EdgeInsets.only(left: 34.0, right: 6.0, top: 4.0, bottom: 4.0),
                           child: _buildReplyInputBox(parent, isDark),
                         ),
-                      if (replies.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 28.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: replies.map((reply) => _buildCommentCard(reply, true, comments)).toList(),
+                      if (replies.isNotEmpty) ...[
+                        _buildCollapseExpandButton(parent, replies, isDark),
+                        if (isExpanded)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: List.generate(replies.length, (replyIndex) {
+                                final reply = replies[replyIndex];
+                                final isLastReply = replyIndex == replies.length - 1;
+
+                                return IntrinsicHeight(
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      CustomPaint(
+                                        size: const Size(22, double.infinity),
+                                        painter: ThreadConnectionLinePainter(
+                                          isLast: isLastReply,
+                                          color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: _buildCommentCard(reply, true, comments),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ),
                           ),
-                        ),
+                      ],
                       const SizedBox(height: 8),
                     ],
                   );
@@ -1220,6 +1246,60 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           );
         }),
       ],
+    );
+  }
+
+  Widget _buildCollapseExpandButton(ReviewComment parent, List<ReviewComment> replies, bool isDark) {
+    final isExpanded = _expandedCommentIds.contains(parent.id);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 36.0, top: 4.0, bottom: 6.0),
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              if (isExpanded) {
+                _expandedCommentIds.remove(parent.id);
+              } else {
+                _expandedCommentIds.add(parent.id);
+              }
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2429) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0),
+                width: 0.6,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isExpanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
+                  size: 13,
+                  color: AppColors.primaryNeon,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  isExpanded
+                      ? 'Hide replies'
+                      : 'See ${replies.length} ${replies.length == 1 ? 'reply' : 'replies'}',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.primaryNeon,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1687,5 +1767,39 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       );
     }
     return const SizedBox.shrink();
+  }
+}
+
+class ThreadConnectionLinePainter extends CustomPainter {
+  final bool isLast;
+  final Color color;
+
+  ThreadConnectionLinePainter({required this.isLast, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final startX = size.width / 2; // center of left column (e.g. 11.0)
+    const curveY = 28.0; // Center of reply avatar from top
+
+    // Draw vertical line from top to curveY
+    canvas.drawLine(Offset(startX, 0), Offset(startX, curveY), paint);
+
+    // Draw horizontal line from startX to right (pointing to reply avatar)
+    canvas.drawLine(Offset(startX, curveY), Offset(size.width, curveY), paint);
+
+    // If NOT the last reply, draw the vertical line all the way to the bottom of this item
+    if (!isLast) {
+      canvas.drawLine(Offset(startX, curveY), Offset(startX, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant ThreadConnectionLinePainter oldDelegate) {
+    return oldDelegate.isLast != isLast || oldDelegate.color != color;
   }
 }
