@@ -50,6 +50,8 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
   final TextEditingController _nameInputController = TextEditingController();
   final TextEditingController _commentInputController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
+  String? _replyingToCommentId;
+  final TextEditingController _replyInputController = TextEditingController();
 
   @override
   void initState() {
@@ -67,6 +69,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     _nameInputController.dispose();
     _commentInputController.dispose();
     _commentFocusNode.dispose();
+    _replyInputController.dispose();
     super.dispose();
   }
 
@@ -265,6 +268,83 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
           SnackBar(content: Text('Failed to post comment: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _addReply(String parentId, int timestampMs) async {
+    final text = _replyInputController.text.trim();
+    if (text.isEmpty || _currentVideo == null || _shareInfo == null || _guestName == null) return;
+
+    final guestFormattedComment = '$_guestName (Guest): $text';
+
+    final comment = ReviewComment(
+      id: '',
+      videoId: _currentVideo!.id,
+      timestampMs: timestampMs,
+      comment: guestFormattedComment,
+      authorId: _shareInfo!.createdBy,
+      createdAt: DateTime.now(),
+      parentId: parentId,
+    );
+
+    try {
+      final repo = ref.read(reviewRepositoryProvider);
+      final newComment = await repo.addReviewCommentByShareToken(widget.shareToken, comment);
+      
+      final prefs = await SharedPreferences.getInstance();
+      _myGuestCommentIds.add(newComment.id);
+      await prefs.setStringList('my_guest_comment_ids_${widget.shareToken}', _myGuestCommentIds);
+
+      setState(() {
+        _replyingToCommentId = null;
+        _replyInputController.clear();
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add reply: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleReaction(ReviewComment comment, String emoji) async {
+    final myId = _guestName ?? 'Guest';
+    final reactions = Map<String, dynamic>.from(comment.reactions);
+    final list = List<String>.from(reactions[emoji] as List? ?? []);
+
+    if (list.contains(myId)) {
+      list.remove(myId);
+    } else {
+      list.add(myId);
+    }
+
+    if (list.isEmpty) {
+      reactions.remove(emoji);
+    } else {
+      reactions[emoji] = list;
+    }
+
+    try {
+      await ref.read(reviewRepositoryProvider).updateReviewCommentReactionsByShareToken(
+        widget.shareToken,
+        comment.id,
+        reactions,
+      );
+    } catch (e) {
+      debugPrint('[REACTION ERROR] $e');
+    }
+  }
+
+  Future<void> _toggleResolved(ReviewComment comment) async {
+    try {
+      await ref.read(reviewRepositoryProvider).updateReviewCommentResolvedStatusByShareToken(
+        widget.shareToken,
+        comment.id,
+        !comment.isResolved,
+      );
+    } catch (e) {
+      debugPrint('[RESOLVED ERROR] $e');
     }
   }
 
@@ -721,6 +801,298 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     );
   }
 
+  Widget _buildReactions(ReviewComment comment) {
+    final myId = _guestName ?? 'Guest';
+    final emojis = ['👍', '❤️', '😮', '✏️', '🚀'];
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: [
+        ...emojis.map((emoji) {
+          final list = List<String>.from(comment.reactions[emoji] as List? ?? []);
+          final reacted = list.contains(myId);
+          if (list.isEmpty) {
+            return InkWell(
+              onTap: () => _toggleReaction(comment, emoji),
+              borderRadius: BorderRadius.circular(4),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                child: Text(emoji, style: const TextStyle(fontSize: 12)),
+              ),
+            );
+          }
+          return InkWell(
+            onTap: () => _toggleReaction(comment, emoji),
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: reacted
+                    ? AppColors.primary.withValues(alpha: 0.15)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: reacted
+                      ? AppColors.primaryNeon.withValues(alpha: 0.5)
+                      : AppColors.border,
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${list.length}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: reacted ? AppColors.primaryNeon : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildCommentCard(ReviewComment comment, bool isReply, List<ReviewComment> allComments) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMyComment = _myGuestCommentIds.contains(comment.id);
+
+    // Try to split Guest indicator
+    final parts = comment.comment.split(' (Guest): ');
+    final isGuest = parts.length > 1;
+    final authorName = isGuest ? parts[0] : 'Freelancer';
+    final commentBody = isGuest ? parts[1] : comment.comment;
+
+    String timeAgo(DateTime dateTime) {
+      final difference = DateTime.now().toUtc().difference(dateTime.toUtc());
+      if (difference.isNegative) return 'Just now';
+      if (difference.inDays >= 7) return DateFormat('MMM d').format(dateTime.toLocal());
+      if (difference.inDays >= 1) return '${difference.inDays}d ago';
+      if (difference.inHours >= 1) return '${difference.inHours}h ago';
+      if (difference.inMinutes >= 1) return '${difference.inMinutes}m ago';
+      return 'Just now';
+    }
+
+    return Opacity(
+      opacity: comment.isResolved ? 0.6 : 1.0,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 2.0),
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF161A1D) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: comment.isResolved
+                ? AppColors.success.withValues(alpha: 0.3)
+                : (isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0)),
+            width: 1.0,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isReply) ...[
+                  IconButton(
+                    icon: Icon(
+                      comment.isResolved
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      color: comment.isResolved ? AppColors.success : AppColors.textMuted,
+                      size: 20,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _toggleResolved(comment),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (!isReply) ...[
+                  InkWell(
+                    onTap: () => _seekTo(Duration(milliseconds: comment.timestampMs)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00C7A5).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        comment.formattedTimestamp,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF00D7B5),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        commentBody,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                          decoration: comment.isResolved ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            '$authorName • ${timeAgo(comment.createdAt)}',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                            ),
+                          ),
+                          if (isGuest) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: const Text(
+                                'GUEST',
+                                style: TextStyle(fontSize: 8, color: Colors.grey, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (isMyComment)
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded, size: 16, color: AppColors.textMuted),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_rounded, size: 14),
+                            SizedBox(width: 8),
+                            Text('Edit', style: TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_rounded, size: 14, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(fontSize: 12, color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (val) {
+                      if (val == 'edit') {
+                        _editComment(comment);
+                      } else if (val == 'delete') {
+                        _confirmDeleteComment(comment);
+                      }
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(child: _buildReactions(comment)),
+                if (!isReply) ...[
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: const Icon(Icons.reply_rounded, size: 14, color: AppColors.primaryNeon),
+                    label: const Text(
+                      'Reply',
+                      style: TextStyle(fontSize: 11, color: AppColors.primaryNeon, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        if (_replyingToCommentId == comment.id) {
+                          _replyingToCommentId = null;
+                        } else {
+                          _replyingToCommentId = comment.id;
+                          _replyInputController.clear();
+                        }
+                      });
+                    },
+                  ),
+                ],
+              ],
+            ),
+            if (_replyingToCommentId == comment.id) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 36,
+                      child: TextField(
+                        controller: _replyInputController,
+                        style: const TextStyle(fontSize: 12, color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Write a reply...',
+                          hintStyle: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          filled: true,
+                          fillColor: isDark ? const Color(0xFF0D121F) : const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppColors.primaryNeon),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.send_rounded, color: AppColors.primaryNeon, size: 18),
+                    onPressed: () => _addReply(comment.id, comment.timestampMs),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildVideoSwitcher(bool isDark) {
     return Container(
       height: 48,
@@ -818,154 +1190,34 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                       );
               }
 
-              return RepaintBoundary(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
-                  itemCount: comments.length,
-                  itemBuilder: (context, index) {
-                  final comment = comments[index];
-                  final duration = Duration(milliseconds: comment.timestampMs);
+              final parentComments = comments.where((c) => c.parentId == null).toList();
+              parentComments.sort((a, b) => a.timestampMs.compareTo(b.timestampMs));
 
-                  // Try to split Guest indicator
-                  final parts = comment.comment.split(' (Guest): ');
-                  final isGuest = parts.length > 1;
-                  final authorName = isGuest ? parts[0] : 'Freelancer';
-                  final commentBody = isGuest ? parts[1] : comment.comment;
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
+                itemCount: parentComments.length,
+                itemBuilder: (context, index) {
+                  final parent = parentComments[index];
+                  final replies = comments.where((c) => c.parentId == parent.id).toList();
+                  replies.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-                  String timeAgo(DateTime dateTime) {
-                    final difference = DateTime.now().toUtc().difference(dateTime.toUtc());
-                    if (difference.isNegative) {
-                      return 'Just now';
-                    }
-                    if (difference.inDays >= 7) {
-                      return DateFormat('MMM d').format(dateTime.toLocal());
-                    } else if (difference.inDays >= 1) {
-                      return '${difference.inDays}d ago';
-                    } else if (difference.inHours >= 1) {
-                      return '${difference.inHours}h ago';
-                    } else if (difference.inMinutes >= 1) {
-                      return '${difference.inMinutes}m ago';
-                    } else {
-                      return 'Just now';
-                    }
-                  }
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 2.0),
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF161A1D) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0),
-                        width: 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        InkWell(
-                          onTap: () => _seekTo(duration),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF00C7A5).withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              comment.formattedTimestamp,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF00D7B5),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildCommentCard(parent, false, comments),
+                      if (replies.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 28.0),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                commentBody,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  Text(
-                                    '$authorName • ${timeAgo(comment.createdAt)}',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                                    ),
-                                  ),
-                                  if (isGuest) ...[
-                                    const SizedBox(width: 4),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: isDark
-                                            ? Colors.white.withValues(alpha: 0.05)
-                                            : Colors.black.withValues(alpha: 0.05),
-                                        borderRadius: BorderRadius.circular(2),
-                                      ),
-                                      child: const Text(
-                                        'GUEST',
-                                        style: TextStyle(fontSize: 8, color: Colors.grey, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ],
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: replies.map((reply) => _buildCommentCard(reply, true, comments)).toList(),
                           ),
                         ),
-                        if (_myGuestCommentIds.contains(comment.id)) ...[
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert_rounded, size: 18, color: Colors.grey),
-                            padding: EdgeInsets.zero,
-                            onSelected: (action) {
-                              if (action == 'edit') {
-                                _editComment(comment);
-                              } else if (action == 'delete') {
-                                _confirmDeleteComment(comment);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit_rounded, size: 16, color: Colors.grey),
-                                    SizedBox(width: 8),
-                                    Text('Edit', style: TextStyle(fontSize: 13)),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete_rounded, size: 16, color: Colors.red),
-                                    SizedBox(width: 8),
-                                    Text('Delete', style: TextStyle(fontSize: 13, color: Colors.red)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
+                      const SizedBox(height: 8),
+                    ],
                   );
                 },
-              ),
-            );
+              );
             },
           ),
         ),

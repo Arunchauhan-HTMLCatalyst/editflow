@@ -5,6 +5,9 @@ class ReviewComment {
   final String comment;
   final String authorId;
   final DateTime createdAt;
+  final String? parentId;
+  final Map<String, dynamic> reactions;
+  final bool isResolved;
 
   const ReviewComment({
     required this.id,
@@ -13,6 +16,9 @@ class ReviewComment {
     required this.comment,
     required this.authorId,
     required this.createdAt,
+    this.parentId,
+    this.reactions = const {},
+    this.isResolved = false,
   });
 
   factory ReviewComment.fromJson(Map<String, dynamic> json) => ReviewComment(
@@ -22,6 +28,9 @@ class ReviewComment {
         comment: json['comment'] as String,
         authorId: json['author_id'] as String,
         createdAt: DateTime.parse(json['created_at'] as String),
+        parentId: json['parent_id'] as String?,
+        reactions: json['reactions'] as Map<String, dynamic>? ?? const {},
+        isResolved: json['is_resolved'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -31,6 +40,9 @@ class ReviewComment {
         'comment': comment,
         'author_id': authorId,
         'created_at': createdAt.toIso8601String(),
+        'parent_id': parentId,
+        'reactions': reactions,
+        'is_resolved': isResolved,
       };
 
   ReviewComment copyWith({
@@ -40,6 +52,9 @@ class ReviewComment {
     String? comment,
     String? authorId,
     DateTime? createdAt,
+    String? parentId,
+    Map<String, dynamic>? reactions,
+    bool? isResolved,
   }) =>
       ReviewComment(
         id: id ?? this.id,
@@ -48,6 +63,9 @@ class ReviewComment {
         comment: comment ?? this.comment,
         authorId: authorId ?? this.authorId,
         createdAt: createdAt ?? this.createdAt,
+        parentId: parentId ?? this.parentId,
+        reactions: reactions ?? this.reactions,
+        isResolved: isResolved ?? this.isResolved,
       );
 
   String get formattedTimestamp {
