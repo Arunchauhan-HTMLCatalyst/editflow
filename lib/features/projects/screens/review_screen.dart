@@ -1393,44 +1393,55 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               ],
             ),
             if (_replyingToCommentId == comment.id) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 30,
+              const SizedBox(height: 8),
+              Container(
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E2429) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0),
+                    width: 0.8,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 8),
+                    const Icon(Icons.subdirectory_arrow_right_rounded, size: 14, color: AppColors.primaryNeon),
+                    const SizedBox(width: 6),
+                    Expanded(
                       child: TextField(
                         controller: _replyInputController,
-                        style: const TextStyle(fontSize: 12, color: Colors.white),
+                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black87),
                         decoration: InputDecoration(
-                          hintText: 'Write a reply...',
-                          hintStyle: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          hintText: 'Reply to this thread...',
+                          hintStyle: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                          border: InputBorder.none,
                           isDense: true,
-                          filled: true,
-                          fillColor: isDark ? const Color(0xFF0D121F) : const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: isDark ? const Color(0xFF2B3237) : const Color(0xFFE2E8F0)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: AppColors.primaryNeon),
-                          ),
+                          contentPadding: EdgeInsets.zero,
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.send_rounded, color: AppColors.primaryNeon, size: 18),
-                    onPressed: () => _addReply(comment.id, comment.timestampMs),
-                  ),
-                ],
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 14, color: AppColors.textMuted),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        setState(() {
+                          _replyingToCommentId = null;
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                    IconButton(
+                      icon: const Icon(Icons.send_rounded, size: 14, color: AppColors.primaryNeon),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _addReply(comment.id, comment.timestampMs),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ),
               ),
             ],
           ],
