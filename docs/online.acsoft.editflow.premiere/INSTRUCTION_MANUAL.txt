@@ -15,7 +15,7 @@ STEP 1: Copy the Extension Folder
    C:\Users\<Your-Username>\AppData\Roaming\Adobe\CEP\extensions\
    
    PATH B (System-Wide - Program Files - RECOMMENDED IF PATH A FAILS):
-   C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
+   C:\Program Files\Common Files\Adobe\CEP\extensions\
 
    * Note: Replace "<Your-Username>" with your actual Windows username.
    * Note: AppData is hidden by default. Check "Hidden items" under the View menu in File Explorer to see it.
