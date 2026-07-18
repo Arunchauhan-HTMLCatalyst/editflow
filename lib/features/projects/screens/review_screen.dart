@@ -1258,36 +1258,37 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
 
   Widget _buildReplyInputBox(ReviewComment parent, bool isDark) {
     return Container(
-      margin: const EdgeInsets.only(top: 2.0, bottom: 6.0),
-      height: 36,
+      margin: const EdgeInsets.only(top: 4.0, bottom: 8.0),
+      height: 42,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF161A1D) : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(21),
         border: Border.all(
           color: isDark ? const Color(0xFF22262B) : const Color(0xFFE2E8F0),
           width: 0.8,
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(width: 10),
-          const Icon(Icons.subdirectory_arrow_right_rounded, size: 14, color: AppColors.primaryNeon),
+          const SizedBox(width: 12),
+          const Icon(Icons.subdirectory_arrow_right_rounded, size: 16, color: AppColors.primaryNeon),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: _replyInputController,
-              style: TextStyle(fontSize: 12.5, color: isDark ? Colors.white : Colors.black87),
+              style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
                 hintText: 'Reply to this thread...',
-                hintStyle: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                hintStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: EdgeInsets.zero,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+            icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textMuted),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             onPressed: () {
@@ -1296,14 +1297,14 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               });
             },
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.send_rounded, size: 16, color: AppColors.primaryNeon),
+            icon: const Icon(Icons.send_rounded, size: 18, color: AppColors.primaryNeon),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             onPressed: () => _addReply(parent.id, parent.timestampMs),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
         ],
       ),
     );
