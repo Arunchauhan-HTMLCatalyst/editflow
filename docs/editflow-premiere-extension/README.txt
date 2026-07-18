@@ -13,16 +13,10 @@ Installation Instructions for Windows:
 
 Enable Unsigned Extensions (Mandatory for local panels):
 --------------------------------------------------------
-By default, Adobe Premiere Pro blocks unsigned extension panels. Run these steps to enable debug mode:
-1. Press "Win + R", type "regedit", and press Enter to open Registry Editor.
-2. Navigate to:
-   HKEY_CURRENT_USER\Software\Adobe\CSXS.9  (For Premiere 2019/2020)
-   HKEY_CURRENT_USER\Software\Adobe\CSXS.10 (For Premiere 2021)
-   HKEY_CURRENT_USER\Software\Adobe\CSXS.11 (For Premiere 2022/2023)
-   HKEY_CURRENT_USER\Software\Adobe\CSXS.12 (For Premiere 2024+)
-3. Right-click in the empty space on the right, select "New > String Value", name it "PlayerDebugMode", and press Enter.
-4. Double-click "PlayerDebugMode", set its Value Data to "1", and click OK.
-5. Close Registry Editor.
+By default, Adobe Premiere Pro blocks unsigned extension panels. We have included a registry file to enable this automatically:
+1. Double-click the "enable-debug-mode.reg" file located inside this folder.
+2. Click "Yes" on the security prompt, and click "OK" to apply.
+(This automatically sets the "PlayerDebugMode" registry string for CSXS versions 9 to 12).
 
 How to open the Panel in Premiere Pro:
 --------------------------------------
