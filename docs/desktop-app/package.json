@@ -1,0 +1,7 @@
+{
+  "name": "editflow-os",
+  "version": "1.0.0",
+  "main": "main.js",
+  "description": "Desktop wrapper for EditFlow Workspace",
+  "author": "AC Soft Solutions"
+}
