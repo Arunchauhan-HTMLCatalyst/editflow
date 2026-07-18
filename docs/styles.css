@@ -2077,7 +2077,7 @@ img {
     background-color: #0e1416;
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    width: 240px;
+    width: 280px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     z-index: 1000;
     overflow: hidden;
