@@ -328,6 +328,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         state = AsyncData(updatedList);
         _saveToCache(_getCacheKey(), updatedList);
       }
+      ref.invalidate(clientPendingReviewsProvider);
       debugPrint('[ProjectProvider] addProject: created ${newProject.id}');
     } catch (e, st) {
       debugPrint('[ProjectProvider] addProject failed: $e');
@@ -360,6 +361,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         state = AsyncData(updatedList);
         _saveToCache(_getCacheKey(), updatedList);
       }
+      ref.invalidate(clientPendingReviewsProvider);
       debugPrint('[ProjectProvider] updateProject: updated ${updated.id}');
 
       // If in client mode, notify the freelancer of the edit. If NOT, notify the client.
@@ -463,6 +465,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         state = AsyncData(updatedList);
         _saveToCache(_getCacheKey(), updatedList);
       }
+      ref.invalidate(clientPendingReviewsProvider);
       debugPrint('[ProjectProvider] deleteProject: deleted $id');
     } catch (e, st) {
       debugPrint('[ProjectProvider] deleteProject failed: $e');
@@ -517,6 +520,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         state = AsyncData(updatedList);
         _saveToCache(_getCacheKey(), updatedList);
       }
+      ref.invalidate(clientPendingReviewsProvider);
       debugPrint('[ProjectProvider] updateStatus: $id -> ${newStatus.displayName}');
 
       final activityType = newStatus == ProjectStatus.paid ? 'payment_received' : 'status_changed';
@@ -632,4 +636,15 @@ final projectProvider = AsyncNotifierProvider<ProjectProvider, List<Project>>(
 final subProjectsProvider = FutureProvider.family<List<Project>, String>((ref, parentId) async {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getSubProjects(parentId);
+});
+
+final clientPendingReviewsProvider = FutureProvider<List<Project>>((ref) async {
+  final settings = ref.watch(settingsProvider);
+  if (!settings.isClientMode) return [];
+  
+  final repo = ref.watch(projectRepositoryProvider);
+  if (repo is ClientProjectRepository) {
+    return repo.getPendingReviews();
+  }
+  return [];
 });

@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/settings/providers/settings_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'services/supabase_service.dart';
+import 'features/projects/providers/project_provider.dart';
 
 final maintenanceProvider = StreamProvider<Map<String, dynamic>>((ref) {
   final controller = StreamController<Map<String, dynamic>>();
@@ -142,6 +143,9 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
   Widget build(BuildContext context) {
     final location = widget.state.uri.toString();
     final isClientMode = ref.watch(settingsProvider).isClientMode;
+    final pendingReviewsCount = isClientMode
+        ? (ref.watch(clientPendingReviewsProvider).valueOrNull?.length ?? 0)
+        : 0;
     final currentIndex = _currentTab(location, isClientMode);
     
     final navItems = isClientMode
@@ -246,6 +250,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
             bottomNavigationBar: _FloatingNavBar(
               currentIndex: currentIndex,
               navItems: navItems,
+              pendingReviewsCount: pendingReviewsCount,
               onTap: (index) {
                 HapticFeedback.selectionClick();
                 if (isClientMode) {
@@ -291,11 +296,13 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
 class _FloatingNavBar extends StatelessWidget {
   final int currentIndex;
   final List<_NavItem> navItems;
+  final int pendingReviewsCount;
   final ValueChanged<int> onTap;
 
   const _FloatingNavBar({
     required this.currentIndex,
     required this.navItems,
+    required this.pendingReviewsCount,
     required this.onTap,
   });
 
@@ -411,14 +418,36 @@ class _FloatingNavBar extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              AnimatedScale(
-                                scale: isActive ? 1.12 : 1.0,
-                                duration: const Duration(milliseconds: 200),
-                                child: Icon(
-                                  item.icon,
-                                  size: 22,
-                                  color: isActive ? activeIconColor : inactiveColor,
-                                ),
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  AnimatedScale(
+                                    scale: isActive ? 1.12 : 1.0,
+                                    duration: const Duration(milliseconds: 200),
+                                    child: Icon(
+                                      item.icon,
+                                      size: 22,
+                                      color: isActive ? activeIconColor : inactiveColor,
+                                    ),
+                                  ),
+                                  if (item.label == 'Reviews' && pendingReviewsCount > 0)
+                                    Positioned(
+                                      right: -2,
+                                      top: -2,
+                                      child: Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          color: Colors.redAccent,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               const SizedBox(height: 3),
                               Text(
@@ -492,6 +521,9 @@ class _DesktopSidebar extends ConsumerWidget {
     final email = user?.email ?? '';
 
     final isClientMode = settings.isClientMode;
+    final pendingReviewsCount = isClientMode
+        ? (ref.watch(clientPendingReviewsProvider).valueOrNull?.length ?? 0)
+        : 0;
 
     return Container(
       width: 250,
@@ -665,11 +697,29 @@ class _DesktopSidebar extends ConsumerWidget {
                             ),
                             child: Row(
                               children: [
-                                Icon(
-                                  item.icon,
-                                  size: 18,
-                                  color: isActive ? activeColor : inactiveColor,
-                                ),
+                                 Stack(
+                                   clipBehavior: Clip.none,
+                                   children: [
+                                     Icon(
+                                       item.icon,
+                                       size: 18,
+                                       color: isActive ? activeColor : inactiveColor,
+                                     ),
+                                     if (item.label == 'Reviews' && pendingReviewsCount > 0)
+                                       Positioned(
+                                         right: -2,
+                                         top: -2,
+                                         child: Container(
+                                           width: 6,
+                                           height: 6,
+                                           decoration: const BoxDecoration(
+                                             color: Colors.redAccent,
+                                             shape: BoxShape.circle,
+                                           ),
+                                         ),
+                                       ),
+                                   ],
+                                 ),
                                 const SizedBox(width: 12),
                                 Text(
                                   item.label,

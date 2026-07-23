@@ -131,4 +131,53 @@ class ClientProjectRepository extends ProjectRepository {
 
   @override
   Future<void> delete(String id) => throw UnsupportedError("Write operations are disabled in client mode");
+
+  @override
+  Future<List<Project>> getPendingReviews() async {
+    final clientUserId = SupabaseService.userId;
+    
+    try {
+      final response = await SupabaseService.instance
+          .from('projects')
+          .select('*, clients!client_id!inner(name, client_user_id)')
+          .eq('clients.client_user_id', clientUserId)
+          .eq('status', 'review_pending')
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 15));
+          
+      final list = <Project>[];
+      for (final e in (response as List)) {
+        if (e['clients'] != null) {
+          e['client_name'] = e['clients']['name'];
+        }
+        
+        final freelancerUserId = e['user_id'] as String;
+        try {
+          final profileRes = await SupabaseService.instance
+              .from('profiles')
+              .select('full_name')
+              .eq('id', freelancerUserId)
+              .maybeSingle()
+              .timeout(const Duration(seconds: 5));
+          if (profileRes != null && profileRes['full_name'] != null) {
+            e['freelancer_name'] = profileRes['full_name'] as String;
+          }
+        } catch (err) {
+          debugPrint('[ClientProjectRepository] Freelancer profile fetch failed: $err');
+        }
+        
+        final project = Project.fromJson(e);
+        list.add(project);
+      }
+      return list;
+    } on PostgrestException catch (e) {
+      if (e.message.contains('client_user_id') || e.code == '42703') {
+        throw Exception(
+          'Supabase schema missing: The \"client_user_id\" column does not exist on the \"clients\" table. '
+          'Please run the SQL migration script in your Supabase SQL Editor to enable the Client Portal features.'
+        );
+      }
+      rethrow;
+    }
+  }
 }

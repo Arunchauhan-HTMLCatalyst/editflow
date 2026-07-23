@@ -121,4 +121,6 @@ class ProjectRepository {
       referenceType: 'project',
     );
   }
+
+  Future<List<Project>> getPendingReviews() async => [];
 }

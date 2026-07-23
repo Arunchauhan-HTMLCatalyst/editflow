@@ -20,7 +20,7 @@ class ClientReviewsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final projectsAsync = ref.watch(projectProvider);
+    final pendingReviewsAsync = ref.watch(clientPendingReviewsProvider);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.background : const Color(0xFFF8FAFC),
@@ -41,7 +41,7 @@ class ClientReviewsScreen extends ConsumerWidget {
       ),
       body: AmbientGlowContainer(
         child: SafeArea(
-          child: projectsAsync.when(
+          child: pendingReviewsAsync.when(
             loading: () => ListView(
               padding: EdgeInsets.all(AppLayout.pagePadding(context)),
               children: List.generate(3, (i) => Padding(
@@ -55,9 +55,7 @@ class ClientReviewsScreen extends ConsumerWidget {
                 style: const TextStyle(color: AppColors.error),
               ),
             ),
-            data: (projects) {
-              final pendingProjects = projects.where((p) => p.status == ProjectStatus.reviewPending).toList();
-
+            data: (pendingProjects) {
               if (pendingProjects.isEmpty) {
                 return Padding(
                   padding: EdgeInsets.all(AppLayout.pagePadding(context)),
