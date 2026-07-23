@@ -1696,33 +1696,35 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           maxLines: 3,
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _priceController,
-                decoration: InputDecoration(
-                  labelText: 'Price',
-                  prefixText: '${currency.symbol} ',
+        if (!project.isSubProject) ...[
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _priceController,
+                  decoration: InputDecoration(
+                    labelText: 'Price',
+                    prefixText: '${currency.symbol} ',
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
-                keyboardType: TextInputType.number,
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextFormField(
-                controller: _receivedController,
-                readOnly: isClient,
-                decoration: InputDecoration(
-                  labelText: 'Advance Payment',
-                  prefixText: '${currency.symbol} ',
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: _receivedController,
+                  readOnly: isClient,
+                  decoration: InputDecoration(
+                    labelText: 'Advance Payment',
+                    prefixText: '${currency.symbol} ',
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
-                keyboardType: TextInputType.number,
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
         TextFormField(
           controller: _deadlineController,
           decoration: InputDecoration(
