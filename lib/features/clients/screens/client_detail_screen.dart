@@ -1688,6 +1688,7 @@ class _CreateProjectSheetState extends ConsumerState<_CreateProjectSheet> {
   late final TextEditingController receivedController;
   late final TextEditingController deadlineController;
   bool isSaving = false;
+  String _paymentType = 'project_basis';
 
   @override
   void initState() {
@@ -1743,6 +1744,53 @@ class _CreateProjectSheetState extends ConsumerState<_CreateProjectSheet> {
             ),
           ),
           const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: CupertinoSlidingSegmentedControl<String>(
+              groupValue: _paymentType,
+              backgroundColor: Colors.transparent,
+              thumbColor: isDark ? const Color(0xFF334155) : Colors.white,
+              children: {
+                'project_basis': Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Text(
+                    'Project Basis',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: _paymentType == 'project_basis' ? FontWeight.w600 : FontWeight.w500,
+                      color: isDark 
+                          ? (_paymentType == 'project_basis' ? Colors.white : AppColors.textSecondary)
+                          : (_paymentType == 'project_basis' ? const Color(0xFF0F172A) : const Color(0xFF64748B)),
+                    ),
+                  ),
+                ),
+                'monthly': Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Text(
+                    'Monthly',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: _paymentType == 'monthly' ? FontWeight.w600 : FontWeight.w500,
+                      color: isDark 
+                          ? (_paymentType == 'monthly' ? Colors.white : AppColors.textSecondary)
+                          : (_paymentType == 'monthly' ? const Color(0xFF0F172A) : const Color(0xFF64748B)),
+                    ),
+                  ),
+                ),
+              },
+              onValueChanged: (value) {
+                if (value != null) {
+                  setState(() => _paymentType = value);
+                }
+              },
+            ),
+          ),
+          const SizedBox(height: 14),
           TextFormField(
             controller: nameController,
             decoration: const InputDecoration(
@@ -1758,31 +1806,41 @@ class _CreateProjectSheetState extends ConsumerState<_CreateProjectSheet> {
             maxLines: 3,
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: priceController,
-                  decoration: InputDecoration(
-                    labelText: 'Price',
-                    prefixText: '${widget.currency.symbol} ',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
+          if (_paymentType == 'monthly')
+            TextFormField(
+              controller: priceController,
+              decoration: InputDecoration(
+                labelText: 'Monthly Retainer Amount',
+                prefixText: '${widget.currency.symbol} ',
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: receivedController,
-                  decoration: InputDecoration(
-                    labelText: 'Advance Payment',
-                    prefixText: '${widget.currency.symbol} ',
+              keyboardType: TextInputType.number,
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: priceController,
+                    decoration: InputDecoration(
+                      labelText: 'Price',
+                      prefixText: '${widget.currency.symbol} ',
+                    ),
+                    keyboardType: TextInputType.number,
                   ),
-                  keyboardType: TextInputType.number,
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: receivedController,
+                    decoration: InputDecoration(
+                      labelText: 'Advance Payment',
+                      prefixText: '${widget.currency.symbol} ',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(height: 14),
           TextFormField(
             controller: deadlineController,
@@ -1820,6 +1878,7 @@ class _CreateProjectSheetState extends ConsumerState<_CreateProjectSheet> {
                     if (nameController.text.trim().isEmpty) return;
                     if (!PremiumHelper.checkProjectLimit(ref, context)) return;
                     setState(() => isSaving = true);
+                    final isFolder = _paymentType == 'monthly';
                     final project = Project(
                       id: '',
                       userId: widget.userId,
@@ -1828,12 +1887,14 @@ class _CreateProjectSheetState extends ConsumerState<_CreateProjectSheet> {
                       description: descController.text.trim().isEmpty
                           ? null : descController.text.trim(),
                       price: double.tryParse(priceController.text.trim()) ?? 0,
-                      receivedAmount: double.tryParse(receivedController.text.trim()) ?? 0,
+                      receivedAmount: isFolder ? 0.0 : (double.tryParse(receivedController.text.trim()) ?? 0),
                       deadline: deadlineController.text.trim().isNotEmpty
                           ? DateTime.tryParse(deadlineController.text.trim()) : null,
                       status: ProjectStatus.yetToStart,
                       createdAt: DateTime.now(),
                       updatedAt: DateTime.now(),
+                      paymentType: _paymentType,
+                      isFolder: isFolder,
                     );
                     final messenger = ScaffoldMessenger.of(context);
                     final notifier = ref.read(projectProvider.notifier);
