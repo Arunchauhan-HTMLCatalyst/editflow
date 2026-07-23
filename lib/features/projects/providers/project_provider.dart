@@ -339,18 +339,27 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
   Future<void> updateProject(Project project) async {
     final repo = ref.read(projectRepositoryProvider);
     final previousState = state.valueOrNull ?? [];
+    final isSubProject = project.parentId != null;
 
-    final optimistic = previousState.map((p) => p.id == project.id ? project : p).toList();
-    _lastValidData = optimistic;
-    state = AsyncData(optimistic);
+    if (!isSubProject) {
+      final optimistic = previousState.map((p) => p.id == project.id ? project : p).toList();
+      _lastValidData = optimistic;
+      state = AsyncData(optimistic);
+    }
 
     try {
       final updated = await repo.update(project);
-      final current = state.valueOrNull ?? [];
-      final updatedList = current.map((p) => p.id == updated.id ? updated : p).toList();
-      _lastValidData = updatedList;
-      state = AsyncData(updatedList);
-      _saveToCache(_getCacheKey(), updatedList);
+      
+      if (isSubProject) {
+        ref.invalidate(projectDetailProvider(updated.id));
+        ref.invalidate(subProjectsProvider(updated.parentId!));
+      } else {
+        final current = state.valueOrNull ?? [];
+        final updatedList = current.map((p) => p.id == updated.id ? updated : p).toList();
+        _lastValidData = updatedList;
+        state = AsyncData(updatedList);
+        _saveToCache(_getCacheKey(), updatedList);
+      }
       debugPrint('[ProjectProvider] updateProject: updated ${updated.id}');
 
       // If in client mode, notify the freelancer of the edit. If NOT, notify the client.
@@ -381,31 +390,45 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
               },
             );
 
-            debugPrint('[PROJECT NOTIFICATION] Sent project_updated notification to freelancer ${updated.userId}');
+            debugPrint('[PROJECT NOTIFICATION] Sent update notification to freelancer ${updated.userId} for project ${updated.name}');
           } catch (err) {
             debugPrint('[PROJECT NOTIFICATION ERROR] $err');
           }
         }());
       } else {
-        final clients = ref.read(safeClientsProvider);
-        final client = clients.firstWhereOrNull((c) => c.id == updated.clientId);
-        if (client != null && client.clientUserId != null) {
-          unawaited(() async {
-            try {
+        // Freelancer edited → notify client
+        unawaited(() async {
+          try {
+            final clients = ref.read(safeClientsProvider);
+            final client = clients.firstWhereOrNull((c) => c.id == updated.clientId);
+            if (client != null && client.clientUserId != null) {
+              final freelancerName = ref.read(authProvider).user?.userMetadata?['full_name'] ?? 'Freelancer';
+
               await SupabaseService.instance.from('activities').insert({
-                'user_id': client.clientUserId,
+                'user_id': client.clientUserId!,
                 'type': 'project_updated',
-                'description': 'Freelancer updated project details: "${updated.name}"',
+                'description': 'Freelancer "$freelancerName" updated project: "${updated.name}"',
                 'reference_id': updated.id,
                 'reference_type': 'project',
                 'created_at': DateTime.now().toIso8601String(),
               });
-              debugPrint('[PROJECT NOTIFICATION] Sent project_updated notification to client ${client.clientUserId}');
-            } catch (err) {
-              debugPrint('[PROJECT NOTIFICATION TO CLIENT ERROR] $err');
+
+              await SupabaseService.instance.functions.invoke(
+                'send-push',
+                body: {
+                  'recipientUserId': client.clientUserId!,
+                  'title': 'Project Updated',
+                  'body': 'Freelancer "$freelancerName" updated project: "${updated.name}"',
+                  'route': '/projects/${updated.id}',
+                },
+              );
+
+              debugPrint('[PROJECT NOTIFICATION] Sent update notification to client ${client.clientUserId} for project ${updated.name}');
             }
-          }());
-        }
+          } catch (err) {
+            debugPrint('[PROJECT NOTIFICATION ERROR] $err');
+          }
+        }());
       }
     } catch (e, st) {
       debugPrint('[ProjectProvider] updateProject failed: $e');
@@ -417,22 +440,29 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
   Future<void> deleteProject(String id) async {
     final repo = ref.read(projectRepositoryProvider);
     final previousState = state.valueOrNull ?? [];
-    final projectName = previousState.where((p) => p.id == id).firstOrNull?.name ?? '';
-
-    final updatedList = previousState.where((p) => p.id != id).toList();
-    _lastValidData = updatedList;
-    state = AsyncData(updatedList);
-    _saveToCache(_getCacheKey(), updatedList);
 
     try {
+      final project = await repo.getById(id);
       await repo.delete(id);
+      
       final activity = ActivityService();
       unawaited(activity.log(
         type: 'project_deleted',
-        description: 'Deleted project "$projectName"',
+        description: 'Deleted project "${project.name}"',
         referenceId: id,
         referenceType: 'project',
       ));
+
+      if (project.parentId != null) {
+        ref.invalidate(projectDetailProvider(id));
+        ref.invalidate(subProjectsProvider(project.parentId!));
+        state = AsyncData(previousState);
+      } else {
+        final updatedList = previousState.where((p) => p.id != id).toList();
+        _lastValidData = updatedList;
+        state = AsyncData(updatedList);
+        _saveToCache(_getCacheKey(), updatedList);
+      }
       debugPrint('[ProjectProvider] deleteProject: deleted $id');
     } catch (e, st) {
       debugPrint('[ProjectProvider] deleteProject failed: $e');
@@ -442,8 +472,19 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
 
   Future<void> updateStatus(String id, ProjectStatus newStatus) async {
     final projects = state.valueOrNull ?? [];
-    final project = projects.firstWhereOrNull((p) => p.id == id);
-    if (project == null) return;
+    final repo = ref.read(projectRepositoryProvider);
+    final previousState = state.valueOrNull ?? [];
+    
+    // Find the project (either in top-level state or via repository if sub-project)
+    Project? project = projects.firstWhereOrNull((p) => p.id == id);
+    if (project == null) {
+      try {
+        project = await repo.getById(id);
+      } catch (e) {
+        debugPrint('[ProjectProvider] updateStatus failed to fetch project: $e');
+        return;
+      }
+    }
 
     Project updated;
     if (newStatus == ProjectStatus.paid) {
@@ -454,20 +495,28 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       updated = project.copyWith(status: newStatus);
     }
 
-    final repo = ref.read(projectRepositoryProvider);
-    final previousState = state.valueOrNull ?? [];
-    final optimisticList = projects.map((p) => p.id == id ? updated : p).toList();
-    _lastValidData = optimisticList;
-    state = AsyncData(optimisticList);
-    _saveToCache(_getCacheKey(), optimisticList);
+    final isSubProject = updated.parentId != null;
+    
+    if (!isSubProject) {
+      final optimisticList = projects.map((p) => p.id == id ? updated : p).toList();
+      _lastValidData = optimisticList;
+      state = AsyncData(optimisticList);
+      _saveToCache(_getCacheKey(), optimisticList);
+    }
 
     try {
       final confirmed = await repo.update(updated);
-      final current = state.valueOrNull ?? [];
-      final updatedList = current.map((p) => p.id == confirmed.id ? confirmed : p).toList();
-      _lastValidData = updatedList;
-      state = AsyncData(updatedList);
-      _saveToCache(_getCacheKey(), updatedList);
+      
+      if (isSubProject) {
+        ref.invalidate(projectDetailProvider(id));
+        ref.invalidate(subProjectsProvider(confirmed.parentId!));
+      } else {
+        final current = state.valueOrNull ?? [];
+        final updatedList = current.map((p) => p.id == confirmed.id ? confirmed : p).toList();
+        _lastValidData = updatedList;
+        state = AsyncData(updatedList);
+        _saveToCache(_getCacheKey(), updatedList);
+      }
       debugPrint('[ProjectProvider] updateStatus: $id -> ${newStatus.displayName}');
 
       final activityType = newStatus == ProjectStatus.paid ? 'payment_received' : 'status_changed';
@@ -475,50 +524,64 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
 
       if (isClient) {
         final clients = ref.read(safeClientsProvider);
-        final client = clients.firstWhereOrNull((c) => c.id == project.clientId);
+        final client = clients.firstWhereOrNull((c) => c.id == confirmed.clientId);
         final clientName = client?.name ?? 'Client';
 
         await SupabaseService.instance.from('activities').insert({
-          'user_id': project.userId,
+          'user_id': confirmed.userId,
           'type': activityType,
           'description': newStatus == ProjectStatus.paid
-              ? 'Client "$clientName" completed payment for "${project.name}"'
-              : 'Client "$clientName" changed status of "${project.name}" to ${newStatus.displayName}',
-          'reference_id': project.id,
+              ? 'Client "$clientName" paid retainer amount for project "${confirmed.name}"'
+              : 'Client "$clientName" moved project "${confirmed.name}" status to "${newStatus.displayName}"',
+          'reference_id': confirmed.id,
           'reference_type': 'project',
           'created_at': DateTime.now().toIso8601String(),
         });
-        debugPrint('[PROJECT NOTIFICATION] Sent status notification to freelancer for project ${project.name}');
-      } else {
-        await repo.logStatusChange(
-          type: activityType,
-          description: newStatus == ProjectStatus.paid
-              ? 'Payment completed for "${project.name}"'
-              : '"${project.name}" -> ${newStatus.displayName}',
-          projectId: project.id,
+
+        await SupabaseService.instance.functions.invoke(
+          'send-push',
+          body: {
+            'recipientUserId': confirmed.userId,
+            'title': newStatus == ProjectStatus.paid ? 'Payment Received' : 'Status Changed',
+            'body': newStatus == ProjectStatus.paid
+                ? 'Client "$clientName" paid retainer amount for project "${confirmed.name}"'
+                : 'Client "$clientName" moved project "${confirmed.name}" status to "${newStatus.displayName}"',
+            'route': '/projects/${confirmed.id}',
+          },
         );
 
-        // Also notify the client if they have a linked portal account
+        debugPrint('[PROJECT NOTIFICATION] Sent status notification to freelancer ${confirmed.userId} for project ${confirmed.name}');
+      } else {
+        // Freelancer status change → notify client
         final clients = ref.read(safeClientsProvider);
-        final client = clients.firstWhereOrNull((c) => c.id == project.clientId);
+        final client = clients.firstWhereOrNull((c) => c.id == confirmed.clientId);
         if (client != null && client.clientUserId != null) {
-          unawaited(() async {
-            try {
-              await SupabaseService.instance.from('activities').insert({
-                'user_id': client.clientUserId,
-                'type': activityType,
-                'description': newStatus == ProjectStatus.paid
-                    ? 'Payment completed for "${project.name}"'
-                    : 'Status of "${project.name}" updated to: ${newStatus.displayName}',
-                'reference_id': project.id,
-                'reference_type': 'project',
-                'created_at': DateTime.now().toIso8601String(),
-              });
-              debugPrint('[PROJECT NOTIFICATION] Sent status notification to client ${client.clientUserId} for project ${project.name}');
-            } catch (err) {
-              debugPrint('[PROJECT NOTIFICATION TO CLIENT ERROR] $err');
-            }
-          }());
+          final freelancerName = ref.read(authProvider).user?.userMetadata?['full_name'] ?? 'Freelancer';
+
+          await SupabaseService.instance.from('activities').insert({
+            'user_id': client.clientUserId!,
+            'type': activityType,
+            'description': newStatus == ProjectStatus.paid
+                ? 'Freelancer "$freelancerName" received payment for project "${confirmed.name}"'
+                : 'Freelancer "$freelancerName" moved project "${confirmed.name}" status to "${newStatus.displayName}"',
+            'reference_id': confirmed.id,
+            'reference_type': 'project',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+
+          await SupabaseService.instance.functions.invoke(
+            'send-push',
+            body: {
+              'recipientUserId': client.clientUserId!,
+              'title': newStatus == ProjectStatus.paid ? 'Payment Received' : 'Status Changed',
+              'body': newStatus == ProjectStatus.paid
+                  ? 'Freelancer "$freelancerName" received payment for project "${confirmed.name}"'
+                  : 'Freelancer "$freelancerName" moved project "${confirmed.name}" status to "${newStatus.displayName}"',
+              'route': '/projects/${confirmed.id}',
+            },
+          );
+
+          debugPrint('[PROJECT NOTIFICATION] Sent status notification to client ${client.clientUserId} for project ${confirmed.name}');
         }
       }
     } catch (e, st) {
