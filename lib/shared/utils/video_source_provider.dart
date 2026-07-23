@@ -151,4 +151,47 @@ class VideoSourceManager {
     }
     return 'External Source';
   }
+
+  static String getIframeUrl(String url) {
+    final trimmed = url.trim();
+    
+    // Check Google Drive
+    if (trimmed.toLowerCase().contains('drive.google.com') || trimmed.toLowerCase().contains('docs.google.com/file')) {
+      final fileIdRegExp = RegExp(r'file/d/([a-zA-Z0-9_-]+)');
+      final fileIdMatch = fileIdRegExp.firstMatch(trimmed);
+      if (fileIdMatch != null) {
+        final fileId = fileIdMatch.group(1);
+        return 'https://drive.google.com/file/d/$fileId/preview';
+      }
+
+      final queryIdRegExp = RegExp(r'[?&]id=([a-zA-Z0-9_-]+)');
+      final queryIdMatch = queryIdRegExp.firstMatch(trimmed);
+      if (queryIdMatch != null) {
+        final fileId = queryIdMatch.group(1);
+        return 'https://drive.google.com/file/d/$fileId/preview';
+      }
+    }
+
+    // Check YouTube
+    if (trimmed.contains('youtube.com') || trimmed.contains('youtu.be')) {
+      final regExp = RegExp(r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})');
+      final match = regExp.firstMatch(trimmed);
+      if (match != null) {
+        final videoId = match.group(1);
+        return 'https://www.youtube.com/embed/$videoId';
+      }
+    }
+
+    // Check Vimeo
+    if (trimmed.contains('vimeo.com')) {
+      final regExp = RegExp(r'vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)');
+      final match = regExp.firstMatch(trimmed);
+      if (match != null) {
+        final videoId = match.group(3);
+        return 'https://player.vimeo.com/video/$videoId';
+      }
+    }
+
+    return trimmed;
+  }
 }

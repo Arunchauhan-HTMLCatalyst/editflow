@@ -9,3 +9,5 @@ void downloadFileWebImpl({
 bool isInAppBrowserImpl() {
   return false;
 }
+
+void registerIframeImpl(String viewType, String url) {}

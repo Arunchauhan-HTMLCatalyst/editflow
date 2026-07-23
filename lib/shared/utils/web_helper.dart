@@ -16,3 +16,7 @@ void downloadFileWeb({
 bool isInAppBrowser() {
   return loader.isInAppBrowserImpl();
 }
+
+void registerIframe(String viewType, String url) {
+  loader.registerIframeImpl(viewType, url);
+}

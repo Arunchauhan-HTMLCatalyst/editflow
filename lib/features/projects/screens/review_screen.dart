@@ -19,6 +19,8 @@ import '../providers/project_provider.dart';
 import '../models/project_status.dart';
 import '../providers/review_provider.dart';
 import '../widgets/share_link_dialog.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../shared/utils/web_helper.dart';
 import '../../../services/supabase_service.dart';
 
 class ReviewScreen extends ConsumerStatefulWidget {
@@ -39,6 +41,7 @@ class ReviewScreen extends ConsumerStatefulWidget {
 
 class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   VideoPlayerController? _controller;
+  bool _isIframeVideo = false;
   bool _isPlayerInitialized = false;
   bool _hasPlayerError = false;
   bool _isPlaying = false;
@@ -77,8 +80,29 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           .timeout(const Duration(seconds: 10));
 
       final video = ReviewVideo.fromJson(response);
-      final playableUrl = VideoSourceManager.getPlayableUrl(video.url);
+      final url = video.url.trim();
 
+      // Check if it's an iframe video source (Google Drive, Youtube, Vimeo)
+      final isGoogleDrive = url.toLowerCase().contains('drive.google.com') || url.toLowerCase().contains('docs.google.com/file');
+      final isYoutube = url.toLowerCase().contains('youtube.com') || url.toLowerCase().contains('youtu.be');
+      final isVimeo = url.toLowerCase().contains('vimeo.com');
+
+      if (kIsWeb && (isGoogleDrive || isYoutube || isVimeo)) {
+        final iframeUrl = VideoSourceManager.getIframeUrl(url);
+        final viewType = 'iframe-player-${widget.videoId}';
+        registerIframe(viewType, iframeUrl);
+
+        if (mounted) {
+          setState(() {
+            _isIframeVideo = true;
+            _isPlayerInitialized = true;
+            _totalDuration = const Duration(minutes: 5); // placeholder
+          });
+        }
+        return;
+      }
+
+      final playableUrl = VideoSourceManager.getPlayableUrl(url);
       _controller = VideoPlayerController.networkUrl(Uri.parse(playableUrl));
       
       await _controller!.initialize();
@@ -787,53 +811,55 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                               child: Container(
                                 color: Colors.black,
                                 child: Center(
-                                  child: _isPlayerInitialized && _controller != null
-                                      ? AspectRatio(
-                                          aspectRatio: _controller!.value.aspectRatio,
-                                          child: RepaintBoundary(
-                                            child: Stack(
-                                              alignment: Alignment.center,
-                                              children: [
-                                                VideoPlayer(_controller!),
-                                                // Transparent overlay to capture taps (works on web where platform views swallow gestures)
-                                                Positioned.fill(
-                                                  child: GestureDetector(
-                                                    behavior: HitTestBehavior.opaque,
-                                                    onTap: _togglePlay,
-                                                    child: Container(color: Colors.transparent),
-                                                  ),
-                                                ),
-                                                if (!_isPlaying)
-                                                  IgnorePointer(
-                                                    child: Container(
-                                                      width: 44,
-                                                      height: 44,
-                                                      decoration: const BoxDecoration(
-                                                        color: Colors.black54,
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                      child: const Icon(
-                                                        CupertinoIcons.play_fill,
-                                                        size: 22,
-                                                        color: Colors.white,
+                                  child: _isPlayerInitialized && (_controller != null || _isIframeVideo)
+                                      ? _isIframeVideo
+                                          ? HtmlElementView(viewType: 'iframe-player-${widget.videoId}')
+                                          : AspectRatio(
+                                              aspectRatio: _controller!.value.aspectRatio,
+                                              child: RepaintBoundary(
+                                                child: Stack(
+                                                  alignment: Alignment.center,
+                                                  children: [
+                                                    VideoPlayer(_controller!),
+                                                    // Transparent overlay to capture taps (works on web where platform views swallow gestures)
+                                                    Positioned.fill(
+                                                      child: GestureDetector(
+                                                        behavior: HitTestBehavior.opaque,
+                                                        onTap: _togglePlay,
+                                                        child: Container(color: Colors.transparent),
                                                       ),
                                                     ),
-                                                  ),
-                                                if (_controller!.value.isBuffering)
-                                                  IgnorePointer(
-                                                    child: Container(
-                                                      color: Colors.black38,
-                                                      child: const Center(
-                                                        child: CircularProgressIndicator(
-                                                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                                    if (!_isPlaying)
+                                                      IgnorePointer(
+                                                        child: Container(
+                                                          width: 44,
+                                                          height: 44,
+                                                          decoration: const BoxDecoration(
+                                                            color: Colors.black54,
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                          child: const Icon(
+                                                            CupertinoIcons.play_fill,
+                                                            size: 22,
+                                                            color: Colors.white,
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                        )
+                                                    if (_controller!.value.isBuffering)
+                                                      IgnorePointer(
+                                                        child: Container(
+                                                          color: Colors.black38,
+                                                          child: const Center(
+                                                            child: CircularProgressIndicator(
+                                                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                            )
                                       : _hasPlayerError
                                           ? _buildPlayerErrorWidget()
                                           : const Center(child: CircularProgressIndicator()),
@@ -841,7 +867,23 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                               ),
                             ),
                             if (_isPlayerInitialized && _controller != null)
-                              _buildScrubberWidget(context, isDark),
+                              _buildScrubberWidget(context, isDark)
+                            else if (_isPlayerInitialized && _isIframeVideo)
+                              Container(
+                                color: Colors.black,
+                                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  'Google Drive/External Player — Automatic timeline sync is disabled. Type feedback comments below.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.yellow[600],
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -870,7 +912,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                 return Column(
                   children: [
                     // 1. VIDEO PLAYER WINDOW
-                    if (_isPlayerInitialized && _controller != null)
+                    if (_isPlayerInitialized && (_controller != null || _isIframeVideo))
                       Column(
                         children: [
                           Container(
@@ -881,55 +923,74 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                             ),
                             color: Colors.black,
                             child: Center(
-                              child: AspectRatio(
-                                aspectRatio: _controller!.value.aspectRatio,
-                                child: RepaintBoundary(
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      VideoPlayer(_controller!),
-                                      // Transparent overlay to capture taps (works on web where platform views swallow gestures)
-                                      Positioned.fill(
-                                        child: GestureDetector(
-                                          behavior: HitTestBehavior.opaque,
-                                          onTap: _togglePlay,
-                                          child: Container(color: Colors.transparent),
-                                        ),
-                                      ),
-                                      if (!_isPlaying)
-                                        IgnorePointer(
-                                          child: Container(
-                                            width: 44,
-                                            height: 44,
-                                            decoration: const BoxDecoration(
-                                              color: Colors.black54,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              CupertinoIcons.play_fill,
-                                              size: 22,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      if (_controller!.value.isBuffering)
-                                        IgnorePointer(
-                                          child: Container(
-                                            color: Colors.black38,
-                                            child: const Center(
-                                              child: CircularProgressIndicator(
-                                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              child: _isIframeVideo
+                                  ? HtmlElementView(viewType: 'iframe-player-${widget.videoId}')
+                                  : AspectRatio(
+                                      aspectRatio: _controller!.value.aspectRatio,
+                                      child: RepaintBoundary(
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            VideoPlayer(_controller!),
+                                            // Transparent overlay to capture taps (works on web where platform views swallow gestures)
+                                            Positioned.fill(
+                                              child: GestureDetector(
+                                                behavior: HitTestBehavior.opaque,
+                                                onTap: _togglePlay,
+                                                child: Container(color: Colors.transparent),
                                               ),
                                             ),
-                                          ),
+                                            if (!_isPlaying)
+                                              IgnorePointer(
+                                                child: Container(
+                                                  width: 44,
+                                                  height: 44,
+                                                  decoration: const BoxDecoration(
+                                                    color: Colors.black54,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const Icon(
+                                                    CupertinoIcons.play_fill,
+                                                    size: 22,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            if (_controller!.value.isBuffering)
+                                              IgnorePointer(
+                                                child: Container(
+                                                  color: Colors.black38,
+                                                  child: const Center(
+                                                    child: CircularProgressIndicator(
+                                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
                                         ),
-                                    ],
-                                  ),
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          if (_controller != null)
+                            _buildScrubberWidget(context, isDark)
+                          else if (_isIframeVideo)
+                            Container(
+                              color: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Google Drive/External Player — Automatic timeline sync is disabled. Type feedback comments below.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.yellow[600],
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.2,
                                 ),
                               ),
                             ),
-                          ),
-                          _buildScrubberWidget(context, isDark),
                         ],
                       )
                     else if (_hasPlayerError)

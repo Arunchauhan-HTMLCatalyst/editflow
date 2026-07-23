@@ -1,5 +1,6 @@
 import 'dart:js' as js;
 import 'dart:html' as html;
+import 'dart:ui_web' as ui_web;
 
 void downloadFileWebImpl({
   required String base64Data,
@@ -32,4 +33,15 @@ bool isInAppBrowserImpl() {
   } catch (_) {
     return false;
   }
+}
+
+void registerIframeImpl(String viewType, String url) {
+  ui_web.platformViewRegistry.registerViewFactory(viewType, (int viewId) {
+    return html.IFrameElement()
+      ..src = url
+      ..style.border = 'none'
+      ..style.width = '100%'
+      ..style.height = '100%'
+      ..allowFullscreen = true;
+  });
 }
