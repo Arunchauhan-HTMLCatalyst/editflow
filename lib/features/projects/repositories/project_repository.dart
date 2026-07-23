@@ -12,7 +12,7 @@ class ProjectRepository {
         .from('projects')
         .select('*, clients!client_id!inner(name)')
         .eq('user_id', userId)
-        .is_('parent_id', null)
+        .isFilter('parent_id', null)
         .order('created_at', ascending: false)
         .timeout(const Duration(seconds: 15));
     return (response as List)
