@@ -157,14 +157,24 @@ class _ProjectCardState extends State<ProjectCard> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      widget.project.name,
-                                      style: AppTextStyles.label(isDark).copyWith(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                    Row(
+                                      children: [
+                                        if (widget.project.isFolder) ...[
+                                          const Icon(Icons.folder_rounded, size: 16, color: AppColors.primary),
+                                          const SizedBox(width: 6),
+                                        ],
+                                        Expanded(
+                                          child: Text(
+                                            widget.project.name,
+                                            style: AppTextStyles.label(isDark).copyWith(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     if (widget.project.clientName != null &&
                                         widget.project.clientName!.trim().isNotEmpty) ...[
@@ -184,8 +194,27 @@ class _ProjectCardState extends State<ProjectCard> {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              Text(
-                                  c.format(widget.project.price),
+                              if (widget.project.isSubProject)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'Included',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white70 : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                )
+                              else
+                                Text(
+                                  widget.project.isFolder 
+                                      ? 'Monthly ${c.format(widget.project.price)}'
+                                      : c.format(widget.project.price),
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w800,
@@ -197,25 +226,46 @@ class _ProjectCardState extends State<ProjectCard> {
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.06),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: AppColors.primary.withValues(alpha: 0.12),
-                                    width: 0.5,
+                              if (widget.project.isFolder)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Monthly Retainer',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF8B5CF6),
+                                    ),
+                                  ),
+                                )
+                              else if (!widget.project.isSubProject)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.06),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: AppColors.primary.withValues(alpha: 0.12),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Due ${c.format(widget.project.remainingAmount)}',
+                                    style: const TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
                                   ),
                                 ),
-                                child: Text(
-                                  'Due ${c.format(widget.project.remainingAmount)}',
-                                  style: const TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
                               const Spacer(),
                               if (widget.project.deadline != null)
                                 Padding(
@@ -225,7 +275,7 @@ class _ProjectCardState extends State<ProjectCard> {
                               StatusBadge(status: widget.project.status),
                             ],
                           ),
-                          if (widget.project.price > 0) ...[
+                          if (widget.project.price > 0 && !widget.project.isFolder && !widget.project.isSubProject) ...[
                             const SizedBox(height: 12),
                             Container(
                               height: 3,

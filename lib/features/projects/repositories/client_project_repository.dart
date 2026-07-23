@@ -43,7 +43,7 @@ class ClientProjectRepository extends ProjectRepository {
         final project = Project.fromJson(e);
         list.add(project);
       }
-      return list;
+      return list.where((p) => p.parentId == null).toList();
     } on PostgrestException catch (e) {
       if (e.message.contains('client_user_id') || e.code == '42703') {
         throw Exception(
@@ -60,6 +60,55 @@ class ClientProjectRepository extends ProjectRepository {
     // Clients can only fetch their own client ID projects anyway, but we restrict it for safety
     final projects = await getAll();
     return projects.where((p) => p.clientId == clientId).toList();
+  }
+
+  @override
+  Future<List<Project>> getSubProjects(String parentId) async {
+    final clientUserId = SupabaseService.userId;
+    
+    try {
+      final response = await SupabaseService.instance
+          .from('projects')
+          .select('*, clients!client_id!inner(name, client_user_id)')
+          .eq('clients.client_user_id', clientUserId)
+          .eq('parent_id', parentId)
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 15));
+          
+      final list = <Project>[];
+      for (final e in (response as List)) {
+        if (e['clients'] != null) {
+          e['client_name'] = e['clients']['name'];
+        }
+        
+        final freelancerUserId = e['user_id'] as String;
+        try {
+          final profileRes = await SupabaseService.instance
+              .from('profiles')
+              .select('full_name')
+              .eq('id', freelancerUserId)
+              .maybeSingle()
+              .timeout(const Duration(seconds: 5));
+          if (profileRes != null && profileRes['full_name'] != null) {
+            e['freelancer_name'] = profileRes['full_name'] as String;
+          }
+        } catch (err) {
+          debugPrint('[ClientProjectRepository] Freelancer profile fetch failed: $err');
+        }
+        
+        final project = Project.fromJson(e);
+        list.add(project);
+      }
+      return list;
+    } on PostgrestException catch (e) {
+      if (e.message.contains('client_user_id') || e.code == '42703') {
+        throw Exception(
+          'Supabase schema missing: The "client_user_id" column does not exist on the "clients" table. '
+          'Please run the SQL migration script in your Supabase SQL Editor to enable the Client Portal features.'
+        );
+      }
+      rethrow;
+    }
   }
 
   @override

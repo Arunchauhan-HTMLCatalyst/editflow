@@ -17,11 +17,15 @@ class AddProjectScreen extends ConsumerStatefulWidget {
   final String? preselectedClientId;
   final String? preselectedFreelancerId;
   final String? preselectedFreelancerName;
+  final String? parentId;
+  final String? parentProjectName;
   const AddProjectScreen({
     super.key,
     this.preselectedClientId,
     this.preselectedFreelancerId,
     this.preselectedFreelancerName,
+    this.parentId,
+    this.parentProjectName,
   });
 
   @override
@@ -37,6 +41,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
   final _descController = TextEditingController();
   String? _selectedClientId;
   bool _isSaving = false;
+  String _paymentType = 'project_basis';
 
   @override
   void initState() {
@@ -120,20 +125,30 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
         }
       }
 
+      final isSubProject = widget.parentId != null;
+      final finalPaymentType = isSubProject ? 'project_basis' : _paymentType;
+      final isFolder = finalPaymentType == 'monthly';
+      
+      final price = isSubProject ? 0.0 : (double.tryParse(_priceController.text.trim()) ?? 0.0);
+      final receivedAmount = (isClient || isSubProject || isFolder) ? 0.0 : (double.tryParse(_receivedController.text.trim()) ?? 0.0);
+
       final project = Project(
         id: '',
         userId: targetUserId,
         clientId: targetClientId!,
         name: _nameController.text.trim(),
         description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
-        price: double.tryParse(_priceController.text.trim()) ?? 0.0,
-        receivedAmount: isClient ? 0.0 : (double.tryParse(_receivedController.text.trim()) ?? 0.0),
+        price: price,
+        receivedAmount: receivedAmount,
         deadline: _deadlineController.text.trim().isNotEmpty
             ? DateTime.tryParse(_deadlineController.text.trim())
             : null,
         status: ProjectStatus.yetToStart,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        paymentType: finalPaymentType,
+        isFolder: isFolder,
+        parentId: widget.parentId,
       );
 
       await ref.read(projectProvider.notifier).addProject(project);
@@ -375,6 +390,87 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                         ),
                       ],
                       const SizedBox(height: 16),
+                      if (widget.parentId == null) ...[
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: CupertinoSlidingSegmentedControl<String>(
+                            groupValue: _paymentType,
+                            backgroundColor: Colors.transparent,
+                            thumbColor: isDark ? const Color(0xFF334155) : Colors.white,
+                            children: {
+                              'project_basis': Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                child: Text(
+                                  'Project Basis',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: _paymentType == 'project_basis' ? FontWeight.w600 : FontWeight.w500,
+                                    color: isDark 
+                                        ? (_paymentType == 'project_basis' ? Colors.white : AppColors.textSecondary)
+                                        : (_paymentType == 'project_basis' ? const Color(0xFF0F172A) : const Color(0xFF64748B)),
+                                  ),
+                                ),
+                              ),
+                              'monthly': Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                child: Text(
+                                  'Monthly',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: _paymentType == 'monthly' ? FontWeight.w600 : FontWeight.w500,
+                                    color: isDark 
+                                        ? (_paymentType == 'monthly' ? Colors.white : AppColors.textSecondary)
+                                        : (_paymentType == 'monthly' ? const Color(0xFF0F172A) : const Color(0xFF64748B)),
+                                  ),
+                                ),
+                              ),
+                            },
+                            onValueChanged: (value) {
+                              if (value != null) {
+                                setState(() => _paymentType = value);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (widget.parentProjectName != null)
+                                      Text(
+                                        'Part of: ${widget.parentProjectName}',
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                      ),
+                                    const Text(
+                                      'Included in Monthly Retainer',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(
@@ -384,45 +480,57 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
-                      if (isClient)
-                        TextFormField(
-                          controller: _priceController,
-                          decoration: InputDecoration(
-                            labelText: 'Budget',
-                            prefixText: '${currency.symbol} ',
+                      if (widget.parentId == null) ...[
+                        if (_paymentType == 'monthly')
+                          TextFormField(
+                            controller: _priceController,
+                            decoration: InputDecoration(
+                              labelText: 'Monthly Retainer Amount',
+                              prefixText: '${currency.symbol} ',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            textInputAction: TextInputAction.next,
+                          )
+                        else if (isClient)
+                          TextFormField(
+                            controller: _priceController,
+                            decoration: InputDecoration(
+                              labelText: 'Budget',
+                              prefixText: '${currency.symbol} ',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            textInputAction: TextInputAction.next,
+                          )
+                        else
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _priceController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Budget',
+                                    prefixText: '${currency.symbol} ',
+                                  ),
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  textInputAction: TextInputAction.next,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _receivedController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Advance Paid',
+                                    prefixText: '${currency.symbol} ',
+                                  ),
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  textInputAction: TextInputAction.next,
+                                ),
+                              ),
+                            ],
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          textInputAction: TextInputAction.next,
-                        )
-                      else
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _priceController,
-                                decoration: InputDecoration(
-                                  labelText: 'Budget',
-                                  prefixText: '${currency.symbol} ',
-                                ),
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                textInputAction: TextInputAction.next,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _receivedController,
-                                decoration: InputDecoration(
-                                  labelText: 'Advance Paid',
-                                  prefixText: '${currency.symbol} ',
-                                ),
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                textInputAction: TextInputAction.next,
-                              ),
-                            ),
-                          ],
-                        ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                      ],
                       TextFormField(
                         controller: _deadlineController,
                         decoration: const InputDecoration(

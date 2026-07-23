@@ -12,6 +12,7 @@ class ProjectRepository {
         .from('projects')
         .select('*, clients!client_id!inner(name)')
         .eq('user_id', userId)
+        .is_('parent_id', null)
         .order('created_at', ascending: false)
         .timeout(const Duration(seconds: 15));
     return (response as List)
@@ -27,6 +28,21 @@ class ProjectRepository {
         .select('*, clients!client_id!inner(name)')
         .eq('user_id', userId)
         .eq('client_id', clientId)
+        .order('created_at', ascending: false)
+        .timeout(const Duration(seconds: 15));
+    return (response as List)
+        .map((e) => Project.tryFromJson(e))
+        .whereType<Project>()
+        .toList();
+  }
+
+  Future<List<Project>> getSubProjects(String parentId) async {
+    final userId = SupabaseService.userId;
+    final response = await SupabaseService.instance
+        .from('projects')
+        .select('*, clients!client_id!inner(name)')
+        .eq('user_id', userId)
+        .eq('parent_id', parentId)
         .order('created_at', ascending: false)
         .timeout(const Duration(seconds: 15));
     return (response as List)

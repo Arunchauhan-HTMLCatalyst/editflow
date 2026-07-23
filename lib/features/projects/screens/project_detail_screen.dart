@@ -612,23 +612,98 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       ),
       const SizedBox(height: 16),
 
-      // Payment progress
-      _PaymentProgress(
-        progress: progress,
-        received: project.receivedAmount,
-        remaining: project.remainingAmount,
-        total: project.price,
-        currency: currency,
-        isDark: isDark,
-      ),
-      const SizedBox(height: 16),
+      // Sub-project: show "Part of" link to parent folder
+      if (project.isSubProject) ...[
+        _buildRetainerInfo(isDark, project),
+        const SizedBox(height: 16),
+      ],
 
-      // Status pipeline — read-only in client mode
-      _StatusPipeline(
-        currentStatus: project.status,
-        isDark: isDark,
-        onStatusTap: isClient ? null : (s) => _changeStatus(project, s),
-      ),
+      // Folder projects: show sub-projects list instead of payment/status
+      if (project.isFolder) ...[
+        // Monthly amount summary
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A2332) : const Color(0xFFF0F7FF),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark ? AppColors.primary.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.15),
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.repeat_rounded, size: 18, color: AppColors.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MONTHLY RETAINER',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${currency.format(project.price)} / month',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Payment progress for the folder retainer
+        _PaymentProgress(
+          progress: progress,
+          received: project.receivedAmount,
+          remaining: project.remainingAmount,
+          total: project.price,
+          currency: currency,
+          isDark: isDark,
+        ),
+        const SizedBox(height: 16),
+        // Sub-projects list
+        _buildSubProjectsList(isDark, project, currency, isClient),
+        const SizedBox(height: 20),
+      ] else if (!project.isSubProject) ...[
+        // Normal project: show payment progress + status pipeline
+        _PaymentProgress(
+          progress: progress,
+          received: project.receivedAmount,
+          remaining: project.remainingAmount,
+          total: project.price,
+          currency: currency,
+          isDark: isDark,
+        ),
+        const SizedBox(height: 16),
+      ],
+
+      // Status pipeline — read-only in client mode (hide for folders)
+      if (!project.isFolder)
+        _StatusPipeline(
+          currentStatus: project.status,
+          isDark: isDark,
+          onStatusTap: isClient ? null : (s) => _changeStatus(project, s),
+        ),
       const SizedBox(height: 20),
 
       if (!isDesktop)
@@ -726,10 +801,277 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ..._buildLeftDetailWidgets(isDark, project, currency, isClient, isDesktop: false),
-        _buildCommentsSection(isDark, project),
-        const SizedBox(height: 24),
+        if (!project.isFolder) ...[
+          _buildCommentsSection(isDark, project),
+          const SizedBox(height: 24),
+        ],
       ],
     );
+  }
+
+  Widget _buildRetainerInfo(bool isDark, Project project) {
+    return GestureDetector(
+      onTap: () {
+        if (project.parentId != null) {
+          context.push('/projects/${project.parentId}');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1A2332) : const Color(0xFFF0F7FF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? AppColors.primary.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.15),
+            width: 0.8,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.folder_rounded,
+              size: 18,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'INCLUDED IN MONTHLY RETAINER',
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Tap to view retainer folder →',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 14,
+              color: AppColors.primary.withValues(alpha: 0.6),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubProjectsList(bool isDark, Project folderProject, CurrencyConfig currency, bool isClient) {
+    final subProjectsAsync = ref.watch(subProjectsProvider(folderProject.id));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'DELIVERABLES',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                letterSpacing: 0.8,
+              ),
+            ),
+            if (!isClient)
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                minSize: 0,
+                onPressed: () {
+                  context.push(
+                    '/projects/add?clientId=${folderProject.clientId}&parentId=${folderProject.id}&parentName=${Uri.encodeComponent(folderProject.name)}',
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(CupertinoIcons.add, size: 12, color: AppColors.primary),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Add Deliverable',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        subProjectsAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text('Failed to load deliverables: $e',
+                style: TextStyle(color: AppColors.error, fontSize: 13)),
+            ),
+          ),
+          data: (subProjects) {
+            if (subProjects.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                    width: 0.8,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.video_library_outlined,
+                      size: 36,
+                      color: AppColors.textMuted.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No deliverables yet',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Add videos/projects for this month',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return Column(
+              children: subProjects.map((sub) {
+                final statusCol = _getStatusColor(sub.status);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: GestureDetector(
+                    onTap: () => context.push('/projects/${sub.id}'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.card : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: statusCol,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  sub.name,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (sub.deadline != null) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'Due ${DateFormat('MMM d').format(sub.deadline!)}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          StatusBadge(status: sub.status),
+                          const SizedBox(width: 4),
+                          Icon(
+                            CupertinoIcons.chevron_right,
+                            size: 14,
+                            color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Color _getStatusColor(ProjectStatus status) {
+    switch (status) {
+      case ProjectStatus.paid:
+      case ProjectStatus.completed:
+        return const Color(0xFF10B981);
+      case ProjectStatus.inProgress:
+        return AppColors.primary;
+      case ProjectStatus.reviewPending:
+      case ProjectStatus.revisionPending:
+        return const Color(0xFFF59E0B);
+      case ProjectStatus.yetToStart:
+        return const Color(0xFF94A3B8);
+    }
   }
 
   Widget _buildDatesCard(bool isDark, Project project, bool overdue) {

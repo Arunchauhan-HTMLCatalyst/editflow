@@ -159,10 +159,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final clientId = state.uri.queryParameters['clientId'];
           final freelancerId = state.uri.queryParameters['freelancerId'];
           final freelancerName = state.uri.queryParameters['freelancerName'];
+          final parentId = state.uri.queryParameters['parentId'];
+          final parentName = state.uri.queryParameters['parentName'];
           return slideUpPage(AddProjectScreen(
             preselectedClientId: clientId,
             preselectedFreelancerId: freelancerId,
             preselectedFreelancerName: freelancerName,
+            parentId: parentId,
+            parentProjectName: parentName,
           ), key: state.pageKey);
         },
       ),

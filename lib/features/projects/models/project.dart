@@ -16,6 +16,9 @@ class Project {
   final String? clientName;
   final String? freelancerName;
   final String? reviewStatus;
+  final String paymentType;
+  final bool isFolder;
+  final String? parentId;
 
   const Project({
     required this.id,
@@ -32,9 +35,14 @@ class Project {
     this.clientName,
     this.freelancerName,
     this.reviewStatus,
+    this.paymentType = 'project_basis',
+    this.isFolder = false,
+    this.parentId,
   });
 
   double get remainingAmount => price - receivedAmount;
+  bool get isMonthly => paymentType == 'monthly';
+  bool get isSubProject => parentId != null;
 
   factory Project.fromJson(Map<String, dynamic> json) => Project(
         id: json['id'] as String,
@@ -51,6 +59,9 @@ class Project {
         clientName: json['client_name'] as String?,
         freelancerName: json['freelancer_name'] as String?,
         reviewStatus: json['review_status'] as String?,
+        paymentType: json['payment_type'] as String? ?? 'project_basis',
+        isFolder: json['is_folder'] as bool? ?? false,
+        parentId: json['parent_id'] as String?,
       );
 
   static Project? tryFromJson(Map<String, dynamic> json) {
@@ -92,6 +103,9 @@ class Project {
         'client_name': clientName,
         'freelancer_name': freelancerName,
         'review_status': reviewStatus,
+        'payment_type': paymentType,
+        'is_folder': isFolder,
+        'parent_id': parentId,
       };
 
   Project copyWith({
@@ -109,6 +123,9 @@ class Project {
     String? clientName,
     String? freelancerName,
     String? reviewStatus,
+    String? paymentType,
+    bool? isFolder,
+    String? parentId,
   }) =>
       Project(
         id: id ?? this.id,
@@ -125,5 +142,8 @@ class Project {
         clientName: clientName ?? this.clientName,
         freelancerName: freelancerName ?? this.freelancerName,
         reviewStatus: reviewStatus ?? this.reviewStatus,
+        paymentType: paymentType ?? this.paymentType,
+        isFolder: isFolder ?? this.isFolder,
+        parentId: parentId ?? this.parentId,
       );
 }

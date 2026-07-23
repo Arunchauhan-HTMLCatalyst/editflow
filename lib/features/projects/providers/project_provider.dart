@@ -154,6 +154,9 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
           pA.updatedAt != pB.updatedAt ||
           pA.clientName != pB.clientName ||
           pA.freelancerName != pB.freelancerName ||
+          pA.paymentType != pB.paymentType ||
+          pA.isFolder != pB.isFolder ||
+          pA.parentId != pB.parentId ||
           pA.reviewStatus != pB.reviewStatus) {
         return false;
       }
@@ -557,3 +560,8 @@ final projectRepositoryProvider = Provider<ProjectRepository>((ref) {
 final projectProvider = AsyncNotifierProvider<ProjectProvider, List<Project>>(
   () => ProjectProvider(),
 );
+
+final subProjectsProvider = FutureProvider.family<List<Project>, String>((ref, parentId) async {
+  final repo = ref.watch(projectRepositoryProvider);
+  return repo.getSubProjects(parentId);
+});
