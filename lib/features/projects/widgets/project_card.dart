@@ -272,7 +272,10 @@ class _ProjectCardState extends State<ProjectCard> {
                                   padding: const EdgeInsets.only(right: 8.0),
                                   child: _buildDeadlineWidget(context, widget.project.deadline!, isDark),
                                 ),
-                              StatusBadge(status: widget.project.status),
+                              StatusBadge(
+                                status: widget.project.status,
+                                isFolder: widget.project.isFolder,
+                              ),
                             ],
                           ),
                           if (widget.project.price > 0 && !widget.project.isFolder && !widget.project.isSubProject) ...[

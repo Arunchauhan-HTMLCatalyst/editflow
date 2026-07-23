@@ -319,10 +319,15 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         }());
       }
 
-      final updatedList = _sort([newProject, ...previousState]);
-      _lastValidData = updatedList;
-      state = AsyncData(updatedList);
-      _saveToCache(_getCacheKey(), updatedList);
+      if (newProject.parentId != null) {
+        ref.invalidate(subProjectsProvider(newProject.parentId!));
+        state = AsyncData(previousState);
+      } else {
+        final updatedList = _sort([newProject, ...previousState]);
+        _lastValidData = updatedList;
+        state = AsyncData(updatedList);
+        _saveToCache(_getCacheKey(), updatedList);
+      }
       debugPrint('[ProjectProvider] addProject: created ${newProject.id}');
     } catch (e, st) {
       debugPrint('[ProjectProvider] addProject failed: $e');

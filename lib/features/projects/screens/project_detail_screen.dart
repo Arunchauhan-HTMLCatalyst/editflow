@@ -509,7 +509,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  StatusBadge(status: project.status),
+                  StatusBadge(
+                    status: project.status,
+                    isFolder: project.isFolder,
+                  ),
                 ],
               ),
               
@@ -697,13 +700,13 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         const SizedBox(height: 16),
       ],
 
-      // Status pipeline — read-only in client mode (hide for folders)
-      if (!project.isFolder)
-        _StatusPipeline(
-          currentStatus: project.status,
-          isDark: isDark,
-          onStatusTap: isClient ? null : (s) => _changeStatus(project, s),
-        ),
+      // Status pipeline — read-only in client mode
+      _StatusPipeline(
+        currentStatus: project.status,
+        isDark: isDark,
+        onStatusTap: isClient ? null : (s) => _changeStatus(project, s),
+        isFolder: project.isFolder,
+      ),
       const SizedBox(height: 20),
 
       if (!isDesktop)
@@ -888,15 +891,14 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 letterSpacing: 0.8,
               ),
             ),
-            if (!isClient)
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                minSize: 0,
-                onPressed: () {
-                  context.push(
-                    '/projects/add?clientId=${folderProject.clientId}&parentId=${folderProject.id}&parentName=${Uri.encodeComponent(folderProject.name)}',
-                  );
-                },
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              minSize: 0,
+              onPressed: () {
+                context.push(
+                  '/projects/add?clientId=${folderProject.clientId}&parentId=${folderProject.id}&parentName=${Uri.encodeComponent(folderProject.name)}',
+                );
+              },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
@@ -2938,25 +2940,33 @@ class _StatusPipeline extends StatelessWidget {
   final ProjectStatus currentStatus;
   final bool isDark;
   final void Function(ProjectStatus)? onStatusTap;
+  final bool isFolder;
 
   const _StatusPipeline({
     required this.currentStatus,
     required this.isDark,
     this.onStatusTap,
+    this.isFolder = false,
   });
-
-  static const _steps = [
-    _StepData('Yet to Start', ProjectStatus.yetToStart, 'Project created, work not begun'),
-    _StepData('In Progress', ProjectStatus.inProgress, 'Actively working on the project'),
-    _StepData('In Review', ProjectStatus.reviewPending, 'Client is reviewing the video drafts'),
-    _StepData('Working on feedback', ProjectStatus.revisionPending, 'Freelancer is working on requested changes'),
-    _StepData('Completed', ProjectStatus.completed, 'Work done, payment pending'),
-    _StepData('Paid', ProjectStatus.paid, 'Fully paid and closed'),
-  ];
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = _steps.indexWhere((s) => s.status == currentStatus);
+    final steps = isFolder ? const [
+      _StepData('Going On', ProjectStatus.inProgress, 'Actively delivering work for this month'),
+      _StepData('Month Paid', ProjectStatus.paid, 'Monthly retainer paid and closed'),
+    ] : const [
+      _StepData('Yet to Start', ProjectStatus.yetToStart, 'Project created, work not begun'),
+      _StepData('In Progress', ProjectStatus.inProgress, 'Actively working on the project'),
+      _StepData('In Review', ProjectStatus.reviewPending, 'Client is reviewing the video drafts'),
+      _StepData('Working on feedback', ProjectStatus.revisionPending, 'Freelancer is working on requested changes'),
+      _StepData('Completed', ProjectStatus.completed, 'Work done, payment pending'),
+      _StepData('Paid', ProjectStatus.paid, 'Fully paid and closed'),
+    ];
+
+    int currentIndex = steps.indexWhere((s) => s.status == currentStatus);
+    if (isFolder && currentIndex < 0) {
+      currentIndex = 0;
+    }
     if (currentIndex < 0) return const SizedBox.shrink();
 
     return Container(
@@ -2997,17 +3007,17 @@ class _StatusPipeline extends StatelessWidget {
                 ),
               ),
               Text(
-                '${currentIndex + 1} / ${_steps.length}',
+                '${currentIndex + 1} / ${steps.length}',
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          ...List.generate(_steps.length, (i) {
-            final step = _steps[i];
+          ...List.generate(steps.length, (i) {
+            final step = steps[i];
             final isCompleted = i < currentIndex;
             final isCurrent = i == currentIndex;
-            final isLast = i == _steps.length - 1;
+            final isLast = i == steps.length - 1;
 
             return _pipelineStep(
               step: step,

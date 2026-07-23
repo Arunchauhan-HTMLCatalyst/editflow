@@ -6,17 +6,27 @@ class StatusBadge extends StatelessWidget {
   final ProjectStatus status;
   final double fontSize;
   final EdgeInsetsGeometry? padding;
+  final bool isFolder;
 
   const StatusBadge({
     super.key,
     required this.status,
     this.fontSize = 11,
     this.padding,
+    this.isFolder = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final color = statusColor(status);
+    String displayName = status.displayName;
+    if (isFolder) {
+      if (status == ProjectStatus.paid) {
+        displayName = 'Month Paid';
+      } else {
+        displayName = 'Going On';
+      }
+    }
     return Container(
       padding: padding ?? EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -25,7 +35,7 @@ class StatusBadge extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.15), width: 0.5),
       ),
       child: Text(
-        status.displayName,
+        displayName,
         style: TextStyle(
           fontSize: fontSize,
           fontWeight: FontWeight.w600,

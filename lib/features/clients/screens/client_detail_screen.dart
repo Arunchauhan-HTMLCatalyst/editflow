@@ -1636,7 +1636,10 @@ class _ClientProjectCardState extends State<_ClientProjectCard> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        p.status.displayName.toUpperCase(),
+                        (p.isFolder
+                                ? (p.status == ProjectStatus.paid ? 'Month Paid' : 'Going On')
+                                : p.status.displayName)
+                            .toUpperCase(),
                         style: TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w800,
