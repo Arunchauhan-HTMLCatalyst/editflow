@@ -706,6 +706,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         isDark: isDark,
         onStatusTap: isClient ? null : (s) => _changeStatus(project, s),
         isFolder: project.isFolder,
+        isSubProject: project.isSubProject,
       ),
       const SizedBox(height: 20),
 
@@ -2941,12 +2942,14 @@ class _StatusPipeline extends StatelessWidget {
   final bool isDark;
   final void Function(ProjectStatus)? onStatusTap;
   final bool isFolder;
+  final bool isSubProject;
 
   const _StatusPipeline({
     required this.currentStatus,
     required this.isDark,
     this.onStatusTap,
     this.isFolder = false,
+    this.isSubProject = false,
   });
 
   @override
@@ -2954,6 +2957,12 @@ class _StatusPipeline extends StatelessWidget {
     final steps = isFolder ? const [
       _StepData('Going On', ProjectStatus.inProgress, 'Actively delivering work for this month'),
       _StepData('Month Paid', ProjectStatus.paid, 'Monthly retainer paid and closed'),
+    ] : isSubProject ? const [
+      _StepData('Yet to Start', ProjectStatus.yetToStart, 'Project created, work not begun'),
+      _StepData('In Progress', ProjectStatus.inProgress, 'Actively working on the project'),
+      _StepData('In Review', ProjectStatus.reviewPending, 'Client is reviewing the video drafts'),
+      _StepData('Working on feedback', ProjectStatus.revisionPending, 'Freelancer is working on requested changes'),
+      _StepData('Completed', ProjectStatus.completed, 'Work done and marked completed'),
     ] : const [
       _StepData('Yet to Start', ProjectStatus.yetToStart, 'Project created, work not begun'),
       _StepData('In Progress', ProjectStatus.inProgress, 'Actively working on the project'),
