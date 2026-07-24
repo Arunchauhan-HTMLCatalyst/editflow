@@ -606,113 +606,11 @@ class _DashboardLayout extends ConsumerWidget {
 
     final isDesktop = MediaQuery.of(context).size.width > 960;
     if (isDesktop) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Left side: main workspace metrics & summary (65%)
-          Expanded(
-            flex: 65,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                AppLayout.pagePadding(context),
-                AppLayout.pagePadding(context),
-                12, // Reduced right padding to sit next to the activity sidebar
-                AppLayout.pagePadding(context) + 24,
-              ),
-              children: [
-                if (hasError)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: _ErrorBanner(onRetry: onRetry, error: error),
-                  ),
-                _StaggeredSection(
-                  index: 0,
-                  child: buildGreetingBanner(),
-                ),
-                const SizedBox(height: 24),
-                _StaggeredSection(
-                  index: 1,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _PeriodFilter(
-                        current: currentPeriod,
-                        onChanged: onPeriodChanged,
-                        isDark: isDark,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _StaggeredSection(
-                  index: 2,
-                  child: _MetricRow(metrics: periodMetrics),
-                ),
-                const SizedBox(height: 16),
-                if (!settings.isClientMode) ...[
-                  _StaggeredSection(
-                    index: 3,
-                    child: GoalTracker(
-                      currentRevenue: metrics.totalReceived,
-                      goal: settings.monthlyGoal,
-                      formatValue: currency.format,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                _StaggeredSection(
-                  index: 4,
-                  child: _buildCompactRow(context, [
-                    if (settings.isClientMode)
-                      TopFreelancersSection(freelancers: metrics.topFreelancers)
-                    else
-                      TopClientsSection(
-                        clients: metrics.topClients
-                            .map((e) => TopClientData(client: e.client, revenue: e.revenue, percentage: e.percentage))
-                            .toList(),
-                        formatValue: currency.format,
-                      ),
-                    ProjectStatusSection(statusData: metrics.pipelineMap, total: projects.length),
-                  ]),
-                ),
-              ],
-            ),
-          ),
-          
-          // Right side: Activity Feed & Logs Panel (35%)
-          Expanded(
-            flex: 35,
-            child: Container(
-              height: double.infinity,
-              margin: EdgeInsets.fromLTRB(
-                12,
-                AppLayout.pagePadding(context),
-                AppLayout.pagePadding(context),
-                AppLayout.pagePadding(context) + 24,
-              ),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                  width: 0.8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: const NotificationCenterScreen(isDialog: true),
-              ),
-            ),
-          ),
-        ],
+      return Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: buildOverviewList(),
+        ),
       );
     }
 

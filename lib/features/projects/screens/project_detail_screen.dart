@@ -3028,44 +3028,12 @@ class _UpiQrPaymentDialog extends ConsumerStatefulWidget {
 }
 
 class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
-  bool _isLoading = false;
-
-
-
-  Future<void> _confirmPayment() async {
-    setState(() => _isLoading = true);
-    try {
-      await ref.read(projectProvider.notifier).payRemainingAmount(widget.project.id);
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Payment confirmed! Project status updated.'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to confirm payment: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final upiId = widget.project.freelancerUpiId ?? '';
     final hasUpi = upiId.isNotEmpty;
     final nameEnc = Uri.encodeComponent(widget.project.freelancerName ?? 'Freelancer');
-    final noteEnc = Uri.encodeComponent('Payment for ${widget.project.name}');
-    final amStr = widget.remaining.toStringAsFixed(2);
-    final upiUrl = 'upi://pay?pa=${upiId.trim()}&pn=$nameEnc&am=$amStr&cu=INR&tn=$noteEnc';
+    final upiUrl = 'upi://pay?pa=${upiId.trim()}&pn=$nameEnc';
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -3120,7 +3088,7 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
                 const SizedBox(height: 24),
               ] else ...[
                 Text(
-                  'Scan the QR code below or tap to open in your default UPI app (GPay, PhonePe, Paytm, BHIM).',
+                  'Scan the QR code below using any UPI app (GPay, PhonePe, Paytm, BHIM) to pay.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
@@ -3219,37 +3187,38 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-              ],
-
-              // Confirm Payment Action button
-              if (hasUpi) ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: widget.isDark ? AppColors.border : const Color(0xFFCBD5E1),
-                        width: 1,
-                      ),
-                      foregroundColor: widget.isDark ? Colors.white : const Color(0xFF090C0E),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                const SizedBox(height: 20),
+                
+                // Payment Inform Note
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.orange.withValues(alpha: 0.25),
+                      width: 0.8,
                     ),
-                    onPressed: _isLoading ? null : _confirmPayment,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text(
-                            'Confirm Payment',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(CupertinoIcons.info_circle_fill, size: 16, color: Colors.orange),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Please inform the freelancer after the payment is done.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: widget.isDark ? Colors.orange[200] : const Color(0xFFC2410C),
+                            height: 1.4,
                           ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 20),
               ],
 
               // Cancel button
