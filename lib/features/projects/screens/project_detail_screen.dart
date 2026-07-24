@@ -3044,23 +3044,20 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
     final noteEnc = Uri.encodeComponent('Payment for ${widget.project.name}');
     final amStr = widget.remaining.toStringAsFixed(2);
 
+    final upiUrl = 'upi://pay?pa=$cleanUpi&pn=$nameEnc&am=$amStr&cu=INR&tn=$noteEnc';
     final androidIntentUrl = 'intent://pay?pa=$cleanUpi&pn=$nameEnc&am=$amStr&cu=INR&tn=$noteEnc#Intent;scheme=upi;end';
-    final webRedirectUrl = 'https://upipg.cit.org.in/pay?pa=$cleanUpi&pn=$nameEnc&am=$amStr&cu=INR&tn=$noteEnc';
 
-    final targetUrl = (defaultTargetPlatform == TargetPlatform.android) ? androidIntentUrl : webRedirectUrl;
+    // On Android mobile web browsers, launch using intent:// wrapper, otherwise use standard upi:// scheme
+    final isAndroidWeb = kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final targetUrl = isAndroidWeb ? androidIntentUrl : upiUrl;
 
     try {
       final uri = Uri.parse(targetUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        final fallbackUri = Uri.parse(webRedirectUrl);
-        await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
-      }
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
       debugPrint('[UPI REDIRECT] Failed to launch: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not launch payment app. Please use the QR code or copy the UPI ID.')),
+        const SnackBar(content: Text('Could not open payment app. Please scan the QR code instead.')),
       );
     }
   }

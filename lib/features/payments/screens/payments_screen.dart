@@ -1727,10 +1727,6 @@ String _generateUpiLink({
   final nameEncoded = Uri.encodeComponent(payeeName);
   final noteEncoded = Uri.encodeComponent(transactionNote ?? '');
   
-  if (isWebRedirect) {
-    return 'https://upipg.cit.org.in/pay?pa=$cleanUpi&pn=$nameEncoded&am=$amStr&cu=INR&tn=$noteEncoded';
-  }
-  
   return 'upi://pay?pa=$cleanUpi&pn=$nameEncoded&am=$amStr&cu=${currencyCode ?? 'INR'}&tn=$noteEncoded';
 }
 
