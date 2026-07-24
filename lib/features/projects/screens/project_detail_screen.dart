@@ -1885,6 +1885,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         }
       }
 
+      ref.invalidate(projectDetailProvider(project.id));
       await ref.read(projectProvider.notifier).updateStatus(project.id, newStatus);
       if (newStatus == ProjectStatus.reviewPending) {
         try {
@@ -1900,7 +1901,6 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         }
       }
       ref.invalidate(latestReviewProvider(project.id));
-      await ref.read(projectProvider.notifier).refresh();
     }
   }
 

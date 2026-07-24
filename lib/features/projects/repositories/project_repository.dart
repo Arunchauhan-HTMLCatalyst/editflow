@@ -69,11 +69,12 @@ class ProjectRepository {
       ..remove('id')
       ..remove('client_name')
       ..remove('freelancer_name')
+      ..remove('freelancer_upi_id')
       ..remove('review_status');
     final response = await SupabaseService.instance
         .from('projects')
         .insert(data)
-        .select('*, clients(name)')
+        .select('*, clients!client_id(name)')
         .single()
         .timeout(const Duration(seconds: 15));
     final created = Project.tryFromJson(response) ?? Project.fromJson(response);
@@ -90,12 +91,13 @@ class ProjectRepository {
     final data = project.toJson()
       ..remove('client_name')
       ..remove('freelancer_name')
+      ..remove('freelancer_upi_id')
       ..remove('review_status');
     final response = await SupabaseService.instance
         .from('projects')
         .update(data)
         .eq('id', project.id)
-        .select('*, clients(name)')
+        .select('*, clients!client_id(name)')
         .single()
         .timeout(const Duration(seconds: 15));
     return Project.tryFromJson(response) ?? Project.fromJson(response);
