@@ -15,6 +15,7 @@ import 'features/settings/providers/settings_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'services/supabase_service.dart';
 import 'features/projects/providers/project_provider.dart';
+import 'shared/utils/web_helper.dart';
 
 final maintenanceProvider = StreamProvider<Map<String, dynamic>>((ref) {
   final controller = StreamController<Map<String, dynamic>>();
@@ -85,6 +86,18 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
       debugPrint('[APPSHELL] App resumed - syncing profile data for upgrades...');
       ref.read(authProvider.notifier).syncProfileData();
     }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    try {
+      final view = WidgetsBinding.instance.platformDispatcher.views.first;
+      final bottomInset = view.viewInsets.bottom;
+      if (bottomInset == 0) {
+        fixKeyboardGap();
+      }
+    } catch (_) {}
   }
 
   int _currentTab(String location, bool isClientMode) {

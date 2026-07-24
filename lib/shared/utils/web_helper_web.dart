@@ -45,3 +45,16 @@ void registerIframeImpl(String viewType, String url) {
       ..allowFullscreen = true;
   });
 }
+
+void fixKeyboardGapImpl() {
+  try {
+    js.context.callMethod('eval', [
+      '''
+      setTimeout(function() {
+        window.scrollTo(0, document.documentElement.scrollTop || document.body.scrollTop || 0);
+        window.dispatchEvent(new Event('resize'));
+      }, 150);
+      '''
+    ]);
+  } catch (_) {}
+}

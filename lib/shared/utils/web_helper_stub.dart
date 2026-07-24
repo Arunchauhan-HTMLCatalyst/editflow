@@ -11,3 +11,5 @@ bool isInAppBrowserImpl() {
 }
 
 void registerIframeImpl(String viewType, String url) {}
+
+void fixKeyboardGapImpl() {}

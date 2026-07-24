@@ -20,3 +20,7 @@ bool isInAppBrowser() {
 void registerIframe(String viewType, String url) {
   loader.registerIframeImpl(viewType, url);
 }
+
+void fixKeyboardGap() {
+  loader.fixKeyboardGapImpl();
+}
