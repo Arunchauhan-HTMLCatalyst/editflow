@@ -23,7 +23,6 @@ import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/utils/upi_helper.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/rich_link_text.dart';
 import '../../../shared/widgets/ambient_glow_container.dart';
@@ -3031,35 +3030,7 @@ class _UpiQrPaymentDialog extends ConsumerStatefulWidget {
 class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
   bool _isLoading = false;
 
-  Future<void> _launchUpiApp() async {
-    final upiId = widget.project.freelancerUpiId;
-    if (upiId == null || upiId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Freelancer has not configured their UPI ID.')),
-      );
-      return;
-    }
 
-    // On Android mobile web browsers, launch using intent:// wrapper, otherwise use standard upi:// scheme
-    final isAndroidWeb = kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-    final targetUrl = buildFlexibleUpiUrl(
-      upiInput: upiId,
-      amount: widget.remaining,
-      payeeName: widget.project.freelancerName ?? 'Freelancer',
-      projectName: widget.project.name,
-      isAndroidIntent: isAndroidWeb,
-    );
-
-    try {
-      final uri = Uri.parse(targetUrl);
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      debugPrint('[UPI REDIRECT] Failed to launch: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open payment app. Please scan the QR code instead.')),
-      );
-    }
-  }
 
   Future<void> _confirmPayment() async {
     setState(() => _isLoading = true);
@@ -3249,32 +3220,6 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Pay via UPI app button
-                SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: _launchUpiApp,
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(CupertinoIcons.device_phone_portrait, size: 16),
-                        SizedBox(width: 8),
-                        Text(
-                          'Open in UPI App',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
               ],
 
               // Confirm Payment Action button

@@ -96,17 +96,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         userName = rawName[0].toUpperCase() + rawName.substring(1);
       }
       
-      final upiLink = _generateUpiLink(
-        upiId: settings.upiId,
-        payeeName: userName,
-        amount: project.remainingAmount,
-        transactionNote: 'Payment for #EF-${project.id.substring(0, 8).toUpperCase()}',
-        currencyCode: currency.code,
-        isWebRedirect: true,
-      );
-      
       buffer.writeln('  PAY TO UPI ID    :  ${settings.upiId}');
-      buffer.writeln('  PAYMENT LINK     :  $upiLink');
       buffer.writeln('------------------------------------------------');
     }
 
@@ -158,17 +148,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         userName = rawName[0].toUpperCase() + rawName.substring(1);
       }
       
-      final upiLink = _generateUpiLink(
-        upiId: settings.upiId,
-        payeeName: userName,
-        amount: totalRemaining,
-        transactionNote: 'Combined Invoice Payment',
-        currencyCode: currency.code,
-        isWebRedirect: true,
-      );
-      
       buffer.writeln('Pay to UPI ID: ${settings.upiId}');
-      buffer.writeln('Payment Link: $upiLink');
       buffer.writeln('------------------------');
     }
 
