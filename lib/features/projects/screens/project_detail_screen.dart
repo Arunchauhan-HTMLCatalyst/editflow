@@ -23,6 +23,7 @@ import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/utils/upi_helper.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/rich_link_text.dart';
 import '../../../shared/widgets/ambient_glow_container.dart';
@@ -3039,17 +3040,15 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
       return;
     }
 
-    final cleanUpi = upiId.trim();
-    final nameEnc = Uri.encodeComponent(widget.project.freelancerName ?? 'Freelancer');
-    final noteEnc = Uri.encodeComponent('Payment for ${widget.project.name}');
-    final amStr = widget.remaining.toStringAsFixed(2);
-
-    final upiUrl = 'upi://pay?pa=$cleanUpi&pn=$nameEnc&am=$amStr&cu=INR&tn=$noteEnc';
-    final androidIntentUrl = 'intent://pay?pa=$cleanUpi&pn=$nameEnc&am=$amStr&cu=INR&tn=$noteEnc#Intent;scheme=upi;end';
-
     // On Android mobile web browsers, launch using intent:// wrapper, otherwise use standard upi:// scheme
     final isAndroidWeb = kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-    final targetUrl = isAndroidWeb ? androidIntentUrl : upiUrl;
+    final targetUrl = buildFlexibleUpiUrl(
+      upiInput: upiId,
+      amount: widget.remaining,
+      payeeName: widget.project.freelancerName ?? 'Freelancer',
+      projectName: widget.project.name,
+      isAndroidIntent: isAndroidWeb,
+    );
 
     try {
       final uri = Uri.parse(targetUrl);

@@ -25,6 +25,7 @@ import '../../../shared/widgets/app_logo.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../settings/models/currency_config.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../../shared/utils/upi_helper.dart';
 
 class PaymentsScreen extends ConsumerStatefulWidget {
   const PaymentsScreen({super.key});
@@ -1722,12 +1723,13 @@ String _generateUpiLink({
   String? currencyCode,
   bool isWebRedirect = false,
 }) {
-  final cleanUpi = upiId.trim();
-  final amStr = amount != null ? amount.toStringAsFixed(2) : '';
-  final nameEncoded = Uri.encodeComponent(payeeName);
-  final noteEncoded = Uri.encodeComponent(transactionNote ?? '');
-  
-  return 'upi://pay?pa=$cleanUpi&pn=$nameEncoded&am=$amStr&cu=${currencyCode ?? 'INR'}&tn=$noteEncoded';
+  return buildFlexibleUpiUrl(
+    upiInput: upiId,
+    amount: amount ?? 0.0,
+    payeeName: payeeName,
+    projectName: transactionNote ?? 'Invoice',
+    isAndroidIntent: false,
+  );
 }
 
 class _AddUpiDialog extends StatefulWidget {
