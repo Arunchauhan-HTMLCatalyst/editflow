@@ -36,7 +36,14 @@ class ProjectStatusSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Project Status', style: AppTextStyles.title3(isDark)),
+                  Expanded(
+                    child: Text(
+                      'Project Status',
+                      style: AppTextStyles.title3(isDark),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     '$total total',
                     style: AppTextStyles.small(isDark).copyWith(

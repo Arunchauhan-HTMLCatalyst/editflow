@@ -46,7 +46,14 @@ class TopClientsSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Top Clients', style: AppTextStyles.title3(isDark)),
+                  Expanded(
+                    child: Text(
+                      'Top Clients',
+                      style: AppTextStyles.title3(isDark),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     'by revenue',
                     style: AppTextStyles.small(isDark).copyWith(

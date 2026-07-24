@@ -849,16 +849,19 @@ class _PaymentProjectCardState extends State<_PaymentProjectCard> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '${currency.format(project.receivedAmount)} paid of ${currency.format(project.price)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                      Expanded(
+                        child: Text(
+                          '${currency.format(project.receivedAmount)} paid of ${currency.format(project.price)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         '$progress%',
                         maxLines: 1,

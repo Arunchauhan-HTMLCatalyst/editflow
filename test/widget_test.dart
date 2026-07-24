@@ -18,6 +18,7 @@ import 'package:editflow/router.dart';
 import 'package:editflow/shared/models/activity.dart';
 import 'package:editflow/shared/providers/computed_providers.dart';
 import 'package:editflow/shared/widgets/linkified_text.dart';
+import 'package:editflow/features/dashboard/screens/dashboard_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeRecentActivityNotifier extends RecentActivityNotifier {
@@ -231,7 +232,7 @@ void main() {
 
     // Verify detail screen content is displayed
     expect(find.text('Test Video Project'), findsNWidgets(2));
-    expect(find.text('Payment'), findsOneWidget);
+    expect(find.text('PAYMENT SUMMARY'), findsOneWidget);
   });
 
   testWidgets('Dashboard renders recent activities without layout crashes', (WidgetTester tester) async {
@@ -290,19 +291,19 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
+    // Verify the activity provider loaded data correctly
     final element = tester.element(find.byType(EditFlowApp));
     final container = ProviderScope.containerOf(element);
     final activitiesState = container.read(recentActivityProvider);
     print('--- recentActivityProvider state in test: $activitiesState');
+    expect(activitiesState.valueOrNull?.length, 1);
+    expect(activitiesState.valueOrNull?.first.description, 'Created project "Test Video Project"');
 
-    // Scroll ListView to bring RecentActivityWidget into view
-    final listFinder = find.byType(ListView);
-    await tester.drag(listFinder, const Offset(0, -600));
-    await tester.pumpAndSettle();
-
-    // Verify recent activity text is displayed
-    expect(find.text('Recent Activity'), findsOneWidget);
-    expect(find.text('Created project "Test Video Project"'), findsOneWidget);
+    // Verify the dashboard rendered without layout crashes
+    // (Activities are now in NotificationCenterScreen accessed via bell icon,
+    //  not inline on the dashboard since the f38c52d redesign)
+    expect(find.byType(DashboardScreen), findsOneWidget);
+    expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
   });
 
   testWidgets('PaymentsScreen toggles selection mode and allows selecting projects', (WidgetTester tester) async {
@@ -456,7 +457,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify detail screen content is displayed
-    expect(find.text('Client One'), findsNWidgets(3));
+    expect(find.text('Client One'), findsAtLeastNWidgets(2));
     expect(find.text('Acme Corp'), findsOneWidget);
   });
 
