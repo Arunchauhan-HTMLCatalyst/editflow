@@ -55,6 +55,29 @@ class AuthState {
         isPremium: isPremium ?? this.isPremium,
         premiumUntil: premiumUntil ?? this.premiumUntil,
       );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AuthState &&
+          runtimeType == other.runtimeType &&
+          status == other.status &&
+          user?.id == other.user?.id &&
+          error == other.error &&
+          role == other.role &&
+          isSuspended == other.isSuspended &&
+          isPremium == other.isPremium &&
+          premiumUntil == other.premiumUntil;
+
+  @override
+  int get hashCode =>
+      status.hashCode ^
+      (user?.id).hashCode ^
+      error.hashCode ^
+      role.hashCode ^
+      isSuspended.hashCode ^
+      isPremium.hashCode ^
+      premiumUntil.hashCode;
 }
 
 class AuthProvider extends StateNotifier<AuthState> {
@@ -109,12 +132,17 @@ class AuthProvider extends StateNotifier<AuthState> {
         return;
       }
 
-      state = state.copyWith(
-        role: role,
-        isSuspended: isSuspended,
-        isPremium: isPremium,
-        premiumUntil: premiumUntil,
-      );
+      if (state.role != role ||
+          state.isSuspended != isSuspended ||
+          state.isPremium != isPremium ||
+          state.premiumUntil != premiumUntil) {
+        state = state.copyWith(
+          role: role,
+          isSuspended: isSuspended,
+          isPremium: isPremium,
+          premiumUntil: premiumUntil,
+        );
+      }
     } catch (e) {
       debugPrint('[AUTH SYNC] Failed to sync profile: $e');
     }
