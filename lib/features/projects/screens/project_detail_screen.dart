@@ -2953,18 +2953,18 @@ class _PaymentProgress extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                    colors: [AppColors.card, AppColors.elevated],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: const Color(0xFF334155),
+                    color: AppColors.border,
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.3),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -3102,7 +3102,7 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: widget.isDark ? const Color(0xFF0F172A) : Colors.white,
+      backgroundColor: widget.isDark ? AppColors.surface : Colors.white,
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -3118,7 +3118,7 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: widget.isDark ? Colors.white : const Color(0xFF0F172A),
+                      color: widget.isDark ? Colors.white : const Color(0xFF090C0E),
                     ),
                   ),
                   IconButton(
@@ -3137,7 +3137,7 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: widget.isDark ? Colors.white : const Color(0xFF0F172A),
+                    color: widget.isDark ? Colors.white : const Color(0xFF090C0E),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -3186,11 +3186,11 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
                     gapless: false,
                     eyeStyle: const QrEyeStyle(
                       eyeShape: QrEyeShape.square,
-                      color: Color(0xFF0F172A),
+                      color: Colors.black,
                     ),
                     dataModuleStyle: const QrDataModuleStyle(
                       dataModuleShape: QrDataModuleShape.square,
-                      color: Color(0xFF0F172A),
+                      color: Colors.black,
                     ),
                     embeddedImage: const AssetImage('assets/images/app_logo_qr.png'),
                     embeddedImageStyle: const QrEmbeddedImageStyle(
@@ -3204,10 +3204,10 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: widget.isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                    color: widget.isDark ? AppColors.elevated : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      color: widget.isDark ? AppColors.border : const Color(0xFFE2E8F0),
                       width: 0.8,
                     ),
                   ),
@@ -3234,7 +3234,7 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: widget.isDark ? Colors.white : const Color(0xFF0F172A),
+                                color: widget.isDark ? Colors.white : const Color(0xFF090C0E),
                               ),
                             ),
                           ],
@@ -3289,10 +3289,10 @@ class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                        color: widget.isDark ? AppColors.border : const Color(0xFFCBD5E1),
                         width: 1,
                       ),
-                      foregroundColor: widget.isDark ? Colors.white : const Color(0xFF0F172A),
+                      foregroundColor: widget.isDark ? Colors.white : const Color(0xFF090C0E),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: _isLoading ? null : _confirmPayment,
