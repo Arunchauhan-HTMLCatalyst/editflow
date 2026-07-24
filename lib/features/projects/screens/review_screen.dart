@@ -501,6 +501,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   Future<void> _approveReview(Review review) async {
     try {
       final videos = await ref.read(reviewRepositoryProvider).getReviewVideos(review.id);
+      if (videos.isEmpty) return;
       final currentVideo = videos.firstWhere((v) => v.id == widget.videoId, orElse: () => videos.first);
       
       // Calculate active pending videos (exclude already approved ones)
@@ -688,6 +689,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                   loading: () => const SizedBox.shrink(),
                   error: (_, __) => const SizedBox.shrink(),
                   data: (videos) {
+                    if (videos.isEmpty) return const SizedBox.shrink();
                     final currentVideo = videos.firstWhere((v) => v.id == widget.videoId, orElse: () => videos.first);
                     if (currentVideo.isApproved) {
                       return Padding(
