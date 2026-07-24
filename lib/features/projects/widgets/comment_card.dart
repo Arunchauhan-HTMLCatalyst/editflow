@@ -30,7 +30,7 @@ class CommentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final timeStr = DateFormat('MMM d, h:mm a').format(comment.createdAt.toLocal());
     final backgroundColor = isDark ? Colors.black.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.45);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0);
+    final borderColor = isDark ? AppColors.border : const Color(0xFFE2E8F0);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),

@@ -124,6 +124,11 @@ class SettingsProvider extends StateNotifier<SettingsState> {
             data: {'upi_id': upi},
           ),
         );
+        // Also update public profiles table
+        await Supabase.instance.client
+            .from('profiles')
+            .update({'upi_id': upi})
+            .eq('id', user.id);
       }
     } catch (_) {}
   }

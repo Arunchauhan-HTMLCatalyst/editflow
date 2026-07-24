@@ -101,6 +101,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         amount: project.remainingAmount,
         transactionNote: 'Payment for #EF-${project.id.substring(0, 8).toUpperCase()}',
         currencyCode: currency.code,
+        isWebRedirect: true,
       );
       
       buffer.writeln('  PAY TO UPI ID    :  ${settings.upiId}');
@@ -162,6 +163,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         amount: totalRemaining,
         transactionNote: 'Combined Invoice Payment',
         currencyCode: currency.code,
+        isWebRedirect: true,
       );
       
       buffer.writeln('Pay to UPI ID: ${settings.upiId}');
@@ -1025,6 +1027,7 @@ class _InvoicePreviewSheetState extends ConsumerState<_InvoicePreviewSheet> {
               ? 'Payment for #EF-${widget.project!.id.substring(0, 8).toUpperCase()}'
               : 'Combined Invoice Payment',
           currencyCode: widget.currency.code,
+          isWebRedirect: true,
         );
         
         shareText = 'Freelance Invoice\nPay via UPI: $upiLink';
@@ -1717,9 +1720,18 @@ String _generateUpiLink({
   double? amount,
   String? transactionNote,
   String? currencyCode,
+  bool isWebRedirect = false,
 }) {
   final cleanUpi = upiId.trim();
-  return 'upi://pay?pa=$cleanUpi';
+  final amStr = amount != null ? amount.toStringAsFixed(2) : '';
+  final nameEncoded = Uri.encodeComponent(payeeName);
+  final noteEncoded = Uri.encodeComponent(transactionNote ?? '');
+  
+  if (isWebRedirect) {
+    return 'https://upipg.cit.org.in/pay?pa=$cleanUpi&pn=$nameEncoded&am=$amStr&cu=INR&tn=$noteEncoded';
+  }
+  
+  return 'upi://pay?pa=$cleanUpi&pn=$nameEncoded&am=$amStr&cu=${currencyCode ?? 'INR'}&tn=$noteEncoded';
 }
 
 class _AddUpiDialog extends StatefulWidget {

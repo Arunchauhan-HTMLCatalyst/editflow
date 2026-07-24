@@ -4,13 +4,13 @@ class AppColors {
   AppColors._();
 
   // Backgrounds
-  static const Color background = Color(0xFF080C0D); // Deep charcoal-black
-  static const Color surface = Color(0xFF101517);
-  static const Color card = Color(0xFF171D1F); // Dark slate/charcoal glassmorphic background
-  static const Color elevated = Color(0xFF1F2629);
+  static const Color background = Color(0xFF070B13); // Deep cosmic dark blue/black
+  static const Color surface = Color(0xFF0E1321);
+  static const Color card = Color(0xFF161D2F); // Distinct dark card background
+  static const Color elevated = Color(0xFF1E263D);
 
   // Borders
-  static const Color border = Color(0xFF273135);
+  static const Color border = Color(0xFF232D42); // Clear slate outline border
   static const Color borderFocused = Color(0xFF0D9488); // Teal
 
   // Accents - Premium Teal & Emerald Mint

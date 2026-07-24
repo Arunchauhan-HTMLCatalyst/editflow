@@ -349,6 +349,189 @@ class _DashboardLayout extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    Widget buildGreetingBanner() {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF171D1F), const Color(0xFF101517)]
+                : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20.0),
+          border: Border.all(
+            color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
+            width: 0.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? AppColors.primary.withValues(alpha: 0.04)
+                  : AppColors.primary.withValues(alpha: 0.1),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            )
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        settings.isClientMode ? 'CLIENT PORTAL' : 'WORKSPACE',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? AppColors.primaryNeon : Colors.white.withValues(alpha: 0.9),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.primary.withValues(alpha: 0.15)
+                              : Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          settings.isClientMode ? 'CLIENT' : 'FREELANCER',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? AppColors.primaryNeon : Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _getTimeBasedGreeting(),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Welcome to your EditFlow workspace.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!AppLayout.isTablet(context))
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Builder(
+                      builder: (context) {
+                        final activitiesAsync = ref.watch(recentActivityProvider);
+                        final count = activitiesAsync.valueOrNull?.length ?? 0;
+                        
+                        final iconButton = IconButton(
+                          icon: const Icon(
+                            Icons.notifications_none_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            final isDesktop = MediaQuery.of(context).size.width > 800;
+                            if (isDesktop) {
+                              showDialog(
+                                context: context,
+                                barrierColor: Colors.black26,
+                                builder: (context) {
+                                  return Center(
+                                    child: Container(
+                                      width: 420,
+                                      height: 600,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.2),
+                                            blurRadius: 12,
+                                            spreadRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: const NotificationCenterScreen(isDialog: true),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            } else {
+                              context.push('/notifications');
+                            }
+                          },
+                        );
+
+                        if (count > 0) {
+                          return Badge(
+                            label: Text('$count', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white)),
+                            backgroundColor: AppColors.error,
+                            child: iconButton,
+                          );
+                        }
+                        return iconButton;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.settings_outlined,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      onPressed: () => context.push('/settings'),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      );
+    }
+
     Widget buildOverviewList() {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -367,186 +550,7 @@ class _DashboardLayout extends ConsumerWidget {
           
           _StaggeredSection(
             index: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [const Color(0xFF171D1F), const Color(0xFF101517)]
-                      : [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20.0),
-                border: Border.all(
-                  color: isDark ? AppColors.border : AppColors.primary.withValues(alpha: 0.15),
-                  width: 0.8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? AppColors.primary.withValues(alpha: 0.04)
-                        : AppColors.primary.withValues(alpha: 0.1),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  )
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              settings.isClientMode ? 'CLIENT PORTAL' : 'WORKSPACE',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w900,
-                                color: isDark ? AppColors.primaryNeon : Colors.white.withValues(alpha: 0.9),
-                                letterSpacing: 1.5,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? AppColors.primary.withValues(alpha: 0.15)
-                                    : Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                settings.isClientMode ? 'CLIENT' : 'FREELANCER',
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w900,
-                                  color: isDark ? AppColors.primaryNeon : Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          _getTimeBasedGreeting(),
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Welcome to your EditFlow workspace.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.75),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!AppLayout.isTablet(context))
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Builder(
-                            builder: (context) {
-                              final activitiesAsync = ref.watch(recentActivityProvider);
-                              final count = activitiesAsync.valueOrNull?.length ?? 0;
-                              
-                              final iconButton = IconButton(
-                                icon: const Icon(
-                                  Icons.notifications_none_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  final isDesktop = MediaQuery.of(context).size.width > 800;
-                                  if (isDesktop) {
-                                    showDialog(
-                                      context: context,
-                                      barrierColor: Colors.black26,
-                                      builder: (context) {
-                                        return Center(
-                                          child: Container(
-                                            width: 420,
-                                            height: 600,
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(16),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.2),
-                                                  blurRadius: 12,
-                                                  spreadRadius: 2,
-                                                ),
-                                              ],
-                                            ),
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(16),
-                                              child: const NotificationCenterScreen(isDialog: true),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  } else {
-                                    context.push('/notifications');
-                                  }
-                                },
-                              );
-
-                              if (count > 0) {
-                                return Badge(
-                                  label: Text('$count', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white)),
-                                  backgroundColor: AppColors.error,
-                                  child: iconButton,
-                                );
-                              }
-                              return iconButton;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.settings_outlined,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            onPressed: () => context.push('/settings'),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
+            child: buildGreetingBanner(),
           ),
           const SizedBox(height: 24),
 
@@ -596,6 +600,118 @@ class _DashboardLayout extends ConsumerWidget {
             ]),
           ),
           const SizedBox(height: 16),
+        ],
+      );
+    }
+
+    final isDesktop = MediaQuery.of(context).size.width > 960;
+    if (isDesktop) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left side: main workspace metrics & summary (65%)
+          Expanded(
+            flex: 65,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                AppLayout.pagePadding(context),
+                AppLayout.pagePadding(context),
+                12, // Reduced right padding to sit next to the activity sidebar
+                AppLayout.pagePadding(context) + 24,
+              ),
+              children: [
+                if (hasError)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: _ErrorBanner(onRetry: onRetry, error: error),
+                  ),
+                _StaggeredSection(
+                  index: 0,
+                  child: buildGreetingBanner(),
+                ),
+                const SizedBox(height: 24),
+                _StaggeredSection(
+                  index: 1,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _PeriodFilter(
+                        current: currentPeriod,
+                        onChanged: onPeriodChanged,
+                        isDark: isDark,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _StaggeredSection(
+                  index: 2,
+                  child: _MetricRow(metrics: periodMetrics),
+                ),
+                const SizedBox(height: 16),
+                if (!settings.isClientMode) ...[
+                  _StaggeredSection(
+                    index: 3,
+                    child: GoalTracker(
+                      currentRevenue: metrics.totalReceived,
+                      goal: settings.monthlyGoal,
+                      formatValue: currency.format,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                _StaggeredSection(
+                  index: 4,
+                  child: _buildCompactRow(context, [
+                    if (settings.isClientMode)
+                      TopFreelancersSection(freelancers: metrics.topFreelancers)
+                    else
+                      TopClientsSection(
+                        clients: metrics.topClients
+                            .map((e) => TopClientData(client: e.client, revenue: e.revenue, percentage: e.percentage))
+                            .toList(),
+                        formatValue: currency.format,
+                      ),
+                    ProjectStatusSection(statusData: metrics.pipelineMap, total: projects.length),
+                  ]),
+                ),
+              ],
+            ),
+          ),
+          
+          // Right side: Activity Feed & Logs Panel (35%)
+          Expanded(
+            flex: 35,
+            child: Container(
+              height: double.infinity,
+              margin: EdgeInsets.fromLTRB(
+                12,
+                AppLayout.pagePadding(context),
+                AppLayout.pagePadding(context),
+                AppLayout.pagePadding(context) + 24,
+              ),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.card : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                  width: 0.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: const NotificationCenterScreen(isDialog: true),
+              ),
+            ),
+          ),
         ],
       );
     }

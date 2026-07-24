@@ -123,4 +123,14 @@ class ProjectRepository {
   }
 
   Future<List<Project>> getPendingReviews() async => [];
+
+  Future<void> payRemainingAmount(String projectId, String clientUid) async {
+    await SupabaseService.instance.rpc(
+      'client_pay_project',
+      params: {
+        'target_project_id': projectId,
+        'client_uid': clientUid,
+      },
+    );
+  }
 }

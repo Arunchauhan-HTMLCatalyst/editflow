@@ -538,18 +538,25 @@ class _DesktopSidebar extends ConsumerWidget {
         ? (ref.watch(clientPendingReviewsProvider).valueOrNull?.length ?? 0)
         : 0;
 
-    return Container(
-      width: 250,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
-        border: Border(
-          right: BorderSide(
-            color: isDark ? AppColors.border.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
-            width: 0.8,
+    final sidebarBg = isDark
+        ? AppColors.surface.withValues(alpha: 0.55)
+        : const Color(0xFFF8FAFC).withValues(alpha: 0.85);
+
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          width: 250,
+          decoration: BoxDecoration(
+            color: sidebarBg,
+            border: Border(
+              right: BorderSide(
+                color: isDark ? AppColors.border.withValues(alpha: 0.35) : const Color(0xFFE2E8F0),
+                width: 0.8,
+              ),
+            ),
           ),
-        ),
-      ),
-      child: SafeArea(
+          child: SafeArea(
         child: Column(
           children: [
             // App Logo Header
@@ -913,6 +920,8 @@ class _DesktopSidebar extends ConsumerWidget {
           ],
         ),
       ),
+    ),
+    ),
     );
   }
 

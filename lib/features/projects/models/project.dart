@@ -15,6 +15,7 @@ class Project {
   final DateTime updatedAt;
   final String? clientName;
   final String? freelancerName;
+  final String? freelancerUpiId;
   final String? reviewStatus;
   final String paymentType;
   final bool isFolder;
@@ -34,6 +35,7 @@ class Project {
     required this.updatedAt,
     this.clientName,
     this.freelancerName,
+    this.freelancerUpiId,
     this.reviewStatus,
     this.paymentType = 'project_basis',
     this.isFolder = false,
@@ -58,6 +60,7 @@ class Project {
         updatedAt: DateTime.parse(json['updated_at'] as String),
         clientName: json['client_name'] as String?,
         freelancerName: json['freelancer_name'] as String?,
+        freelancerUpiId: json['freelancer_upi_id'] as String?,
         reviewStatus: json['review_status'] as String?,
         paymentType: json['payment_type'] as String? ?? 'project_basis',
         isFolder: json['is_folder'] as bool? ?? false,
@@ -70,6 +73,8 @@ class Project {
       if (clientName != null) json['client_name'] = clientName;
       final freelancerName = json['profiles'] is Map ? json['profiles']['full_name'] as String? : null;
       if (freelancerName != null) json['freelancer_name'] = freelancerName;
+      final freelancerUpi = json['profiles'] is Map ? json['profiles']['upi_id'] as String? : null;
+      if (freelancerUpi != null) json['freelancer_upi_id'] = freelancerUpi;
       
       // If reviews is joined in the response (e.g. for the latest review status)
       if (json['reviews'] is List && (json['reviews'] as List).isNotEmpty) {
@@ -102,6 +107,7 @@ class Project {
         'updated_at': updatedAt.toIso8601String(),
         'client_name': clientName,
         'freelancer_name': freelancerName,
+        'freelancer_upi_id': freelancerUpiId,
         'review_status': reviewStatus,
         'payment_type': paymentType,
         'is_folder': isFolder,
@@ -122,6 +128,7 @@ class Project {
     DateTime? updatedAt,
     String? clientName,
     String? freelancerName,
+    String? freelancerUpiId,
     String? reviewStatus,
     String? paymentType,
     bool? isFolder,
@@ -141,6 +148,7 @@ class Project {
         updatedAt: updatedAt ?? this.updatedAt,
         clientName: clientName ?? this.clientName,
         freelancerName: freelancerName ?? this.freelancerName,
+        freelancerUpiId: freelancerUpiId ?? this.freelancerUpiId,
         reviewStatus: reviewStatus ?? this.reviewStatus,
         paymentType: paymentType ?? this.paymentType,
         isFolder: isFolder ?? this.isFolder,

@@ -29,12 +29,17 @@ class ClientProjectRepository extends ProjectRepository {
         try {
           final profileRes = await SupabaseService.instance
               .from('profiles')
-              .select('full_name')
+              .select('full_name, upi_id')
               .eq('id', freelancerUserId)
               .maybeSingle()
               .timeout(const Duration(seconds: 5));
-          if (profileRes != null && profileRes['full_name'] != null) {
-            e['freelancer_name'] = profileRes['full_name'] as String;
+          if (profileRes != null) {
+            if (profileRes['full_name'] != null) {
+              e['freelancer_name'] = profileRes['full_name'] as String;
+            }
+            if (profileRes['upi_id'] != null) {
+              e['freelancer_upi_id'] = profileRes['upi_id'] as String;
+            }
           }
         } catch (err) {
           debugPrint('[ClientProjectRepository] Freelancer profile fetch failed: $err');
@@ -85,12 +90,17 @@ class ClientProjectRepository extends ProjectRepository {
         try {
           final profileRes = await SupabaseService.instance
               .from('profiles')
-              .select('full_name')
+              .select('full_name, upi_id')
               .eq('id', freelancerUserId)
               .maybeSingle()
               .timeout(const Duration(seconds: 5));
-          if (profileRes != null && profileRes['full_name'] != null) {
-            e['freelancer_name'] = profileRes['full_name'] as String;
+          if (profileRes != null) {
+            if (profileRes['full_name'] != null) {
+              e['freelancer_name'] = profileRes['full_name'] as String;
+            }
+            if (profileRes['upi_id'] != null) {
+              e['freelancer_upi_id'] = profileRes['upi_id'] as String;
+            }
           }
         } catch (err) {
           debugPrint('[ClientProjectRepository] Freelancer profile fetch failed: $err');
@@ -155,12 +165,17 @@ class ClientProjectRepository extends ProjectRepository {
         try {
           final profileRes = await SupabaseService.instance
               .from('profiles')
-              .select('full_name')
+              .select('full_name, upi_id')
               .eq('id', freelancerUserId)
               .maybeSingle()
               .timeout(const Duration(seconds: 5));
-          if (profileRes != null && profileRes['full_name'] != null) {
-            e['freelancer_name'] = profileRes['full_name'] as String;
+          if (profileRes != null) {
+            if (profileRes['full_name'] != null) {
+              e['freelancer_name'] = profileRes['full_name'] as String;
+            }
+            if (profileRes['upi_id'] != null) {
+              e['freelancer_upi_id'] = profileRes['upi_id'] as String;
+            }
           }
         } catch (err) {
           debugPrint('[ClientProjectRepository] Freelancer profile fetch failed: $err');

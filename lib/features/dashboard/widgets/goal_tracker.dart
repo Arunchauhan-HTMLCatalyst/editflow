@@ -74,7 +74,7 @@ class _GoalTrackerState extends State<GoalTracker> with SingleTickerProviderStat
         borderRadius: BorderRadius.circular(20.0),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF1E293B)
+              ? AppColors.border
               : const Color(0xFFE2E8F0),
           width: 0.8,
         ),

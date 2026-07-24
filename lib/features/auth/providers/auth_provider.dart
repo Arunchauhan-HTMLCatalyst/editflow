@@ -110,6 +110,7 @@ class AuthProvider extends StateNotifier<AuthState> {
           'is_suspended': false,
           'is_premium': false,
           'premium_until': null,
+          'upi_id': user.userMetadata?['upi_id'] as String?,
         });
         debugPrint('[AUTH SYNC] Created missing profile for user ${user.id}');
       } else {

@@ -594,6 +594,36 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
     }
   }
 
+  Future<void> payRemainingAmount(String projectId) async {
+    final repo = ref.read(projectRepositoryProvider);
+    final previousState = state.valueOrNull ?? [];
+    
+    final optimisticList = previousState.map((p) {
+      if (p.id == projectId) {
+        return p.copyWith(
+          receivedAmount: p.price,
+          status: p.status == ProjectStatus.completed ? ProjectStatus.paid : p.status,
+        );
+      }
+      return p;
+    }).toList();
+    state = AsyncData(optimisticList);
+
+    try {
+      final authState = ref.read(authProvider);
+      final uid = authState.user?.id ?? SupabaseService.userId;
+      
+      await repo.payRemainingAmount(projectId, uid);
+      
+      ref.invalidate(projectDetailProvider(projectId));
+      await refresh();
+    } catch (e, st) {
+      debugPrint('[ProjectProvider] payRemainingAmount failed: $e');
+      state = AsyncError<List<Project>>(e, st).copyWithPrevious(AsyncData(previousState));
+      rethrow;
+    }
+  }
+
   Future<void> refresh() async {
     final repo = ref.read(projectRepositoryProvider);
     final previousState = state.valueOrNull ?? [];

@@ -114,11 +114,11 @@ class _ProjectCardState extends State<ProjectCard> {
         curve: Curves.easeOutCubic,
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1A1F21) : Colors.white,
+            color: isDark ? AppColors.card : Colors.white,
             borderRadius: BorderRadius.circular(16.0),
             border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
-              width: 0.8,
+              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+              width: 0.9,
             ),
             boxShadow: [
               BoxShadow(

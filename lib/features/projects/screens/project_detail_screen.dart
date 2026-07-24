@@ -1,9 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/project.dart';
 import '../models/project_status.dart';
 import '../providers/project_provider.dart';
@@ -682,6 +686,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           total: project.price,
           currency: currency,
           isDark: isDark,
+          project: project,
+          isClientMode: isClient,
         ),
         const SizedBox(height: 16),
         // Sub-projects list
@@ -696,6 +702,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           total: project.price,
           currency: currency,
           isDark: isDark,
+          project: project,
+          isClientMode: isClient,
         ),
         const SizedBox(height: 16),
       ],
@@ -2653,6 +2661,8 @@ class _PaymentProgress extends StatelessWidget {
   final double total;
   final CurrencyConfig currency;
   final bool isDark;
+  final Project project;
+  final bool isClientMode;
 
   const _PaymentProgress({
     required this.progress,
@@ -2661,6 +2671,8 @@ class _PaymentProgress extends StatelessWidget {
     required this.total,
     required this.currency,
     required this.isDark,
+    required this.project,
+    required this.isClientMode,
   });
 
   @override
@@ -2933,9 +2945,389 @@ class _PaymentProgress extends StatelessWidget {
                ),
              ],
            ),
-         ],
-       ),
-     );
+          if (isClientMode && remaining > 0) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFF334155),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: const Icon(CupertinoIcons.qrcode, size: 16, color: Color(0xFF10B981)),
+                  label: Text(
+                    'Pay Remaining (${currency.format(remaining)})',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700, 
+                      fontSize: 13,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  onPressed: () => _showUpiQrPaymentDialog(context),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showUpiQrPaymentDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => _UpiQrPaymentDialog(
+        project: project,
+        remaining: remaining,
+        currency: currency,
+        isDark: isDark,
+      ),
+    );
+  }
+}
+
+class _UpiQrPaymentDialog extends ConsumerStatefulWidget {
+  final Project project;
+  final double remaining;
+  final CurrencyConfig currency;
+  final bool isDark;
+
+  const _UpiQrPaymentDialog({
+    required this.project,
+    required this.remaining,
+    required this.currency,
+    required this.isDark,
+  });
+
+  @override
+  ConsumerState<_UpiQrPaymentDialog> createState() => _UpiQrPaymentDialogState();
+}
+
+class _UpiQrPaymentDialogState extends ConsumerState<_UpiQrPaymentDialog> {
+  bool _isLoading = false;
+
+  Future<void> _launchUpiApp() async {
+    final upiId = widget.project.freelancerUpiId;
+    if (upiId == null || upiId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Freelancer has not configured their UPI ID.')),
+      );
+      return;
+    }
+
+    final cleanUpi = upiId.trim();
+    final nameEnc = Uri.encodeComponent(widget.project.freelancerName ?? 'Freelancer');
+    final noteEnc = Uri.encodeComponent('Payment for ${widget.project.name}');
+    final amStr = widget.remaining.toStringAsFixed(2);
+
+    final androidIntentUrl = 'intent://pay?pa=$cleanUpi&pn=$nameEnc&am=$amStr&cu=INR&tn=$noteEnc#Intent;scheme=upi;end';
+    final webRedirectUrl = 'https://upipg.cit.org.in/pay?pa=$cleanUpi&pn=$nameEnc&am=$amStr&cu=INR&tn=$noteEnc';
+
+    final targetUrl = (defaultTargetPlatform == TargetPlatform.android) ? androidIntentUrl : webRedirectUrl;
+
+    try {
+      final uri = Uri.parse(targetUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        final fallbackUri = Uri.parse(webRedirectUrl);
+        await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('[UPI REDIRECT] Failed to launch: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not launch payment app. Please use the QR code or copy the UPI ID.')),
+      );
+    }
+  }
+
+  Future<void> _confirmPayment() async {
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(projectProvider.notifier).payRemainingAmount(widget.project.id);
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment confirmed! Project status updated.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to confirm payment: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final upiId = widget.project.freelancerUpiId ?? '';
+    final hasUpi = upiId.isNotEmpty;
+    final nameEnc = Uri.encodeComponent(widget.project.freelancerName ?? 'Freelancer');
+    final noteEnc = Uri.encodeComponent('Payment for ${widget.project.name}');
+    final amStr = widget.remaining.toStringAsFixed(2);
+    final upiUrl = 'upi://pay?pa=${upiId.trim()}&pn=$nameEnc&am=$amStr&cu=INR&tn=$noteEnc';
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: widget.isDark ? const Color(0xFF0F172A) : Colors.white,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'UPI QR Payment',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: widget.isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(CupertinoIcons.xmark, size: 20, color: widget.isDark ? Colors.white54 : Colors.black54),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              
+              if (!hasUpi) ...[
+                const Icon(CupertinoIcons.info_circle_fill, size: 48, color: Colors.orange),
+                const SizedBox(height: 16),
+                Text(
+                  'UPI ID Not Found',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: widget.isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'The freelancer has not configured their UPI ID in their settings yet. Please ask them to update their UPI ID to enable quick scan payments.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: widget.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ] else ...[
+                Text(
+                  'Scan the QR code below or tap to open in your default UPI app (GPay, PhonePe, Paytm, BHIM).',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: widget.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // QR Image Wrapper
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: widget.isDark ? 0.4 : 0.05),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: QrImageView(
+                    data: upiUrl,
+                    version: QrVersions.auto,
+                    errorCorrectionLevel: QrErrorCorrectLevel.H,
+                    size: 200.0,
+                    gapless: false,
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.square,
+                      color: Color(0xFF0F172A),
+                    ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: Color(0xFF0F172A),
+                    ),
+                    embeddedImage: const AssetImage('assets/images/app_logo_qr.png'),
+                    embeddedImageStyle: const QrEmbeddedImageStyle(
+                      size: Size(24, 24),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // UPI Details copy box
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: widget.isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(CupertinoIcons.info, size: 16, color: Color(0xFF10B981)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'PAYEE: ${widget.project.freelancerName ?? 'Freelancer'}',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: widget.isDark ? Colors.white70 : const Color(0xFF64748B),
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              upiId,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: widget.isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(CupertinoIcons.doc_on_doc, size: 16, color: Color(0xFF10B981)),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: upiId));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('UPI ID copied to clipboard!'), duration: Duration(seconds: 2)),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Pay via UPI app button
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _launchUpiApp,
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(CupertinoIcons.device_phone_portrait, size: 16),
+                        SizedBox(width: 8),
+                        Text(
+                          'Open in UPI App',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // Confirm Payment Action button
+              if (hasUpi) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                        width: 1,
+                      ),
+                      foregroundColor: widget.isDark ? Colors.white : const Color(0xFF0F172A),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _isLoading ? null : _confirmPayment,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text(
+                            'Confirm Payment',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // Cancel button
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  'Close',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: widget.isDark ? Colors.white54 : Colors.black54,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
