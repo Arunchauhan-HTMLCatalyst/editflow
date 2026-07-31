@@ -44,6 +44,8 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
   Client? _cachedClient;
   List<Project> _cachedProjects = [];
   final _editFormKey = GlobalKey<FormState>();
+  bool _isSelectMode = false;
+  final Set<String> _selectedProjectIds = {};
 
   @override
   void initState() {
@@ -65,11 +67,293 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     super.dispose();
   }
 
+  void _toggleProjectSelection(String projectId) {
+    setState(() {
+      _isSelectMode = true;
+      if (_selectedProjectIds.contains(projectId)) {
+        _selectedProjectIds.remove(projectId);
+      } else {
+        _selectedProjectIds.add(projectId);
+      }
+    });
+  }
+
+  Future<void> _handleBatchDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Projects'),
+        content: Text('Are you sure you want to delete these ${_selectedProjectIds.length} projects? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final ids = _selectedProjectIds.toList();
+      setState(() {
+        _isSelectMode = false;
+        _selectedProjectIds.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              SizedBox(width: 12),
+              Text('Deleting projects...'),
+            ],
+          ),
+          duration: Duration(days: 1),
+        ),
+      );
+
+      try {
+        final notifier = ref.read(projectProvider.notifier);
+        for (final id in ids) {
+          await notifier.deleteProject(id);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Projects deleted successfully')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete projects: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _handleBatchStatusUpdate() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final status = await showDialog<ProjectStatus>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: isDark ? const Color(0xFF1B2227) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF2E3942) : const Color(0xFFE2E8F0),
+            width: 0.8,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        child: const Icon(
+                          Icons.change_circle_outlined,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Update Status',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                          fontFamily: 'Outfit',
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    color: isDark ? Colors.white54 : Colors.black54,
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Select the new status to apply to the selected projects:',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                  fontFamily: 'Outfit',
+                ),
+              ),
+              const SizedBox(height: 20),
+              ...ProjectStatus.values.map((s) {
+                Color badgeColor;
+                IconData icon;
+                switch (s) {
+                  case ProjectStatus.yetToStart:
+                    badgeColor = const Color(0xFF64748B);
+                    icon = Icons.schedule_rounded;
+                    break;
+                  case ProjectStatus.inProgress:
+                    badgeColor = const Color(0xFF3B82F6);
+                    icon = Icons.play_arrow_rounded;
+                    break;
+                  case ProjectStatus.reviewPending:
+                    badgeColor = const Color(0xFF8B5CF6);
+                    icon = Icons.rate_review_rounded;
+                    break;
+                  case ProjectStatus.revisionPending:
+                    badgeColor = const Color(0xFFF59E0B);
+                    icon = Icons.replay_rounded;
+                    break;
+                  case ProjectStatus.completed:
+                    badgeColor = const Color(0xFF10B981);
+                    icon = Icons.check_circle_rounded;
+                    break;
+                  case ProjectStatus.paid:
+                    badgeColor = const Color(0xFF06B6D4);
+                    icon = Icons.payments_rounded;
+                    break;
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: InkWell(
+                    onTap: () => Navigator.of(ctx).pop(s),
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(12.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF2E3942) : const Color(0xFFE2E8F0),
+                          width: 0.8,
+                        ),
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6.0),
+                            decoration: BoxDecoration(
+                              color: badgeColor.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              icon,
+                              color: badgeColor,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            s.displayName,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              fontFamily: 'Outfit',
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: isDark ? Colors.white30 : Colors.black26,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (status != null && mounted) {
+      final ids = _selectedProjectIds.toList();
+      setState(() {
+        _isSelectMode = false;
+        _selectedProjectIds.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Text('Updating status to ${status.displayName}...'),
+            ],
+          ),
+          duration: const Duration(days: 1),
+        ),
+      );
+
+      try {
+        final notifier = ref.read(projectProvider.notifier);
+        for (final id in ids) {
+          await notifier.updateStatus(id, status);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Projects updated to ${status.displayName}')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update projects: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final clientsAsync = ref.watch(clientProvider);
     final currency = ref.watch(currencyProvider);
+    final isClient = ref.watch(settingsProvider).isClientMode;
 
     final allProjects = ref.watch(safeProjectsProvider);
     final clients = clientsAsync.valueOrNull ?? [];
@@ -154,139 +438,176 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leadingWidth: 56,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12.0),
-          child: CupertinoButton(
-            padding: EdgeInsets.zero,
-            child: Container(
-              padding: const EdgeInsets.all(6.0),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-                  width: 0.8,
+        leading: _isSelectMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  setState(() {
+                    _isSelectMode = false;
+                    _selectedProjectIds.clear();
+                  });
+                },
+              )
+            : Padding(
+                padding: const EdgeInsets.only(left: 12.0),
+                child: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  child: Container(
+                    padding: const EdgeInsets.all(6.0),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Icon(
+                      CupertinoIcons.back,
+                      size: 18,
+                      color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  onPressed: () => WidgetsBinding.instance.addPostFrameCallback((_) => context.pop()),
                 ),
               ),
-              child: Icon(
-                CupertinoIcons.back,
-                size: 18,
-                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-              ),
-            ),
-            onPressed: () => WidgetsBinding.instance.addPostFrameCallback((_) => context.pop()),
-          ),
-        ),
         title: Text(
-          _isEditing ? 'Edit Details' : cl.name,
+          _isSelectMode
+              ? '${_selectedProjectIds.length} Selected'
+              : (_isEditing ? 'Edit Details' : cl.name),
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 18,
             color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
           ),
         ),
-        actions: _isEditing
+        actions: _isSelectMode
             ? [
-                Padding(
-                  padding: const EdgeInsets.only(right: 12.0),
-                  child: Center(
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.0,
-                              color: AppColors.primary,
-                            ),
-                          )
-                        : TextButton(
-                            onPressed: _saveClient,
-                            child: const Text(
-                              'Save',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
+                if (!isClient) ...[
+                  IconButton(
+                    icon: const Icon(Icons.change_circle_outlined),
+                    tooltip: 'Update Status',
+                    onPressed: _selectedProjectIds.isEmpty ? null : _handleBatchStatusUpdate,
                   ),
-                ),
-              ]
-            : [
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  child: Container(
-                    padding: const EdgeInsets.all(6.0),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: cl.clientUserId != null
-                            ? AppColors.success.withValues(alpha: 0.4)
-                            : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08)),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Icon(
-                      cl.clientUserId != null ? CupertinoIcons.checkmark_seal_fill : CupertinoIcons.link,
-                      size: 18,
-                      color: cl.clientUserId != null ? AppColors.success : AppColors.primary,
-                    ),
+                  IconButton(
+                    icon: const Icon(CupertinoIcons.delete),
+                    tooltip: 'Delete Projects',
+                    onPressed: _selectedProjectIds.isEmpty ? null : _handleBatchDelete,
                   ),
-                  onPressed: () => _showPortalInvitationDialog(context, cl),
-                ),
-                const SizedBox(width: 8),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  child: Container(
-                    padding: const EdgeInsets.all(6.0),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.pencil,
-                      size: 18,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+                ],
+                IconButton(
+                  icon: const Icon(Icons.select_all),
+                  tooltip: 'Select All',
                   onPressed: () {
-                    setState(() => _isEditing = true);
-                    _nameController.text = cl.name;
-                    _phoneController.text = cl.phone ?? '';
-                    _emailController.text = cl.email ?? '';
-                    _companyController.text = cl.company ?? '';
-                    _notesController.text = cl.notes ?? '';
+                    setState(() {
+                      _selectedProjectIds.addAll(displayProjects.map((p) => p.id));
+                    });
                   },
                 ),
                 const SizedBox(width: 8),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  child: Container(
-                    padding: const EdgeInsets.all(6.0),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-                        width: 0.8,
+              ]
+            : (_isEditing
+                ? [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12.0),
+                      child: Center(
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.0,
+                                  color: AppColors.primary,
+                                ),
+                              )
+                            : TextButton(
+                                onPressed: _saveClient,
+                                child: const Text(
+                                  'Save',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
-                    child: const Icon(
-                      CupertinoIcons.trash,
-                      size: 18,
-                      color: AppColors.error,
+                  ]
+                : [
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: Container(
+                        padding: const EdgeInsets.all(6.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: cl.clientUserId != null
+                                ? AppColors.success.withValues(alpha: 0.4)
+                                : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08)),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Icon(
+                          cl.clientUserId != null ? CupertinoIcons.checkmark_seal_fill : CupertinoIcons.link,
+                          size: 18,
+                          color: cl.clientUserId != null ? AppColors.success : AppColors.primary,
+                        ),
+                      ),
+                      onPressed: () => _showPortalInvitationDialog(context, cl),
                     ),
-                  ),
-                  onPressed: () => _deleteClient(cl),
-                ),
-                const SizedBox(width: 12),
-              ],
+                    const SizedBox(width: 8),
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: Container(
+                        padding: const EdgeInsets.all(6.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.pencil,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() => _isEditing = true);
+                        _nameController.text = cl.name;
+                        _phoneController.text = cl.phone ?? '';
+                        _emailController.text = cl.email ?? '';
+                        _companyController.text = cl.company ?? '';
+                        _notesController.text = cl.notes ?? '';
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: Container(
+                        padding: const EdgeInsets.all(6.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.trash,
+                          size: 18,
+                          color: AppColors.error,
+                        ),
+                      ),
+                      onPressed: () => _deleteClient(cl),
+                    ),
+                    const SizedBox(width: 12),
+                  ]),
       ),
       body: AmbientGlowContainer(
         child: SafeArea(
@@ -659,16 +980,59 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           ),
         )
       else
-        ...clientProjects.map((p) => Padding(
+        ...clientProjects.map((p) {
+          final isSelected = _selectedProjectIds.contains(p.id);
+          final isClient = ref.watch(settingsProvider).isClientMode;
+          return Padding(
+            key: ValueKey(p.id),
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: _ClientProjectCard(
               key: ValueKey(p.id),
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: _ClientProjectCard(
-                key: ValueKey(p.id),
-                project: p,
-                currency: currency,
-                onTap: () => context.push('/projects/${p.id}'),
-              ),
-            )),
+              project: p,
+              currency: currency,
+              isSelectMode: _isSelectMode,
+              isSelected: isSelected,
+              onSelectedChanged: (val) {
+                if (val == true) {
+                  setState(() => _selectedProjectIds.add(p.id));
+                } else {
+                  setState(() {
+                    _selectedProjectIds.remove(p.id);
+                    if (_selectedProjectIds.isEmpty) {
+                      _isSelectMode = false;
+                    }
+                  });
+                }
+              },
+              onTap: () {
+                if (_isSelectMode) {
+                  if (_selectedProjectIds.contains(p.id)) {
+                    setState(() {
+                      _selectedProjectIds.remove(p.id);
+                      if (_selectedProjectIds.isEmpty) {
+                        _isSelectMode = false;
+                      }
+                    });
+                  } else {
+                    setState(() => _selectedProjectIds.add(p.id));
+                  }
+                } else {
+                  context.push('/projects/${p.id}');
+                }
+              },
+              onLongPress: isClient
+                  ? null
+                  : () {
+                      _toggleProjectSelection(p.id);
+                    },
+              onSecondaryTap: isClient
+                  ? null
+                  : () {
+                      _toggleProjectSelection(p.id);
+                    },
+            ),
+          );
+        }),
       const SizedBox(height: 24),
     ];
   }
@@ -1511,12 +1875,22 @@ class _ClientProjectCard extends StatefulWidget {
   final Project project;
   final CurrencyConfig currency;
   final VoidCallback onTap;
+  final bool isSelectMode;
+  final bool isSelected;
+  final ValueChanged<bool?>? onSelectedChanged;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onSecondaryTap;
 
   const _ClientProjectCard({
     super.key,
     required this.project,
     required this.currency,
     required this.onTap,
+    this.isSelectMode = false,
+    this.isSelected = false,
+    this.onSelectedChanged,
+    this.onLongPress,
+    this.onSecondaryTap,
   });
 
   @override
@@ -1549,10 +1923,12 @@ class _ClientProjectCardState extends State<_ClientProjectCard> {
           color: isDark ? const Color(0xFF14191B) : Colors.white,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: _isHovered
-                ? AppColors.primary.withValues(alpha: 0.4)
-                : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0)),
-            width: 0.8,
+            color: widget.isSelected
+                ? AppColors.primary
+                : (_isHovered
+                    ? AppColors.primary.withValues(alpha: 0.4)
+                    : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0))),
+            width: widget.isSelected ? 1.2 : 0.8,
           ),
           boxShadow: [
             BoxShadow(
@@ -1569,10 +1945,24 @@ class _ClientProjectCardState extends State<_ClientProjectCard> {
           child: InkWell(
             borderRadius: BorderRadius.circular(15),
             onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
+            onSecondaryTap: widget.onSecondaryTap,
             child: Padding(
               padding: const EdgeInsets.all(15.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                children: [
+                  if (widget.isSelectMode)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12.0),
+                      child: CupertinoCheckbox(
+                        value: widget.isSelected,
+                        activeColor: AppColors.primary,
+                        onChanged: widget.onSelectedChanged,
+                      ),
+                    ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Row 1: Status Dot + Project Name + Price
                   Row(
@@ -1662,10 +2052,13 @@ class _ClientProjectCardState extends State<_ClientProjectCard> {
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
-    );
+    ),
+  ),
+),
+);
   }
 }
 
@@ -2002,35 +2395,74 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
           ),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surface : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
+              color: isDark ? AppColors.surface : Colors.white,
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
                 width: 0.8,
               ),
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: selectedProject?.id,
-                dropdownColor: isDark ? AppColors.surface : Colors.white,
-                hint: const Text('Choose a project', style: TextStyle(color: AppColors.textMuted)),
-                items: widget.clientProjects.map((p) {
-                  return DropdownMenuItem(
-                    value: p.id,
-                    child: Text(p.name, overflow: TextOverflow.ellipsis),
-                  );
-                }).toList(),
-                onChanged: (id) {
-                  setState(() {
-                    selectedProject = widget.clientProjects.firstWhere((p) => p.id == id);
-                    amountController.text =
-                        selectedProject!.receivedAmount.toStringAsFixed(0);
-                  });
-                },
-              ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.assignment_outlined,
+                  size: 15,
+                  color: isDark ? AppColors.primaryNeon : AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 1,
+                  height: 16,
+                  color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: selectedProject?.id,
+                      dropdownColor: isDark ? AppColors.surface : Colors.white,
+                      icon: Icon(
+                        Icons.keyboard_arrow_down_rounded, 
+                        size: 18,
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                      ),
+                      hint: Text(
+                        'Choose a project', 
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                        ),
+                      ),
+                      items: widget.clientProjects.map((p) {
+                        return DropdownMenuItem(
+                          value: p.id,
+                          child: Text(
+                            p.name, 
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (id) {
+                        setState(() {
+                          selectedProject = widget.clientProjects.firstWhere((p) => p.id == id);
+                          amountController.text =
+                              selectedProject!.receivedAmount.toStringAsFixed(0);
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           if (selectedProject != null) ...[

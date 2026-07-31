@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
@@ -22,11 +23,29 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   bool _maintenanceEnabled = false;
   final TextEditingController _maintenanceMessageController = TextEditingController();
 
-  // Support state
+  // Support state (hidden but kept in state for database compatibility)
   final TextEditingController _supportEmailController = TextEditingController();
 
   bool _isSaving = false;
   bool _isLoaded = false;
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _announcementTextController.addListener(_onTextChanged);
+    _maintenanceMessageController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    if (!_isLoaded || _isSaving) return;
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        _saveSettings();
+      }
+    });
+  }
 
   void _loadSettings(List<Map<String, dynamic>> settingsList) {
     if (_isLoaded) return;
@@ -42,7 +61,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         _maintenanceEnabled = value['enabled'] as bool? ?? false;
         _maintenanceMessageController.text = value['message'] as String? ?? '';
       } else if (key == 'support') {
-        _supportEmailController.text = value['email'] as String? ?? '';
+        _supportEmailController.text = value['email'] as String? ?? 'editflow@acsoft.online';
       }
     }
 
@@ -76,18 +95,13 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
           {
             'key': 'support',
             'value': {
-              'email': _supportEmailController.text.trim(),
+              'email': _supportEmailController.text.isNotEmpty ? _supportEmailController.text.trim() : 'editflow@acsoft.online',
             }
           }
         ]
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Global system settings updated successfully!')),
-        );
-        _isLoaded = false;
-        ref.invalidate(adminSettingsProvider);
         setState(() {
           _isSaving = false;
         });
@@ -106,6 +120,9 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
+    _announcementTextController.removeListener(_onTextChanged);
+    _maintenanceMessageController.removeListener(_onTextChanged);
     _announcementTextController.dispose();
     _maintenanceMessageController.dispose();
     _supportEmailController.dispose();
@@ -128,6 +145,41 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             key: _formKey,
             child: ListView(
               children: [
+                // Live sync indicator at the top
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _isSaving ? Colors.orangeAccent : const Color(0xFF10B981),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _isSaving 
+                                  ? Colors.orangeAccent.withValues(alpha: 0.4) 
+                                  : const Color(0xFF10B981).withValues(alpha: 0.4),
+                              blurRadius: 4,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _isSaving ? 'Syncing changes live...' : 'Live configurations active (Auto-saved)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _isSaving ? Colors.orangeAccent : const Color(0xFF10B981),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
                 // 1. Announcement Banner Settings
                 _buildCard(
                   title: 'SYSTEM ANNOUNCEMENT BANNER',
@@ -139,7 +191,10 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                           const Text('Show Announcement Banner', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                           Switch(
                             value: _announcementVisible,
-                            onChanged: (val) => setState(() => _announcementVisible = val),
+                            onChanged: (val) {
+                              setState(() => _announcementVisible = val);
+                              _saveSettings();
+                            },
                             activeColor: AppColors.primaryNeon,
                           ),
                         ],
@@ -171,7 +226,10 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                           const Text('Enable Maintenance Mode', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                           Switch(
                             value: _maintenanceEnabled,
-                            onChanged: (val) => setState(() => _maintenanceEnabled = val),
+                            onChanged: (val) {
+                              setState(() => _maintenanceEnabled = val);
+                              _saveSettings();
+                            },
                             activeColor: Colors.redAccent,
                           ),
                         ],
@@ -190,48 +248,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-
-                // 3. Support Contact Settings
-                _buildCard(
-                  title: 'SUPPORT CONTACT SETUP',
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _supportEmailController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
-                        decoration: const InputDecoration(
-                          labelText: 'Support Contact Email',
-                          labelStyle: TextStyle(color: AppColors.textSecondary),
-                          border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
-                        ),
-                        validator: (val) {
-                          if (val == null || val.trim().isEmpty) return 'Support email is required';
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 32),
-
-                // Save button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _isSaving ? null : _saveSettings,
-                    icon: _isSaving
-                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.save_rounded, size: 14),
-                    label: const Text('Save Configuration', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

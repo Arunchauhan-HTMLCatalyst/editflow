@@ -175,7 +175,9 @@ class NotificationCenterScreen extends ConsumerWidget {
 
                     return InkWell(
                       onTap: () {
-                        if (item.referenceId != null && item.referenceType == 'project') {
+                        if (item.type == 'payment_overdue' && item.referenceId == 'combined_overdue_payments') {
+                          context.go('/payments');
+                        } else if (item.referenceId != null && item.referenceType == 'project') {
                           context.push('/projects/${item.referenceId}');
                         }
                       },

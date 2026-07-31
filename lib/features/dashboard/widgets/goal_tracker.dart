@@ -7,12 +7,16 @@ class GoalTracker extends StatefulWidget {
   final double currentRevenue;
   final double goal;
   final String Function(double) formatValue;
+  final String label;
+  final bool isExpense;
 
   const GoalTracker({
     super.key,
     required this.currentRevenue,
     required this.goal,
     required this.formatValue,
+    this.label = 'MONTHLY GOAL',
+    this.isExpense = false,
   });
 
   @override
@@ -57,9 +61,11 @@ class _GoalTrackerState extends State<GoalTracker> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final progress = (widget.currentRevenue / widget.goal).clamp(0.0, 1.0);
-    final isGoalMet = widget.currentRevenue >= widget.goal;
+    final isGoalMet = widget.isExpense
+        ? widget.currentRevenue <= widget.goal
+        : widget.currentRevenue >= widget.goal;
 
-    if (progress >= 1.0 && !_hasCelebrated) {
+    if (!widget.isExpense && progress >= 1.0 && !_hasCelebrated) {
       _hasCelebrated = true;
       Future.delayed(const Duration(milliseconds: 1100), () {
         if (mounted) {
@@ -67,6 +73,10 @@ class _GoalTrackerState extends State<GoalTracker> with SingleTickerProviderStat
         }
       });
     }
+
+    final accentColor = widget.isExpense
+        ? (isGoalMet ? const Color(0xFF10B981) : const Color(0xFFEF4444))
+        : (isGoalMet ? const Color(0xFF10B981) : AppColors.primary);
 
     return Container(
       decoration: BoxDecoration(
@@ -100,9 +110,7 @@ class _GoalTrackerState extends State<GoalTracker> with SingleTickerProviderStat
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isGoalMet
-                    ? const Color(0xFF10B981).withValues(alpha: 0.05)
-                    : AppColors.primary.withValues(alpha: 0.04),
+                color: accentColor.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -125,7 +133,7 @@ class _GoalTrackerState extends State<GoalTracker> with SingleTickerProviderStat
                           painter: _GoalRingPainter(
                             progress: animatedProgress,
                             isDark: isDark,
-                            accentColor: isGoalMet ? const Color(0xFF10B981) : AppColors.primary,
+                            accentColor: accentColor,
                           ),
                           child: Center(
                             child: Column(
@@ -141,7 +149,7 @@ class _GoalTrackerState extends State<GoalTracker> with SingleTickerProviderStat
                                   ),
                                 ),
                                 Text(
-                                  'DONE',
+                                  widget.isExpense ? 'SPENT' : 'DONE',
                                   style: TextStyle(
                                     fontSize: 8.5,
                                     fontWeight: FontWeight.w800,
@@ -165,7 +173,7 @@ class _GoalTrackerState extends State<GoalTracker> with SingleTickerProviderStat
                       Row(
                         children: [
                           Text(
-                            'MONTHLY GOAL',
+                            widget.label,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -173,7 +181,24 @@ class _GoalTrackerState extends State<GoalTracker> with SingleTickerProviderStat
                               color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                             ),
                           ),
-                          if (isGoalMet) ...[
+                          if (widget.isExpense) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isGoalMet ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                isGoalMet ? 'WITHIN BUDGET' : 'OVER BUDGET ⚠️',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w900,
+                                  color: isGoalMet ? const Color(0xFF065F46) : const Color(0xFF991B1B),
+                                ),
+                              ),
+                            ),
+                          ] else if (isGoalMet) ...[
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -205,7 +230,9 @@ class _GoalTrackerState extends State<GoalTracker> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Target: ${widget.formatValue(widget.goal)}',
+                        widget.isExpense
+                            ? 'Limit: ${widget.formatValue(widget.goal)}'
+                            : 'Target: ${widget.formatValue(widget.goal)}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,

@@ -70,6 +70,219 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDesktop = MediaQuery.of(context).size.width > 800;
+
+    Widget buildFields() {
+      if (isDesktop) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Name *',
+                      hintText: 'Enter client name',
+                    ),
+                    validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
+                    textInputAction: TextInputAction.next,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email address',
+                      hintText: 'client@example.com',
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone number',
+                      hintText: '+1 (555) 000-0000',
+                    ),
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _companyController,
+                    decoration: const InputDecoration(
+                      labelText: 'Company name',
+                      hintText: 'Acme Corp',
+                    ),
+                    textInputAction: TextInputAction.next,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            TextFormField(
+              controller: _notesController,
+              decoration: const InputDecoration(
+                labelText: 'Notes',
+                hintText: 'Add private details or preferences',
+              ),
+              maxLines: 4,
+              textInputAction: TextInputAction.newline,
+            ),
+          ],
+        );
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              labelText: 'Name *',
+              hintText: 'Enter client name',
+            ),
+            validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: 'Email address',
+              hintText: 'client@example.com',
+            ),
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _phoneController,
+            decoration: const InputDecoration(
+              labelText: 'Phone number',
+              hintText: '+1 (555) 000-0000',
+            ),
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _companyController,
+            decoration: const InputDecoration(
+              labelText: 'Company name',
+              hintText: 'Acme Corp',
+            ),
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _notesController,
+            decoration: const InputDecoration(
+              labelText: 'Notes',
+              hintText: 'Add private details or preferences',
+            ),
+            maxLines: 4,
+            textInputAction: TextInputAction.newline,
+          ),
+        ],
+      );
+    }
+
+    final bodyContent = Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? 24.0 : 20.0,
+            vertical: isDesktop ? 32.0 : 16.0,
+          ),
+          child: Container(
+            decoration: isDesktop
+                ? BoxDecoration(
+                    color: isDark ? AppColors.card : Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                      width: 0.8,
+                    ),
+                    boxShadow: isDark
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            )
+                          ],
+                  )
+                : null,
+            padding: EdgeInsets.all(isDesktop ? 32.0 : 0.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (isDesktop) ...[
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.person_add_outlined,
+                          color: AppColors.primary,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'New Client Account',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            fontFamily: 'Outfit',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Create a client profile to track their payments, invoices, and work metrics.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                  ],
+                  buildFields(),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: _isSaving ? null : _save,
+                    child: _isSaving
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Add Client'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -137,77 +350,8 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
       ),
       body: AmbientGlowContainer(
         child: SafeArea(
-          child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name *',
-                    hintText: 'Enter client name',
-                  ),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email address',
-                    hintText: 'client@example.com',
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone number',
-                    hintText: '+1 (555) 000-0000',
-                  ),
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _companyController,
-                  decoration: const InputDecoration(
-                    labelText: 'Company name',
-                    hintText: 'Acme Corp',
-                  ),
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes',
-                    hintText: 'Add private details or preferences',
-                  ),
-                  maxLines: 4,
-                  textInputAction: TextInputAction.newline,
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: _isSaving ? null : _save,
-                  child: _isSaving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Add Client'),
-                ),
-              ],
-            ),
-          ),
+          child: bodyContent,
         ),
-      ),
       ),
     );
   }

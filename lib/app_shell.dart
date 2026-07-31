@@ -51,6 +51,40 @@ final maintenanceProvider = StreamProvider<Map<String, dynamic>>((ref) {
   return controller.stream;
 });
 
+final announcementProvider = StreamProvider<Map<String, dynamic>>((ref) {
+  final controller = StreamController<Map<String, dynamic>>();
+  
+  Future<void> fetch() async {
+    try {
+      final response = await SupabaseService.instance
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'announcement')
+          .maybeSingle();
+      if (response != null && response['value'] != null) {
+        if (!controller.isClosed) {
+          controller.add(response['value'] as Map<String, dynamic>);
+        }
+      }
+    } catch (e) {
+      if (!controller.isClosed) {
+        controller.add({'visible': false, 'text': ''});
+      }
+    }
+  }
+
+  fetch();
+
+  final timer = Timer.periodic(const Duration(seconds: 20), (_) => fetch());
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
+});
+
 class AppShell extends ConsumerStatefulWidget {
   final GoRouterState state;
   final Widget child;
@@ -179,6 +213,9 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     final maintenanceVal = ref.watch(maintenanceProvider).valueOrNull;
     final isMaintenanceMode = maintenanceVal?['enabled'] == true && !authState.isAdmin;
 
+    final announcementVal = ref.watch(announcementProvider).valueOrNull;
+    final isAnnouncementVisible = announcementVal?['visible'] == true && !authState.isAdmin;
+
     final bannerWidget = isMaintenanceMode
         ? Container(
             width: double.infinity,
@@ -193,6 +230,29 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
                   Expanded(
                     child: Text(
                       maintenanceVal?['message'] ?? 'EditFlow is currently in Maintenance. Please donot do any activity in your editflow account.',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : const SizedBox.shrink();
+
+    final announcementBannerWidget = isAnnouncementVisible
+        ? Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: AppColors.primary,
+            child: SafeArea(
+              bottom: false,
+              child: Row(
+                children: [
+                  const Icon(Icons.campaign_rounded, color: Colors.white, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      announcementVal?['text'] ?? '',
                       style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -241,6 +301,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
                   child: Column(
                     children: [
                       bannerWidget,
+                      announcementBannerWidget,
                       Expanded(child: widget.child),
                     ],
                   ),
@@ -252,6 +313,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
             body: Column(
               children: [
                 bannerWidget,
+                announcementBannerWidget,
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.only(bottom: AppSpacing.navBarMargin + 4),

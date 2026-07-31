@@ -233,51 +233,87 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
           }
         }
 
-        // Determine if overdue payment
-        if (p.remainingAmount > 0 && remaining.isNegative && p.status != ProjectStatus.paid) {
-          if (p.status == ProjectStatus.completed) {
-            neededType = 'payment_overdue';
-            desc = 'Payment for completed project "${p.name}" is overdue!';
+        if (neededType != null && desc != null) {
+          final existing = await SupabaseService.instance
+              .from('activities')
+              .select('id')
+              .eq('user_id', currentUserId)
+              .eq('type', neededType)
+              .eq('reference_id', p.id);
+
+          if ((existing as List).isEmpty) {
+            await SupabaseService.instance.from('activities').insert({
+              'user_id': currentUserId,
+              'type': neededType,
+              'description': desc,
+              'reference_id': p.id,
+              'reference_type': 'project',
+              'created_at': now.toIso8601String(),
+            });
+            debugPrint('[NOTIFICATION SYNC] Logged notification "$neededType" for project ${p.name}');
+          }
+        }
+      }
+
+      // Handle combined payment overdue notifications
+      final overdueProjects = projects.where((p) {
+        if (p.deadline == null) return false;
+        final isOverdue = p.deadline!.isBefore(now);
+        return p.remainingAmount > 0 && isOverdue && p.status == ProjectStatus.completed;
+      }).toList();
+
+      final prefs = await SharedPreferences.getInstance();
+      if (overdueProjects.isNotEmpty) {
+        final count = overdueProjects.length;
+        final desc = count == 1
+            ? '1 payment is overdue!'
+            : '$count payments are overdue!';
+        
+        final lastCount = prefs.getInt('last_combined_overdue_count') ?? -1;
+        final lastSentStr = prefs.getString('last_combined_overdue_time');
+        
+        bool shouldSend = true;
+        if (lastSentStr != null) {
+          final lastSent = DateTime.tryParse(lastSentStr);
+          if (lastSent != null && now.difference(lastSent).inHours < 24 && count == lastCount) {
+            shouldSend = false;
           }
         }
 
-        if (neededType != null && desc != null) {
-          bool shouldSend = true;
-          if (neededType == 'payment_overdue') {
-            final prefs = await SharedPreferences.getInstance();
-            final lastSentStr = prefs.getString('last_overdue_notif_${p.id}');
-            if (lastSentStr != null) {
-              final lastSent = DateTime.tryParse(lastSentStr);
-              if (lastSent != null && now.difference(lastSent).inHours < 24) {
-                shouldSend = false;
-              }
-            }
-          }
+        if (shouldSend) {
+          // Clear any old payment_overdue notifications to avoid duplicates/spam
+          await SupabaseService.instance
+              .from('activities')
+              .delete()
+              .eq('user_id', currentUserId)
+              .eq('type', 'payment_overdue');
 
-          if (shouldSend) {
-            final existing = await SupabaseService.instance
-                .from('activities')
-                .select('id')
-                .eq('user_id', currentUserId)
-                .eq('type', neededType)
-                .eq('reference_id', p.id);
+          // Insert single combined notification
+          await SupabaseService.instance.from('activities').insert({
+            'user_id': currentUserId,
+            'type': 'payment_overdue',
+            'description': desc,
+            'reference_id': 'combined_overdue_payments',
+            'reference_type': 'project',
+            'created_at': now.toIso8601String(),
+          });
 
-            if ((existing as List).isEmpty) {
-              await SupabaseService.instance.from('activities').insert({
-                'user_id': currentUserId,
-                'type': neededType,
-                'description': desc,
-                'reference_id': p.id,
-                'reference_type': 'project',
-                'created_at': now.toIso8601String(),
-              });
-              if (neededType == 'payment_overdue') {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('last_overdue_notif_${p.id}', now.toIso8601String());
-              }
-              debugPrint('[NOTIFICATION SYNC] Logged notification "$neededType" for project ${p.name}');
-            }
-          }
+          await prefs.setInt('last_combined_overdue_count', count);
+          await prefs.setString('last_combined_overdue_time', now.toIso8601String());
+          debugPrint('[NOTIFICATION SYNC] Logged combined notification: $desc');
+        }
+      } else {
+        // No overdue payments, make sure to clean up any left-over notifications
+        final lastCount = prefs.getInt('last_combined_overdue_count');
+        if (lastCount != null) {
+          await SupabaseService.instance
+              .from('activities')
+              .delete()
+              .eq('user_id', currentUserId)
+              .eq('type', 'payment_overdue');
+          await prefs.remove('last_combined_overdue_count');
+          await prefs.remove('last_combined_overdue_time');
+          debugPrint('[NOTIFICATION SYNC] Cleared overdue payments notifications.');
         }
       }
     } catch (e) {
@@ -487,7 +523,7 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       debugPrint('[ProjectProvider] deleteProject: deleted $id');
     } catch (e, st) {
       debugPrint('[ProjectProvider] deleteProject failed: $e');
-      state = AsyncError<List<Project>>(e, st).copyWithPrevious(AsyncData(previousState));
+      rethrow;
     }
   }
 
@@ -496,7 +532,6 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
     final repo = ref.read(projectRepositoryProvider);
     final previousState = state.valueOrNull ?? [];
     
-    // Find the project (either in top-level state or via repository if sub-project)
     Project? project = projects.firstWhereOrNull((p) => p.id == id);
     if (project == null) {
       try {
@@ -574,7 +609,6 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
 
         debugPrint('[PROJECT NOTIFICATION] Sent status notification to freelancer ${confirmed.userId} for project ${confirmed.name}');
       } else {
-        // Freelancer status change → notify client
         final clients = ref.read(safeClientsProvider);
         final client = clients.firstWhereOrNull((c) => c.id == confirmed.clientId);
         if (client != null && client.clientUserId != null) {
@@ -608,7 +642,9 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
       }
     } catch (e, st) {
       debugPrint('[ProjectProvider] updateStatus failed: $e');
-      state = AsyncError<List<Project>>(e, st).copyWithPrevious(AsyncData(previousState));
+      state = AsyncData(previousState);
+      _saveToCache(_getCacheKey(), previousState);
+      rethrow;
     }
   }
 

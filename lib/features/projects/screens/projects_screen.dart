@@ -109,28 +109,198 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
         _isSelectMode = false;
         _selectedProjectIds.clear();
       });
-      final notifier = ref.read(projectProvider.notifier);
-      for (final id in ids) {
-        await notifier.deleteProject(id);
-      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Projects deleted successfully')),
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              SizedBox(width: 12),
+              Text('Deleting projects...'),
+            ],
+          ),
+          duration: Duration(days: 1),
+        ),
       );
+
+      try {
+        final notifier = ref.read(projectProvider.notifier);
+        for (final id in ids) {
+          await notifier.deleteProject(id);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Projects deleted successfully')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete projects: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
     }
   }
 
   Future<void> _handleBatchStatusUpdate() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final status = await showDialog<ProjectStatus>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Batch Update Status'),
-        content: const Text('Select the status to apply to all selected projects:'),
-        actions: ProjectStatus.values.map((s) {
-          return TextButton(
-            onPressed: () => Navigator.of(ctx).pop(s),
-            child: Text(s.displayName),
-          );
-        }).toList(),
+      builder: (ctx) => Dialog(
+        backgroundColor: isDark ? const Color(0xFF1B2227) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF2E3942) : const Color(0xFFE2E8F0),
+            width: 0.8,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        child: const Icon(
+                          Icons.change_circle_outlined,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Update Status',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                          fontFamily: 'Outfit',
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    color: isDark ? Colors.white54 : Colors.black54,
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Select the new status to apply to the selected projects:',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                  fontFamily: 'Outfit',
+                ),
+              ),
+              const SizedBox(height: 20),
+              ...ProjectStatus.values.map((s) {
+                Color badgeColor;
+                IconData icon;
+                switch (s) {
+                  case ProjectStatus.yetToStart:
+                    badgeColor = const Color(0xFF64748B);
+                    icon = Icons.schedule_rounded;
+                    break;
+                  case ProjectStatus.inProgress:
+                    badgeColor = const Color(0xFF3B82F6);
+                    icon = Icons.play_arrow_rounded;
+                    break;
+                  case ProjectStatus.reviewPending:
+                    badgeColor = const Color(0xFF8B5CF6);
+                    icon = Icons.rate_review_rounded;
+                    break;
+                  case ProjectStatus.revisionPending:
+                    badgeColor = const Color(0xFFF59E0B);
+                    icon = Icons.replay_rounded;
+                    break;
+                  case ProjectStatus.completed:
+                    badgeColor = const Color(0xFF10B981);
+                    icon = Icons.check_circle_rounded;
+                    break;
+                  case ProjectStatus.paid:
+                    badgeColor = const Color(0xFF06B6D4);
+                    icon = Icons.payments_rounded;
+                    break;
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: InkWell(
+                    onTap: () => Navigator.of(ctx).pop(s),
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(12.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF2E3942) : const Color(0xFFE2E8F0),
+                          width: 0.8,
+                        ),
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6.0),
+                            decoration: BoxDecoration(
+                              color: badgeColor.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              icon,
+                              color: badgeColor,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            s.displayName,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              fontFamily: 'Outfit',
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: isDark ? Colors.white30 : Colors.black26,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
       ),
     );
 
@@ -140,13 +310,46 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
         _isSelectMode = false;
         _selectedProjectIds.clear();
       });
-      final notifier = ref.read(projectProvider.notifier);
-      for (final id in ids) {
-        await notifier.updateStatus(id, status);
-      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Projects updated to ${status.displayName}')),
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Text('Updating status to ${status.displayName}...'),
+            ],
+          ),
+          duration: const Duration(days: 1),
+        ),
       );
+
+      try {
+        final notifier = ref.read(projectProvider.notifier);
+        for (final id in ids) {
+          await notifier.updateStatus(id, status);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Projects updated to ${status.displayName}')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update projects: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -157,6 +360,52 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     final currency = ref.watch(currencyProvider);
     final isClient = ref.watch(settingsProvider).isClientMode;
     final clients = ref.watch(safeClientsProvider);
+
+    final rawProjects = projectsAsync.valueOrNull ?? [];
+    final searchFiltered = rawProjects
+        .where((p) =>
+            p.name.toLowerCase().contains(_searchQuery) ||
+            (p.clientName?.toLowerCase().contains(_searchQuery) ?? false))
+        .toList();
+
+    final activeCount = rawProjects.where((p) =>
+      p.status == ProjectStatus.yetToStart ||
+      p.status == ProjectStatus.inProgress ||
+      p.status == ProjectStatus.revisionPending
+    ).length;
+
+    final completedCount = rawProjects.where((p) =>
+      p.status == ProjectStatus.completed ||
+      p.status == ProjectStatus.paid
+    ).length;
+
+    final overdueCount = rawProjects.where((p) {
+      if (p.deadline == null) return false;
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final deadlineDate = DateTime(p.deadline!.year, p.deadline!.month, p.deadline!.day);
+      return deadlineDate.isBefore(today) && p.status != ProjectStatus.paid;
+    }).length;
+
+    final filtered = searchFiltered.where((p) {
+      switch (_selectedFilter) {
+        case ProjectListFilter.active:
+          return p.status == ProjectStatus.yetToStart ||
+              p.status == ProjectStatus.inProgress ||
+              p.status == ProjectStatus.revisionPending;
+        case ProjectListFilter.overdue:
+          if (p.deadline == null) return false;
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final deadlineDate = DateTime(p.deadline!.year, p.deadline!.month, p.deadline!.day);
+          return deadlineDate.isBefore(today) && p.status != ProjectStatus.paid;
+        case ProjectListFilter.completed:
+          return p.status == ProjectStatus.completed ||
+              p.status == ProjectStatus.paid;
+        case ProjectListFilter.all:
+          return true;
+      }
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -191,37 +440,39 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
               ),
         actions: [
           if (_isSelectMode) ...[
-            IconButton(
-              icon: const Icon(CupertinoIcons.checkmark_seal_fill),
-              tooltip: 'Update Status',
-              onPressed: _selectedProjectIds.isEmpty ? null : _handleBatchStatusUpdate,
-            ),
-            IconButton(
-              icon: const Icon(CupertinoIcons.delete),
-              tooltip: 'Delete Projects',
-              onPressed: _selectedProjectIds.isEmpty ? null : _handleBatchDelete,
-            ),
+            if (!isClient) ...[
+              IconButton(
+                icon: const Icon(Icons.change_circle_outlined),
+                tooltip: 'Update Status',
+                onPressed: _selectedProjectIds.isEmpty ? null : _handleBatchStatusUpdate,
+              ),
+              IconButton(
+                icon: const Icon(CupertinoIcons.delete),
+                tooltip: 'Delete Projects',
+                onPressed: _selectedProjectIds.isEmpty ? null : _handleBatchDelete,
+              ),
+            ],
             IconButton(
               icon: const Icon(Icons.select_all),
               tooltip: 'Select All',
               onPressed: () {
-                final projects = projectsAsync.valueOrNull ?? [];
                 setState(() {
-                  _selectedProjectIds.addAll(projects.map((p) => p.id));
+                  _selectedProjectIds.addAll(filtered.map((p) => p.id));
                 });
               },
             ),
           ] else ...[
-            IconButton(
-              icon: const Icon(Icons.playlist_add_check_rounded),
-              tooltip: 'Select Multiple',
-              onPressed: () {
-                setState(() {
-                  _isSelectMode = true;
-                  _selectedProjectIds.clear();
-                });
-              },
-            ),
+            if (!isClient)
+              IconButton(
+                icon: const Icon(Icons.playlist_add_check_rounded),
+                tooltip: 'Select Multiple',
+                onPressed: () {
+                  setState(() {
+                    _isSelectMode = true;
+                    _selectedProjectIds.clear();
+                  });
+                },
+              ),
             CupertinoButton(
               padding: EdgeInsets.zero,
               child: Container(
@@ -287,51 +538,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                 onRetry: () => ref.read(projectProvider.notifier).refresh(),
               ),
               data: (projects) {
-                final searchFiltered = projects
-                    .where((p) =>
-                        p.name.toLowerCase().contains(_searchQuery) ||
-                        (p.clientName?.toLowerCase().contains(_searchQuery) ?? false))
-                    .toList();
-
-                final activeCount = projects.where((p) =>
-                  p.status == ProjectStatus.yetToStart ||
-                  p.status == ProjectStatus.inProgress ||
-                  p.status == ProjectStatus.revisionPending
-                ).length;
-
-                final completedCount = projects.where((p) =>
-                  p.status == ProjectStatus.completed ||
-                  p.status == ProjectStatus.paid
-                ).length;
-
-                final overdueCount = projects.where((p) {
-                  if (p.deadline == null) return false;
-                  final now = DateTime.now();
-                  final today = DateTime(now.year, now.month, now.day);
-                  final deadlineDate = DateTime(p.deadline!.year, p.deadline!.month, p.deadline!.day);
-                  return deadlineDate.isBefore(today) && p.status != ProjectStatus.paid;
-                }).length;
-
-                // Apply selected filter chip
-                final filtered = searchFiltered.where((p) {
-                  switch (_selectedFilter) {
-                    case ProjectListFilter.active:
-                      return p.status == ProjectStatus.yetToStart ||
-                          p.status == ProjectStatus.inProgress ||
-                          p.status == ProjectStatus.revisionPending;
-                    case ProjectListFilter.overdue:
-                      if (p.deadline == null) return false;
-                      final now = DateTime.now();
-                      final today = DateTime(now.year, now.month, now.day);
-                      final deadlineDate = DateTime(p.deadline!.year, p.deadline!.month, p.deadline!.day);
-                      return deadlineDate.isBefore(today) && p.status != ProjectStatus.paid;
-                    case ProjectListFilter.completed:
-                      return p.status == ProjectStatus.completed ||
-                          p.status == ProjectStatus.paid;
-                    case ProjectListFilter.all:
-                      return true;
-                  }
-                }).toList();
+                // Using precomputed variables: searchFiltered, activeCount, completedCount, overdueCount, filtered
 
                 if (projects.isEmpty) {
                   if (!isClient && clients.isEmpty) {
@@ -450,8 +657,8 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                                             }
                                           });
                                         },
-                                        onLongPress: () => _toggleProjectSelection(project.id),
-                                        onSecondaryTap: () => _toggleProjectSelection(project.id),
+                                        onLongPress: isClient ? null : () => _toggleProjectSelection(project.id),
+                                        onSecondaryTap: isClient ? null : () => _toggleProjectSelection(project.id),
                                         onTap: () {
                                           if (_isSelectMode) {
                                             setState(() {
@@ -495,8 +702,8 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                                             }
                                           });
                                         },
-                                        onLongPress: () => _toggleProjectSelection(project.id),
-                                        onSecondaryTap: () => _toggleProjectSelection(project.id),
+                                        onLongPress: isClient ? null : () => _toggleProjectSelection(project.id),
+                                        onSecondaryTap: isClient ? null : () => _toggleProjectSelection(project.id),
                                         onTap: () {
                                           if (_isSelectMode) {
                                             setState(() {

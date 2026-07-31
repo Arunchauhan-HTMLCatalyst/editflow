@@ -34,7 +34,6 @@ class ProjectCard extends StatefulWidget {
 }
 
 class _ProjectCardState extends State<ProjectCard> {
-  double _scale = 1.0;
 
   Widget _buildDeadlineWidget(BuildContext context, DateTime deadline, bool isDark) {
     final now = DateTime.now();
@@ -113,39 +112,35 @@ class _ProjectCardState extends State<ProjectCard> {
     final c = widget.currency ?? CurrencyConfig.usd;
     final statusCol = statusColor(widget.project.status);
 
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _scale = 0.97),
-      onTapUp: (_) => setState(() => _scale = 1.0),
-      onTapCancel: () => setState(() => _scale = 1.0),
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      onSecondaryTap: widget.onSecondaryTap,
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeOutCubic,
-        child: RepaintBoundary(
-          child: Container(
-            decoration: BoxDecoration(
-            color: isDark ? AppColors.card : Colors.white,
-            borderRadius: BorderRadius.circular(16.0),
-            border: Border.all(
-              color: widget.isSelected
-                  ? AppColors.primary
-                  : (isDark ? AppColors.border : const Color(0xFFE2E8F0)),
-              width: widget.isSelected ? 1.5 : 0.9,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    return RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.card : Colors.white,
+          borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(
+            color: widget.isSelected
+                ? AppColors.primary
+                : (isDark ? AppColors.border : const Color(0xFFE2E8F0)),
+            width: widget.isSelected ? 1.5 : 0.9,
           ),
-          child: ClipRRect(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
+            onSecondaryTap: widget.onSecondaryTap,
             borderRadius: BorderRadius.circular(16.0),
-            child: IntrinsicHeight(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16.0),
+              child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

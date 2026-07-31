@@ -325,35 +325,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final List<DropdownMenuItem<String>> items = [];
     final now = DateTime.now();
     
-    // Add Month items (e.g. July 2026, June 2026...)
     for (int i = 0; i < 12; i++) {
       final date = DateTime(now.year, now.month - i, 1);
       final key = 'month_${date.year}_${date.month}';
       
       String label = DateFormat('MMMM yyyy').format(date);
       if (i == 0) {
-        label += ' (Current Month)';
+        label += ' (Current)';
       }
       
       items.add(DropdownMenuItem<String>(
         value: key,
-        child: Text(label, style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
       ));
     }
     
-    // Add Year items (e.g. 2026, 2025, 2024...)
     for (int i = 0; i < 4; i++) {
       final year = now.year - i;
       final key = 'year_$year';
       
       String label = '$year';
       if (i == 0) {
-        label += ' (Current Year)';
+        label += ' (Current)';
       }
       
       items.add(DropdownMenuItem<String>(
         value: key,
-        child: Text(label, style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
       ));
     }
     
@@ -603,74 +601,127 @@ class _DashboardLayout extends ConsumerWidget {
             index: 1,
             child: Row(
               children: [
-                // Dropdown 1: Month & Year Selector
                 Expanded(
+                  flex: 7,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    height: 38,
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surface : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12),
+                      color: isDark ? AppColors.surface : Colors.white,
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
                         width: 0.8,
                       ),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: periodKey != 'all' ? periodKey : null,
-                        isExpanded: true,
-                        hint: Text(
-                          'Select Month / Year',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 13,
+                          color: isDark ? AppColors.primaryNeon : AppColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 1,
+                          height: 14,
+                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: periodKey != 'all' ? periodKey : null,
+                              isExpanded: true,
+                              icon: Icon(
+                                Icons.keyboard_arrow_down_rounded, 
+                                size: 16,
+                                color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                              ),
+                              hint: Text(
+                                'Select Month / Year',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                ),
+                              ),
+                              dropdownColor: isDark ? AppColors.surface : Colors.white,
+                              items: getMonthYearItems(isDark),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  onPeriodChanged(val);
+                                }
+                              },
+                            ),
                           ),
                         ),
-                        dropdownColor: isDark ? AppColors.surface : Colors.white,
-                        items: getMonthYearItems(isDark),
-                        onChanged: (val) {
-                          if (val != null) {
-                            onPeriodChanged(val);
-                          }
-                        },
-                      ),
+                      ],
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Dropdown 2: All Time Selector
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.surface : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: periodKey == 'all' ? 'all' : null,
-                      hint: Text(
-                        'Specific Period',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
-                        ),
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    height: 38,
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.surface : Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                        width: 0.8,
                       ),
-                      dropdownColor: isDark ? AppColors.surface : Colors.white,
-                      items: [
-                        DropdownMenuItem<String>(
-                          value: 'all',
-                          child: Text('All Time', style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.all_inclusive_rounded,
+                          size: 13,
+                          color: isDark ? AppColors.primary : AppColors.primaryNeon,
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 1,
+                          height: 14,
+                          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: periodKey == 'all' ? 'all' : null,
+                              isExpanded: true,
+                              icon: Icon(
+                                Icons.keyboard_arrow_down_rounded, 
+                                size: 16,
+                                color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                              ),
+                              hint: Text(
+                                'Period',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                ),
+                              ),
+                              dropdownColor: isDark ? AppColors.surface : Colors.white,
+                              items: [
+                                DropdownMenuItem<String>(
+                                  value: 'all',
+                                  child: Text('All Time', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val == 'all') {
+                                  onPeriodChanged('all');
+                                }
+                              },
+                            ),
+                          ),
                         ),
                       ],
-                      onChanged: (val) {
-                        if (val == 'all') {
-                          onPeriodChanged('all');
-                        }
-                      },
                     ),
                   ),
                 ),
@@ -683,36 +734,36 @@ class _DashboardLayout extends ConsumerWidget {
             child: _MetricRow(metrics: periodMetrics),
           ),
           const SizedBox(height: 16),
-          if (!settings.isClientMode) ...[
-            _StaggeredSection(
-              index: 3,
-              child: Builder(
-                builder: (context) {
-                  final now = DateTime.now();
-                  int goalYear = now.year;
-                  int goalMonth = now.month;
-                  
-                  if (periodKey.startsWith('month_')) {
-                    final parts = periodKey.split('_');
-                    goalYear = int.parse(parts[1]);
-                    goalMonth = int.parse(parts[2]);
-                  }
-                  
-                  final start = DateTime(goalYear, goalMonth, 1);
-                  final end = goalMonth == 12 ? DateTime(goalYear + 1, 1, 1) : DateTime(goalYear, goalMonth + 1, 1);
-                  final thisMonthProjects = projects.where((p) => p.createdAt.isAfter(start) && p.createdAt.isBefore(end));
-                  final thisMonthEarning = thisMonthProjects.fold<double>(0.0, (s, p) => s + p.price);
-                  
-                  return GoalTracker(
-                    currentRevenue: thisMonthEarning,
-                    goal: settings.monthlyGoal,
-                    formatValue: currency.format,
-                  );
+          _StaggeredSection(
+            index: 3,
+            child: Builder(
+              builder: (context) {
+                final now = DateTime.now();
+                int goalYear = now.year;
+                int goalMonth = now.month;
+                
+                if (periodKey.startsWith('month_')) {
+                  final parts = periodKey.split('_');
+                  goalYear = int.parse(parts[1]);
+                  goalMonth = int.parse(parts[2]);
                 }
-              ),
+                
+                final start = DateTime(goalYear, goalMonth, 1);
+                final end = goalMonth == 12 ? DateTime(goalYear + 1, 1, 1) : DateTime(goalYear, goalMonth + 1, 1);
+                final thisMonthProjects = projects.where((p) => p.createdAt.isAfter(start) && p.createdAt.isBefore(end));
+                final thisMonthEarning = thisMonthProjects.fold<double>(0.0, (s, p) => s + p.price);
+                
+                return GoalTracker(
+                  currentRevenue: thisMonthEarning,
+                  goal: settings.monthlyGoal,
+                  formatValue: currency.format,
+                  label: settings.isClientMode ? 'MONTHLY BUDGET' : 'MONTHLY GOAL',
+                  isExpense: settings.isClientMode,
+                );
+              }
             ),
-            const SizedBox(height: 16),
-          ],
+          ),
+          const SizedBox(height: 16),
           _StaggeredSection(
             index: 4,
             child: _buildCompactRow(context, [

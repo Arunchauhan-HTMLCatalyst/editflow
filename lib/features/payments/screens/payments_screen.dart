@@ -194,6 +194,287 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     _showInvoicePreview(context, projects: projects, currency: currency);
   }
 
+  void _toggleProjectSelection(String projectId) {
+    setState(() {
+      _isSelectMode = true;
+      if (_selectedProjectIds.contains(projectId)) {
+        _selectedProjectIds.remove(projectId);
+      } else {
+        _selectedProjectIds.add(projectId);
+      }
+    });
+  }
+
+  Future<void> _handleBatchDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Projects'),
+        content: Text('Are you sure you want to delete these ${_selectedProjectIds.length} projects? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final ids = _selectedProjectIds.toList();
+      setState(() {
+        _isSelectMode = false;
+        _selectedProjectIds.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              SizedBox(width: 12),
+              Text('Deleting projects...'),
+            ],
+          ),
+          duration: Duration(days: 1),
+        ),
+      );
+
+      try {
+        final notifier = ref.read(projectProvider.notifier);
+        for (final id in ids) {
+          await notifier.deleteProject(id);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Projects deleted successfully')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete projects: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _handleBatchStatusUpdate() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final status = await showDialog<ProjectStatus>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: isDark ? const Color(0xFF1B2227) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF2E3942) : const Color(0xFFE2E8F0),
+            width: 0.8,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        child: const Icon(
+                          Icons.change_circle_outlined,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Update Status',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                          fontFamily: 'Outfit',
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    color: isDark ? Colors.white54 : Colors.black54,
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Select the new status to apply to the selected projects:',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                  fontFamily: 'Outfit',
+                ),
+              ),
+              const SizedBox(height: 20),
+              ...ProjectStatus.values.map((s) {
+                Color badgeColor;
+                IconData icon;
+                switch (s) {
+                  case ProjectStatus.yetToStart:
+                    badgeColor = const Color(0xFF64748B);
+                    icon = Icons.schedule_rounded;
+                    break;
+                  case ProjectStatus.inProgress:
+                    badgeColor = const Color(0xFF3B82F6);
+                    icon = Icons.play_arrow_rounded;
+                    break;
+                  case ProjectStatus.reviewPending:
+                    badgeColor = const Color(0xFF8B5CF6);
+                    icon = Icons.rate_review_rounded;
+                    break;
+                  case ProjectStatus.revisionPending:
+                    badgeColor = const Color(0xFFF59E0B);
+                    icon = Icons.replay_rounded;
+                    break;
+                  case ProjectStatus.completed:
+                    badgeColor = const Color(0xFF10B981);
+                    icon = Icons.check_circle_rounded;
+                    break;
+                  case ProjectStatus.paid:
+                    badgeColor = const Color(0xFF06B6D4);
+                    icon = Icons.payments_rounded;
+                    break;
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: InkWell(
+                    onTap: () => Navigator.of(ctx).pop(s),
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(12.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF2E3942) : const Color(0xFFE2E8F0),
+                          width: 0.8,
+                        ),
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6.0),
+                            decoration: BoxDecoration(
+                              color: badgeColor.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              icon,
+                              color: badgeColor,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            s.displayName,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              fontFamily: 'Outfit',
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: isDark ? Colors.white30 : Colors.black26,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (status != null && mounted) {
+      final ids = _selectedProjectIds.toList();
+      setState(() {
+        _isSelectMode = false;
+        _selectedProjectIds.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Text('Updating status to ${status.displayName}...'),
+            ],
+          ),
+          duration: const Duration(days: 1),
+        ),
+      );
+
+      try {
+        final notifier = ref.read(projectProvider.notifier);
+        for (final id in ids) {
+          await notifier.updateStatus(id, status);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Projects updated to ${status.displayName}')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update projects: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -201,6 +482,23 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     final currency = ref.watch(currencyProvider);
     final overview = ref.watch(paymentOverviewProvider);
     final clients = ref.watch(safeClientsProvider);
+    final isClient = ref.watch(settingsProvider).isClientMode;
+
+    final rawProjects = projectsAsync.valueOrNull ?? [];
+    final filteredProjects = rawProjects.where((p) {
+      final matchesSearch = p.name.toLowerCase().contains(_searchQuery) ||
+          (p.clientName?.toLowerCase().contains(_searchQuery) ?? false);
+      final matchesClient = _selectedClientId == null || p.clientId == _selectedClientId;
+      
+      bool matchesStatus = true;
+      if (_selectedStatus == 'paid') {
+        matchesStatus = p.status == ProjectStatus.paid;
+      } else if (_selectedStatus == 'unpaid') {
+        matchesStatus = p.status != ProjectStatus.paid;
+      }
+      
+      return matchesSearch && matchesClient && matchesStatus;
+    }).toList();
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -248,13 +546,24 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               },
             )
           else ...[
+            if (!isClient) ...[
+              IconButton(
+                icon: const Icon(Icons.change_circle_outlined),
+                tooltip: 'Update Status',
+                onPressed: _selectedProjectIds.isEmpty ? null : _handleBatchStatusUpdate,
+              ),
+              IconButton(
+                icon: const Icon(CupertinoIcons.delete),
+                tooltip: 'Delete Projects',
+                onPressed: _selectedProjectIds.isEmpty ? null : _handleBatchDelete,
+              ),
+            ],
             IconButton(
               icon: const Icon(Icons.select_all),
               tooltip: 'Select all',
               onPressed: () {
-                final projects = projectsAsync.valueOrNull ?? [];
                 setState(() {
-                  _selectedProjectIds.addAll(projects.map((p) => p.id));
+                  _selectedProjectIds.addAll(filteredProjects.map((p) => p.id));
                 });
               },
             ),
@@ -264,8 +573,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               onPressed: _selectedProjectIds.isEmpty
                   ? null
                   : () {
-                      final projects = projectsAsync.valueOrNull ?? [];
-                      final selected = projects.where((p) => _selectedProjectIds.contains(p.id)).toList();
+                      final selected = filteredProjects.where((p) => _selectedProjectIds.contains(p.id)).toList();
                       _shareCombinedInvoice(selected, currency);
                     },
             ),
@@ -278,22 +586,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           error: (e, _) => Center(
             child: Text('Error: ${e.toString()}'),
           ),
-          data: (projects) {
-            // Apply search filter, client dropdown filter, and status filter
-            final filteredProjects = projects.where((p) {
-              final matchesSearch = p.name.toLowerCase().contains(_searchQuery) ||
-                  (p.clientName?.toLowerCase().contains(_searchQuery) ?? false);
-              final matchesClient = _selectedClientId == null || p.clientId == _selectedClientId;
-              
-              bool matchesStatus = true;
-              if (_selectedStatus == 'paid') {
-                matchesStatus = p.status == ProjectStatus.paid;
-              } else if (_selectedStatus == 'unpaid') {
-                matchesStatus = p.status != ProjectStatus.paid;
-              }
-              
-              return matchesSearch && matchesClient && matchesStatus;
-            }).toList();
+          data: (_) {
+            // Using precomputed filteredProjects
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -462,64 +756,51 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                   children: [
                     Expanded(
                       flex: 4,
-                      child: TextField(
-                        onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-                        decoration: InputDecoration(
-                          hintText: 'Search payments...',
-                          prefixIcon: const Icon(CupertinoIcons.search, size: 16),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10.0),
-                        ),
-                        style: TextStyle(
-                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.surface : CupertinoColors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String?>(
-                            value: _selectedClientId,
-                            isExpanded: true,
-                            hint: Text(
-                              'Client',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                      child: SizedBox(
+                        height: 38,
+                        child: TextField(
+                          onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                          decoration: InputDecoration(
+                            hintText: 'Search payments...',
+                            hintStyle: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                            ),
+                            prefixIcon: Icon(
+                              CupertinoIcons.search,
+                              size: 14,
+                              color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                            ),
+                            filled: true,
+                            fillColor: isDark ? AppColors.surface : Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                                width: 0.8,
                               ),
                             ),
-                            dropdownColor: isDark ? AppColors.surface : CupertinoColors.white,
-                            items: [
-                              DropdownMenuItem<String?>(
-                                value: null,
-                                child: Text('All Clients', style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                                width: 0.8,
                               ),
-                              ...clients.map((c) {
-                                return DropdownMenuItem<String?>(
-                                  value: c.id,
-                                  child: Text(c.name, style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
-                                );
-                              }),
-                            ],
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedClientId = val;
-                              });
-                            },
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                                width: 1.0,
+                              ),
+                            ),
+                          ),
+                          style: TextStyle(
+                            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -528,49 +809,147 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                     Expanded(
                       flex: 3,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        height: 38,
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.surface : CupertinoColors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          color: isDark ? AppColors.surface : Colors.white,
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
                             width: 0.8,
                           ),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String?>(
-                            value: _selectedStatus,
-                            isExpanded: true,
-                            hint: Text(
-                              'Status',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.person_outline_rounded,
+                              size: 13,
+                              color: isDark ? AppColors.primaryNeon : AppColors.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              width: 1,
+                              height: 14,
+                              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String?>(
+                                  value: _selectedClientId,
+                                  isExpanded: true,
+                                  icon: Icon(
+                                    Icons.keyboard_arrow_down_rounded, 
+                                    size: 16,
+                                    color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                  ),
+                                  hint: Text(
+                                    'Client',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  dropdownColor: isDark ? AppColors.surface : Colors.white,
+                                  items: [
+                                    DropdownMenuItem<String?>(
+                                      value: null,
+                                      child: Text('All Clients', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
+                                    ),
+                                    ...clients.map((c) {
+                                      return DropdownMenuItem<String?>(
+                                        value: c.id,
+                                        child: Text(c.name, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
+                                      );
+                                    }),
+                                  ],
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _selectedClientId = val;
+                                    });
+                                  },
+                                ),
                               ),
                             ),
-                            dropdownColor: isDark ? AppColors.surface : CupertinoColors.white,
-                            items: [
-                              DropdownMenuItem<String?>(
-                                value: null,
-                                child: Text('All Status', style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
-                              ),
-                              DropdownMenuItem<String?>(
-                                value: 'paid',
-                                child: Text('Paid', style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
-                              ),
-                              DropdownMenuItem<String?>(
-                                value: 'unpaid',
-                                child: Text('Unpaid', style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
-                              ),
-                            ],
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedStatus = val;
-                              });
-                            },
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        height: 38,
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.surface : Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                            width: 0.8,
                           ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline_rounded,
+                              size: 13,
+                              color: isDark ? AppColors.primary : AppColors.primaryNeon,
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              width: 1,
+                              height: 14,
+                              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String?>(
+                                  value: _selectedStatus,
+                                  isExpanded: true,
+                                  icon: Icon(
+                                    Icons.keyboard_arrow_down_rounded, 
+                                    size: 16,
+                                    color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                  ),
+                                  hint: Text(
+                                    'Status',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  dropdownColor: isDark ? AppColors.surface : Colors.white,
+                                  items: [
+                                    DropdownMenuItem<String?>(
+                                      value: null,
+                                      child: Text('All Status', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
+                                    ),
+                                    DropdownMenuItem<String?>(
+                                      value: 'paid',
+                                      child: Text('Paid', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
+                                    ),
+                                    DropdownMenuItem<String?>(
+                                      value: 'unpaid',
+                                      child: Text('Unpaid', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
+                                    ),
+                                  ],
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _selectedStatus = val;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -624,6 +1003,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                             });
                           },
                           onSharePressed: () => _shareInvoice(p, currency),
+                          onLongPress: isClient ? null : () => _toggleProjectSelection(p.id),
+                          onSecondaryTap: isClient ? null : () => _toggleProjectSelection(p.id),
                         ),
                       );
                     },
@@ -651,6 +1032,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                             });
                           },
                           onSharePressed: () => _shareInvoice(p, currency),
+                          onLongPress: isClient ? null : () => _toggleProjectSelection(p.id),
+                          onSecondaryTap: isClient ? null : () => _toggleProjectSelection(p.id),
                         ),
                       ),
                     );
@@ -880,6 +1263,8 @@ class _PaymentProjectCard extends StatefulWidget {
   final bool isSelected;
   final ValueChanged<bool?>? onSelectedChanged;
   final VoidCallback? onSharePressed;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onSecondaryTap;
 
   const _PaymentProjectCard({
     required this.project,
@@ -889,6 +1274,8 @@ class _PaymentProjectCard extends StatefulWidget {
     this.isSelected = false,
     this.onSelectedChanged,
     this.onSharePressed,
+    this.onLongPress,
+    this.onSecondaryTap,
   });
 
   @override
@@ -946,6 +1333,8 @@ class _PaymentProjectCardState extends State<_PaymentProjectCard> {
                 context.push('/projects/${project.id}');
               }
             },
+            onLongPress: widget.onLongPress,
+            onSecondaryTap: widget.onSecondaryTap,
             borderRadius: BorderRadius.circular(16.0),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
