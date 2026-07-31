@@ -542,10 +542,12 @@ final dashboardPeriodMetricsProvider =
   switch (period) {
     case DashboardPeriod.month:
       final start = DateTime(now.year, now.month, 1);
-      filtered = projects.where((p) => p.createdAt.isAfter(start));
+      final end = now.month == 12 ? DateTime(now.year + 1, 1, 1) : DateTime(now.year, now.month + 1, 1);
+      filtered = projects.where((p) => p.createdAt.isAfter(start) && p.createdAt.isBefore(end));
     case DashboardPeriod.year:
       final start = DateTime(now.year, 1, 1);
-      filtered = projects.where((p) => p.createdAt.isAfter(start));
+      final end = DateTime(now.year + 1, 1, 1);
+      filtered = projects.where((p) => p.createdAt.isAfter(start) && p.createdAt.isBefore(end));
     case DashboardPeriod.all:
       filtered = projects;
   }
