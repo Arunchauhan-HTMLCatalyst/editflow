@@ -124,8 +124,9 @@ class _ProjectCardState extends State<ProjectCard> {
         scale: _scale,
         duration: const Duration(milliseconds: 100),
         curve: Curves.easeOutCubic,
-        child: Container(
-          decoration: BoxDecoration(
+        child: RepaintBoundary(
+          child: Container(
+            decoration: BoxDecoration(
             color: isDark ? AppColors.card : Colors.white,
             borderRadius: BorderRadius.circular(16.0),
             border: Border.all(
@@ -337,6 +338,7 @@ class _ProjectCardState extends State<ProjectCard> {
               ),
             ),
           ),
+        ),
         ),
       ),
     );
