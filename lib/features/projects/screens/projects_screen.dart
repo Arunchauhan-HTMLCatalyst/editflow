@@ -31,6 +31,17 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
   bool _isSelectMode = false;
   final Set<String> _selectedProjectIds = {};
 
+  void _toggleProjectSelection(String projectId) {
+    setState(() {
+      _isSelectMode = true;
+      if (_selectedProjectIds.contains(projectId)) {
+        _selectedProjectIds.remove(projectId);
+      } else {
+        _selectedProjectIds.add(projectId);
+      }
+    });
+  }
+
   Widget _buildSummaryChip({
     required String label,
     required Color color,
@@ -439,6 +450,8 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                                             }
                                           });
                                         },
+                                        onLongPress: () => _toggleProjectSelection(project.id),
+                                        onSecondaryTap: () => _toggleProjectSelection(project.id),
                                         onTap: () {
                                           if (_isSelectMode) {
                                             setState(() {
@@ -482,6 +495,8 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                                             }
                                           });
                                         },
+                                        onLongPress: () => _toggleProjectSelection(project.id),
+                                        onSecondaryTap: () => _toggleProjectSelection(project.id),
                                         onTap: () {
                                           if (_isSelectMode) {
                                             setState(() {

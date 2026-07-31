@@ -242,23 +242,41 @@ class ProjectProvider extends AsyncNotifier<List<Project>> {
         }
 
         if (neededType != null && desc != null) {
-          final existing = await SupabaseService.instance
-              .from('activities')
-              .select('id')
-              .eq('user_id', currentUserId)
-              .eq('type', neededType)
-              .eq('reference_id', p.id);
+          bool shouldSend = true;
+          if (neededType == 'payment_overdue') {
+            final prefs = await SharedPreferences.getInstance();
+            final lastSentStr = prefs.getString('last_overdue_notif_${p.id}');
+            if (lastSentStr != null) {
+              final lastSent = DateTime.tryParse(lastSentStr);
+              if (lastSent != null && now.difference(lastSent).inHours < 24) {
+                shouldSend = false;
+              }
+            }
+          }
 
-          if ((existing as List).isEmpty) {
-            await SupabaseService.instance.from('activities').insert({
-              'user_id': currentUserId,
-              'type': neededType,
-              'description': desc,
-              'reference_id': p.id,
-              'reference_type': 'project',
-              'created_at': now.toIso8601String(),
-            });
-            debugPrint('[NOTIFICATION SYNC] Logged notification "$neededType" for project ${p.name}');
+          if (shouldSend) {
+            final existing = await SupabaseService.instance
+                .from('activities')
+                .select('id')
+                .eq('user_id', currentUserId)
+                .eq('type', neededType)
+                .eq('reference_id', p.id);
+
+            if ((existing as List).isEmpty) {
+              await SupabaseService.instance.from('activities').insert({
+                'user_id': currentUserId,
+                'type': neededType,
+                'description': desc,
+                'reference_id': p.id,
+                'reference_type': 'project',
+                'created_at': now.toIso8601String(),
+              });
+              if (neededType == 'payment_overdue') {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('last_overdue_notif_${p.id}', now.toIso8601String());
+              }
+              debugPrint('[NOTIFICATION SYNC] Logged notification "$neededType" for project ${p.name}');
+            }
           }
         }
       }

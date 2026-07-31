@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'notification_center_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
@@ -46,11 +47,13 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  DashboardPeriod _period = DashboardPeriod.month;
+  late String _periodKey;
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _periodKey = 'month_${now.year}_${now.month}';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(commentRepositoryProvider).cleanupOldVoiceNotes().catchError((e) {
         debugPrint('[DASHBOARD] Background voice note cleanup error: $e');
@@ -98,7 +101,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final currency = ref.watch(currencyProvider);
     final settings = ref.watch(settingsProvider);
     final metrics = ref.watch(dashboardMetricsProvider);
-    final periodMetrics = ref.watch(dashboardPeriodMetricsProvider(_period));
+    final periodMetrics = ref.watch(dashboardPeriodMetricsProvider(_periodKey));
 
     final projectsAsync = ref.watch(projectProvider);
     final clientsAsync = ref.watch(clientProvider);
@@ -308,13 +311,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ref.read(clientProvider.notifier).refresh();
                           ref.read(projectProvider.notifier).refresh();
                         },
-                        onPeriodChanged: (p) => setState(() => _period = p),
-                        currentPeriod: _period,
+                        onPeriodChanged: (p) => setState(() => _periodKey = p),
+                        periodKey: _periodKey,
+                        getMonthYearItems: _getMonthYearDropdownItems,
                       )),
           ),
         ),
       ),
     );
+  }
+
+  List<DropdownMenuItem<String>> _getMonthYearDropdownItems(bool isDark) {
+    final List<DropdownMenuItem<String>> items = [];
+    final now = DateTime.now();
+    
+    // Add Month items (e.g. July 2026, June 2026...)
+    for (int i = 0; i < 12; i++) {
+      final date = DateTime(now.year, now.month - i, 1);
+      final key = 'month_${date.year}_${date.month}';
+      
+      String label = DateFormat('MMMM yyyy').format(date);
+      if (i == 0) {
+        label += ' (Current Month)';
+      }
+      
+      items.add(DropdownMenuItem<String>(
+        value: key,
+        child: Text(label, style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+      ));
+    }
+    
+    // Add Year items (e.g. 2026, 2025, 2024...)
+    for (int i = 0; i < 4; i++) {
+      final year = now.year - i;
+      final key = 'year_$year';
+      
+      String label = '$year';
+      if (i == 0) {
+        label += ' (Current Year)';
+      }
+      
+      items.add(DropdownMenuItem<String>(
+        value: key,
+        child: Text(label, style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+      ));
+    }
+    
+    return items;
   }
 }
 
@@ -328,8 +371,9 @@ class _DashboardLayout extends ConsumerWidget {
   final bool hasError;
   final Object? error;
   final VoidCallback onRetry;
-  final ValueChanged<DashboardPeriod> onPeriodChanged;
-  final DashboardPeriod currentPeriod;
+  final ValueChanged<String> onPeriodChanged;
+  final String periodKey;
+  final List<DropdownMenuItem<String>> Function(bool) getMonthYearItems;
 
   const _DashboardLayout({
     required this.metrics,
@@ -342,7 +386,8 @@ class _DashboardLayout extends ConsumerWidget {
     this.error,
     required this.onRetry,
     required this.onPeriodChanged,
-    required this.currentPeriod,
+    required this.periodKey,
+    required this.getMonthYearItems,
   });
 
   @override
@@ -557,12 +602,77 @@ class _DashboardLayout extends ConsumerWidget {
           _StaggeredSection(
             index: 1,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _PeriodFilter(
-                  current: currentPeriod,
-                  onChanged: onPeriodChanged,
-                  isDark: isDark,
+                // Dropdown 1: Month & Year Selector
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.surface : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: periodKey != 'all' ? periodKey : null,
+                        isExpanded: true,
+                        hint: Text(
+                          'Select Month / Year',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                          ),
+                        ),
+                        dropdownColor: isDark ? AppColors.surface : Colors.white,
+                        items: getMonthYearItems(isDark),
+                        onChanged: (val) {
+                          if (val != null) {
+                            onPeriodChanged(val);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Dropdown 2: All Time Selector
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surface : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: periodKey == 'all' ? 'all' : null,
+                      hint: Text(
+                        'Specific Period',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                        ),
+                      ),
+                      dropdownColor: isDark ? AppColors.surface : Colors.white,
+                      items: [
+                        DropdownMenuItem<String>(
+                          value: 'all',
+                          child: Text('All Time', style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val == 'all') {
+                          onPeriodChanged('all');
+                        }
+                      },
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -578,15 +688,23 @@ class _DashboardLayout extends ConsumerWidget {
               index: 3,
               child: Builder(
                 builder: (context) {
-                  // Re-calculate this month's payments specifically matching projects created this month
                   final now = DateTime.now();
-                  final start = DateTime(now.year, now.month, 1);
-                  final end = now.month == 12 ? DateTime(now.year + 1, 1, 1) : DateTime(now.year, now.month + 1, 1);
+                  int goalYear = now.year;
+                  int goalMonth = now.month;
+                  
+                  if (periodKey.startsWith('month_')) {
+                    final parts = periodKey.split('_');
+                    goalYear = int.parse(parts[1]);
+                    goalMonth = int.parse(parts[2]);
+                  }
+                  
+                  final start = DateTime(goalYear, goalMonth, 1);
+                  final end = goalMonth == 12 ? DateTime(goalYear + 1, 1, 1) : DateTime(goalYear, goalMonth + 1, 1);
                   final thisMonthProjects = projects.where((p) => p.createdAt.isAfter(start) && p.createdAt.isBefore(end));
-                  final thisMonthReceived = thisMonthProjects.fold<double>(0.0, (s, p) => s + p.receivedAmount);
+                  final thisMonthEarning = thisMonthProjects.fold<double>(0.0, (s, p) => s + p.price);
                   
                   return GoalTracker(
-                    currentRevenue: thisMonthReceived,
+                    currentRevenue: thisMonthEarning,
                     goal: settings.monthlyGoal,
                     formatValue: currency.format,
                   );
@@ -705,81 +823,7 @@ class _StaggeredSectionState extends State<_StaggeredSection> with SingleTickerP
   }
 }
 
-class _PeriodFilter extends StatelessWidget {
-  final DashboardPeriod current;
-  final ValueChanged<DashboardPeriod> onChanged;
-  final bool isDark;
 
-  const _PeriodFilter({required this.current, required this.onChanged, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4.0),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surface : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-          width: 0.8,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _PeriodTab(label: 'Month', selected: current == DashboardPeriod.month, onTap: () => onChanged(DashboardPeriod.month), isDark: isDark),
-          _PeriodTab(label: 'Year', selected: current == DashboardPeriod.year, onTap: () => onChanged(DashboardPeriod.year), isDark: isDark),
-          _PeriodTab(label: 'All time', selected: current == DashboardPeriod.all, onTap: () => onChanged(DashboardPeriod.all), isDark: isDark),
-        ],
-      ),
-    );
-  }
-}
-
-class _PeriodTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool isDark;
-
-  const _PeriodTab({required this.label, required this.selected, required this.onTap, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? (isDark ? AppColors.card : Colors.white)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-            color: selected
-                ? AppColors.primary
-                : (isDark ? AppColors.textSecondary : const Color(0xFF64748B)),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _ErrorBanner extends StatelessWidget {
   final VoidCallback onRetry;

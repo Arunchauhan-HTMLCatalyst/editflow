@@ -14,6 +14,8 @@ class ProjectCard extends StatefulWidget {
   final bool isSelectMode;
   final bool isSelected;
   final ValueChanged<bool?>? onSelectedChanged;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onSecondaryTap;
 
   const ProjectCard({
     super.key,
@@ -23,6 +25,8 @@ class ProjectCard extends StatefulWidget {
     this.isSelectMode = false,
     this.isSelected = false,
     this.onSelectedChanged,
+    this.onLongPress,
+    this.onSecondaryTap,
   });
 
   @override
@@ -114,6 +118,8 @@ class _ProjectCardState extends State<ProjectCard> {
       onTapUp: (_) => setState(() => _scale = 1.0),
       onTapCancel: () => setState(() => _scale = 1.0),
       onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
+      onSecondaryTap: widget.onSecondaryTap,
       child: AnimatedScale(
         scale: _scale,
         duration: const Duration(milliseconds: 100),

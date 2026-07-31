@@ -528,28 +528,26 @@ class PeriodMetricItem {
   });
 }
 
-enum DashboardPeriod { all, month, year }
-
 final dashboardPeriodMetricsProvider =
-    Provider.family<List<PeriodMetricItem>, DashboardPeriod>((ref, period) {
+    Provider.family<List<PeriodMetricItem>, String>((ref, filterKey) {
   final projects = ref.watch(safeProjectsProvider);
   final currency = ref.watch(currencyProvider);
   final settings = ref.watch(settingsProvider);
   final isClient = settings.isClientMode;
-  final now = DateTime.now();
 
   Iterable<Project> filtered;
-  switch (period) {
-    case DashboardPeriod.month:
-      final start = DateTime(now.year, now.month, 1);
-      final end = now.month == 12 ? DateTime(now.year + 1, 1, 1) : DateTime(now.year, now.month + 1, 1);
-      filtered = projects.where((p) => p.createdAt.isAfter(start) && p.createdAt.isBefore(end));
-    case DashboardPeriod.year:
-      final start = DateTime(now.year, 1, 1);
-      final end = DateTime(now.year + 1, 1, 1);
-      filtered = projects.where((p) => p.createdAt.isAfter(start) && p.createdAt.isBefore(end));
-    case DashboardPeriod.all:
-      filtered = projects;
+  if (filterKey == 'all') {
+    filtered = projects;
+  } else if (filterKey.startsWith('year_')) {
+    final year = int.parse(filterKey.split('_')[1]);
+    filtered = projects.where((p) => p.createdAt.year == year);
+  } else if (filterKey.startsWith('month_')) {
+    final parts = filterKey.split('_');
+    final year = int.parse(parts[1]);
+    final month = int.parse(parts[2]);
+    filtered = projects.where((p) => p.createdAt.year == year && p.createdAt.month == month);
+  } else {
+    filtered = projects;
   }
 
   final list = filtered.toList();
