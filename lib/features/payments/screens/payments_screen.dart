@@ -38,6 +38,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   bool _isSelectMode = false;
   final Set<String> _selectedProjectIds = {};
   String _searchQuery = '';
+  String? _selectedStatus; // null for All, 'paid' for Paid, 'unpaid' for Unpaid
   String? _selectedClientId;
 
   void _shareInvoiceText(Project project, CurrencyConfig currency) {
@@ -278,12 +279,20 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
             child: Text('Error: ${e.toString()}'),
           ),
           data: (projects) {
-            // Apply search filter and client dropdown filter
+            // Apply search filter, client dropdown filter, and status filter
             final filteredProjects = projects.where((p) {
               final matchesSearch = p.name.toLowerCase().contains(_searchQuery) ||
                   (p.clientName?.toLowerCase().contains(_searchQuery) ?? false);
               final matchesClient = _selectedClientId == null || p.clientId == _selectedClientId;
-              return matchesSearch && matchesClient;
+              
+              bool matchesStatus = true;
+              if (_selectedStatus == 'paid') {
+                matchesStatus = p.status == ProjectStatus.paid;
+              } else if (_selectedStatus == 'unpaid') {
+                matchesStatus = p.status != ProjectStatus.paid;
+              }
+              
+              return matchesSearch && matchesClient && matchesStatus;
             }).toList();
 
           return RefreshIndicator(
@@ -452,7 +461,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 Row(
                   children: [
                     Expanded(
-                      flex: 3,
+                      flex: 4,
                       child: TextField(
                         onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
                         decoration: InputDecoration(
@@ -467,11 +476,11 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Expanded(
-                      flex: 2,
+                      flex: 3,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.surface : CupertinoColors.white,
                           borderRadius: BorderRadius.circular(12),
@@ -485,9 +494,11 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                             value: _selectedClientId,
                             isExpanded: true,
                             hint: Text(
-                              'Filter Client',
+                              'Client',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
                               ),
                             ),
@@ -495,18 +506,68 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                             items: [
                               DropdownMenuItem<String?>(
                                 value: null,
-                                child: Text('All Clients', style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+                                child: Text('All Clients', style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
                               ),
                               ...clients.map((c) {
                                 return DropdownMenuItem<String?>(
                                   value: c.id,
-                                  child: Text(c.name, style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+                                  child: Text(c.name, style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
                                 );
                               }),
                             ],
                             onChanged: (val) {
                               setState(() {
                                 _selectedClientId = val;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.surface : CupertinoColors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: _selectedStatus,
+                            isExpanded: true,
+                            hint: Text(
+                              'Status',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                              ),
+                            ),
+                            dropdownColor: isDark ? AppColors.surface : CupertinoColors.white,
+                            items: [
+                              DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('All Status', style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
+                              ),
+                              DropdownMenuItem<String?>(
+                                value: 'paid',
+                                child: Text('Paid', style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
+                              ),
+                              DropdownMenuItem<String?>(
+                                value: 'unpaid',
+                                child: Text('Unpaid', style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black)),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedStatus = val;
                               });
                             },
                           ),

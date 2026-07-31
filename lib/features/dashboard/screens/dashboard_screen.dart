@@ -576,10 +576,21 @@ class _DashboardLayout extends ConsumerWidget {
           if (!settings.isClientMode) ...[
             _StaggeredSection(
               index: 3,
-              child: GoalTracker(
-                currentRevenue: metrics.totalReceived,
-                goal: settings.monthlyGoal,
-                formatValue: currency.format,
+              child: Builder(
+                builder: (context) {
+                  // Re-calculate this month's payments specifically matching projects created this month
+                  final now = DateTime.now();
+                  final start = DateTime(now.year, now.month, 1);
+                  final end = now.month == 12 ? DateTime(now.year + 1, 1, 1) : DateTime(now.year, now.month + 1, 1);
+                  final thisMonthProjects = projects.where((p) => p.createdAt.isAfter(start) && p.createdAt.isBefore(end));
+                  final thisMonthReceived = thisMonthProjects.fold<double>(0.0, (s, p) => s + p.receivedAmount);
+                  
+                  return GoalTracker(
+                    currentRevenue: thisMonthReceived,
+                    goal: settings.monthlyGoal,
+                    formatValue: currency.format,
+                  );
+                }
               ),
             ),
             const SizedBox(height: 16),
