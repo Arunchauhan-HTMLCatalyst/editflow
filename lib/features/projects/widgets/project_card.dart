@@ -11,12 +11,18 @@ class ProjectCard extends StatefulWidget {
   final Project project;
   final VoidCallback onTap;
   final CurrencyConfig? currency;
+  final bool isSelectMode;
+  final bool isSelected;
+  final ValueChanged<bool?>? onSelectedChanged;
 
   const ProjectCard({
     super.key,
     required this.project,
     required this.onTap,
     this.currency,
+    this.isSelectMode = false,
+    this.isSelected = false,
+    this.onSelectedChanged,
   });
 
   @override
@@ -117,8 +123,10 @@ class _ProjectCardState extends State<ProjectCard> {
             color: isDark ? AppColors.card : Colors.white,
             borderRadius: BorderRadius.circular(16.0),
             border: Border.all(
-              color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
-              width: 0.9,
+              color: widget.isSelected
+                  ? AppColors.primary
+                  : (isDark ? AppColors.border : const Color(0xFFE2E8F0)),
+              width: widget.isSelected ? 1.5 : 0.9,
             ),
             boxShadow: [
               BoxShadow(
@@ -144,6 +152,17 @@ class _ProjectCardState extends State<ProjectCard> {
                       ),
                     ),
                   ),
+                  if (widget.isSelectMode)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 10.0),
+                      child: Center(
+                        child: CupertinoCheckbox(
+                          value: widget.isSelected,
+                          activeColor: AppColors.primary,
+                          onChanged: widget.onSelectedChanged,
+                        ),
+                      ),
+                    ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),

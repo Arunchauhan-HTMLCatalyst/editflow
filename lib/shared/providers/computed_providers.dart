@@ -375,18 +375,22 @@ DashboardMetrics _computeDashboardMetrics(List<Project> projects, List<Client> c
   int weekStarted = 0, weekPaid = 0;
   double weekPayments = 0;
   for (final p in projects) {
-    if (p.createdAt.isAfter(weekStart) && p.createdAt.isBefore(weekEnd)) weekStarted++;
-    if (p.status == ProjectStatus.paid && p.updatedAt.isAfter(weekStart) && p.updatedAt.isBefore(weekEnd)) weekPaid++;
-    if (p.updatedAt.isAfter(weekStart) && p.updatedAt.isBefore(weekEnd)) weekPayments += p.receivedAmount;
+    if (p.createdAt.isAfter(weekStart) && p.createdAt.isBefore(weekEnd)) {
+      weekStarted++;
+      if (p.status == ProjectStatus.paid) {
+        weekPaid++;
+      }
+      weekPayments += p.receivedAmount;
+    }
   }
 
   final weeklyRevenue = List.generate(7, (i) {
     final day = weekStart.add(Duration(days: i));
     return projects
         .where((p) =>
-            p.updatedAt.year == day.year &&
-            p.updatedAt.month == day.month &&
-            p.updatedAt.day == day.day)
+            p.createdAt.year == day.year &&
+            p.createdAt.month == day.month &&
+            p.createdAt.day == day.day)
         .fold<double>(0.0, (s, p) => s + p.receivedAmount);
   });
 
@@ -394,9 +398,9 @@ DashboardMetrics _computeDashboardMetrics(List<Project> projects, List<Client> c
     final day = today.subtract(Duration(days: 29 - i));
     return projects
         .where((p) =>
-            p.updatedAt.year == day.year &&
-            p.updatedAt.month == day.month &&
-            p.updatedAt.day == day.day)
+            p.createdAt.year == day.year &&
+            p.createdAt.month == day.month &&
+            p.createdAt.day == day.day)
         .fold<double>(0.0, (s, p) => s + p.receivedAmount);
   });
 
@@ -405,7 +409,7 @@ DashboardMetrics _computeDashboardMetrics(List<Project> projects, List<Client> c
     final adjustedMonth = ((month - 1) % 12) + 1;
     final year = month <= 0 ? today.year - 1 + ((month - 1) ~/ 12) : today.year;
     return projects
-        .where((p) => p.updatedAt.year == year && p.updatedAt.month == adjustedMonth)
+        .where((p) => p.createdAt.year == year && p.createdAt.month == adjustedMonth)
         .fold<double>(0.0, (s, p) => s + p.receivedAmount);
   });
 
@@ -538,10 +542,10 @@ final dashboardPeriodMetricsProvider =
   switch (period) {
     case DashboardPeriod.month:
       final start = DateTime(now.year, now.month, 1);
-      filtered = projects.where((p) => p.updatedAt.isAfter(start));
+      filtered = projects.where((p) => p.createdAt.isAfter(start));
     case DashboardPeriod.year:
       final start = DateTime(now.year, 1, 1);
-      filtered = projects.where((p) => p.updatedAt.isAfter(start));
+      filtered = projects.where((p) => p.createdAt.isAfter(start));
     case DashboardPeriod.all:
       filtered = projects;
   }

@@ -37,6 +37,8 @@ class PaymentsScreen extends ConsumerStatefulWidget {
 class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   bool _isSelectMode = false;
   final Set<String> _selectedProjectIds = {};
+  String _searchQuery = '';
+  String? _selectedClientId;
 
   void _shareInvoiceText(Project project, CurrencyConfig currency) {
     final authState = ref.read(authProvider);
@@ -197,6 +199,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     final projectsAsync = ref.watch(projectProvider);
     final currency = ref.watch(currencyProvider);
     final overview = ref.watch(paymentOverviewProvider);
+    final clients = ref.watch(safeClientsProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -275,6 +278,14 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
             child: Text('Error: ${e.toString()}'),
           ),
           data: (projects) {
+            // Apply search filter and client dropdown filter
+            final filteredProjects = projects.where((p) {
+              final matchesSearch = p.name.toLowerCase().contains(_searchQuery) ||
+                  (p.clientName?.toLowerCase().contains(_searchQuery) ?? false);
+              final matchesClient = _selectedClientId == null || p.clientId == _selectedClientId;
+              return matchesSearch && matchesClient;
+            }).toList();
+
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(projectProvider);
@@ -381,30 +392,131 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 ],
                 const SizedBox(height: 28),
                 if (overview.overdueProjects.isNotEmpty && !_isSelectMode) ...[
-                  Row(
-                    children: [
-                      const Icon(CupertinoIcons.exclamationmark_triangle,
-                          size: 16, color: AppColors.error),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Overdue Payments',
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: isDark ? 0.08 : 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.2),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.alarm_fill,
+                            size: 16,
+                            color: AppColors.error,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Overdue Payments',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.error,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${overview.overdueProjects.length} projects require balance clearance.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Search & Filter controls
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextField(
+                        onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                        decoration: InputDecoration(
+                          hintText: 'Search payments...',
+                          prefixIcon: const Icon(CupertinoIcons.search, size: 16),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10.0),
+                        ),
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.error,
+                          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ...overview.overdueProjects.map((p) => RepaintBoundary(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: _OverdueCard(project: p, isDark: isDark, currency: currency),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.surface : CupertinoColors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark ? AppColors.border : const Color(0xFFE2E8F0),
+                            width: 0.8,
+                          ),
                         ),
-                      )),
-                  const SizedBox(height: 16),
-                ],
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: _selectedClientId,
+                            isExpanded: true,
+                            hint: Text(
+                              'Filter Client',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                              ),
+                            ),
+                            dropdownColor: isDark ? AppColors.surface : CupertinoColors.white,
+                            items: [
+                              DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('All Clients', style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+                              ),
+                              ...clients.map((c) {
+                                return DropdownMenuItem<String?>(
+                                  value: c.id,
+                                  child: Text(c.name, style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+                                );
+                              }),
+                            ],
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedClientId = val;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
                 Text(
                   'All Projects',
                   style: AppTextStyles.title3(isDark).copyWith(
@@ -413,11 +525,11 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (projects.isEmpty)
+                if (filteredProjects.isEmpty)
                   const EmptyStateWidget(
                     icon: Icons.attach_money,
-                    title: 'No payments yet',
-                    subtitle: 'Create a project to start tracking payments',
+                    title: 'No payments found',
+                    subtitle: 'Modify filters or search keywords',
                   )
                 else if (AppLayout.isTablet(context))
                   GridView.builder(
@@ -429,9 +541,9 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                       crossAxisSpacing: 12.0,
                       childAspectRatio: AppLayout.gridColumns(context) == 3 ? 2.8 : 2.2,
                     ),
-                    itemCount: projects.length,
+                    itemCount: filteredProjects.length,
                     itemBuilder: (context, index) {
-                      final p = projects[index];
+                      final p = filteredProjects[index];
                       final isSelected = _selectedProjectIds.contains(p.id);
                       return RepaintBoundary(
                         key: ValueKey(p.id),
@@ -456,7 +568,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                     },
                   )
                 else
-                  ...projects.map((p) {
+                  ...filteredProjects.map((p) {
                     final isSelected = _selectedProjectIds.contains(p.id);
                     return RepaintBoundary(
                       key: ValueKey(p.id),
