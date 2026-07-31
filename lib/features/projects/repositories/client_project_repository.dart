@@ -123,20 +123,44 @@ class ClientProjectRepository extends ProjectRepository {
 
   @override
   Future<Project> getById(String id) async {
-    final project = await super.getById(id);
-    // Fetch client record to make sure client owns it
-    final clientRow = await SupabaseService.instance
-        .from('clients')
-        .select('client_user_id')
-        .eq('id', project.clientId)
+    final clientUserId = SupabaseService.userId;
+    
+    final response = await SupabaseService.instance
+        .from('projects')
+        .select('*, clients!client_id!inner(name, client_user_id)')
+        .eq('id', id)
         .single()
         .timeout(const Duration(seconds: 15));
 
-    final clientUserId = clientRow['client_user_id'] as String?;
-    if (clientUserId != SupabaseService.userId) {
+    // Verify client ownership
+    final clientData = response['clients'];
+    if (clientData == null || clientData['client_user_id'] != clientUserId) {
       throw Exception('Unauthorized access to project');
     }
-    return project;
+    response['client_name'] = clientData['name'];
+
+    // Fetch freelancer profile (name + UPI ID)
+    final freelancerUserId = response['user_id'] as String;
+    try {
+      final profileRes = await SupabaseService.instance
+          .from('profiles')
+          .select('full_name, upi_id')
+          .eq('id', freelancerUserId)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 5));
+      if (profileRes != null) {
+        if (profileRes['full_name'] != null) {
+          response['freelancer_name'] = profileRes['full_name'] as String;
+        }
+        if (profileRes['upi_id'] != null) {
+          response['freelancer_upi_id'] = profileRes['upi_id'] as String;
+        }
+      }
+    } catch (err) {
+      debugPrint('[ClientProjectRepository] Freelancer profile fetch failed: $err');
+    }
+
+    return Project.fromJson(response);
   }
 
   @override

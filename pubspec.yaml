@@ -1,7 +1,7 @@
 name: editflow
 description: "Freelance project management for video editors"
 publish_to: 'none'
-version: 2.2.2+6
+version: 2.2.3+7
 
 environment:
   sdk: ^3.10.4
