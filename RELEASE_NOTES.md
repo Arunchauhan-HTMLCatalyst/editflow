@@ -1,3 +1,28 @@
+# Release Notes - EditFlow v2.2.2
+
+We are excited to release **EditFlow v2.2.2**, introducing responsive desktop optimizations, filter-scoped multi-select and batch actions, client dashboard budget tracking, admin side creation metrics with live syncing settings, system announcement banners, and consolidated overdue payment notifications.
+
+---
+
+## 🚀 What's New in v2.2.2
+
+### 🖥️ Desktop Optimized Layouts
+* **Responsive Dual-Column Form**: On wider desktop viewports (> 800px), the *Add Client Screen* reorganizes inputs side-by-side into a beautiful, centered glassmorphic card container to maximize readability and reduce scrolling.
+
+### ⚡ Batch Actions & Multi-Select Portals
+* **Payments & Projects Batching**: Stays scoped to active search queries and filters. Includes bulk status updates and bulk deletions with persistent loading state and error handling.
+* **Client Detail Projects Selection**: Extended full multi-select, select all, batch updates, and deletion directly to the project list inside the *Client Details Screen*.
+
+### 📊 Admin Side Analytics & Auto-Save
+* **User Metrics**: Added Projects and Clients count indicator cards on user overview cards.
+* **Live Configuration Sync**: Settings changes save automatically using debounced listeners on text fields and instant triggers on switches, removing the manual Save button.
+
+### 🔔 Consolidated Alerts & Announcements
+* **Combined Overdue Alerts**: Replaced multiple spammy notifications with a single summary notice: *"X payments are overdue!"* that redirects users to the Payments screen and auto-clears.
+* **Announcement Banner Stream**: Displays active system banners from Supabase at the top of mobile and desktop viewports.
+
+---
+
 # Release Notes - EditFlow v1.2.0
 
 We are excited to release **EditFlow v1.2.0**, introducing a persistent Android Foreground Service with WebSocket/polling synchronization fallback, two-way status notification portals, custom-branded landing website (hosted via GitHub Pages), default INR currency support, and simplified compliant UPI deep links.

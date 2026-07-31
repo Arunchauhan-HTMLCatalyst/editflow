@@ -1,0 +1,14 @@
+🚀 What's New in EditFlow v2.2.2
+
+• 💎 EditFlow Pro (Monthly & Yearly plans)
+• 💳 Subscription upgrades with UPI payment
+• 📊 Admin Dashboard with user metrics & live sync settings
+• 🔔 Combined overdue payment alerts & notifications
+• 🛠️ Support request management
+• ❓ Support & FAQ section in Settings
+• 🖥️ Responsive dual-column Add Client screen
+• ⚡ Batch actions for client details & payments
+• 📈 Client Dashboard monthly budget goals
+• 🌐 Web app improvements & announcement banners
+
+Thank you for using EditFlow! ❤️
